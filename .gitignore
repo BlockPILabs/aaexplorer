@@ -29,3 +29,7 @@ out
 gen
 .vscode
 .aim
+
+internal/entity/ent
+
+dist
