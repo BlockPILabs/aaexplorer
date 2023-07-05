@@ -3,7 +3,6 @@ package middleware
 import (
 	"github.com/BlockPILabs/aa-scan/internal/log"
 	"github.com/gofiber/fiber/v2"
-	"net/http"
 	"time"
 )
 
@@ -23,8 +22,13 @@ func Logger(logger log.Logger) fiber.Handler {
 		)
 
 		if err != nil {
-			_logger.Error("api error", "err", err)
-		} else if c.Response().StatusCode() != http.StatusOK {
+			switch e := err.(type) {
+			case *fiber.Error:
+				_logger.Error("api error", "err", e.Message, "status", e.Code)
+			default:
+				_logger.Error("api error", "err", err)
+			}
+		} else if c.Response().StatusCode() != fiber.StatusOK {
 			_logger.Warn("api warn")
 		} else {
 			_logger.Debug("api success")

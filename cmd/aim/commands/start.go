@@ -1,11 +1,13 @@
 package commands
 
 import (
+	"github.com/BlockPILabs/aa-scan/explorer"
 	"github.com/BlockPILabs/aa-scan/internal/middleware"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/pprof"
 	fiber_recover "github.com/gofiber/fiber/v2/middleware/recover"
 	"strings"
+	"time"
 
 	aimos "github.com/BlockPILabs/aa-scan/internal/os"
 	fiber "github.com/gofiber/fiber/v2"
@@ -35,7 +37,11 @@ func NewStartCmd() *cobra.Command {
 				BodyLimit:   int(config.Api.MaxBodyBytes),
 				Concurrency: config.Api.MaxOpenConnections,
 				ErrorHandler: func(ctx *fiber.Ctx, err error) error {
-					return err
+					_, err = ctx.WriteString("error")
+					if err != nil {
+						return err
+					}
+					return nil
 				},
 			})
 			// Use middleware
@@ -60,6 +66,13 @@ func NewStartCmd() *cobra.Command {
 			app.Use(fiber_recover.New(fiber_recover.Config{
 				EnableStackTrace: true,
 			}))
+
+			app.Get("/", func(ftx *fiber.Ctx) error {
+				ftx.WriteString(time.Now().String())
+				return nil
+			})
+			// register router
+			explorer.Resister(app.Group("/explorer"))
 
 			go func() {
 				err := app.Listen(config.Api.ListenAddress)
