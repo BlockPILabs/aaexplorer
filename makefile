@@ -1,7 +1,3 @@
-#
-#
-#.PHONY: all build
-
 
 NAME?=aim
 
@@ -14,7 +10,7 @@ BUILD_TAGS?=$(NAME)
 
 
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
-LD_FLAGS = -X github.com/BlockPILabs/aa-scan/version.GitCommitHash=$(COMMIT_HASH)
+LD_FLAGS = -X github.com/BlockPILabs/aa-scan/version.GitCommitHash="$(COMMIT_HASH)"
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
 
 CGO_ENABLED ?= 0
@@ -130,6 +126,16 @@ generate: clean
 build: clean generate
 	CGO_ENABLED=$(CGO_ENABLED) go build $(BUILD_FLAGS) -tags '$(BUILD_TAGS)' -o $(OUTPUT) ./cmd/aim/
 .PHONY: build
+
+install: clean generate
+	CGO_ENABLED=$(CGO_ENABLED) go install $(BUILD_FLAGS) -tags '$(BUILD_TAGS)' -o $(OUTPUT) ./cmd/aim/
+
+.PHONY: install
+
+migrate: clean generate
+	CGO_ENABLED=$(CGO_ENABLED) go run  ./cmd/aim/ migrate
+
+.PHONY: migrate
 
 clean:
 	rm -rf dist/*

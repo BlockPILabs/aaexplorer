@@ -13,6 +13,7 @@ func main() {
 	rootCmd.AddCommand(
 		commands.VersionCmd,
 		commands.ScanCmd,
+		commands.MigrateCmd,
 	)
 	// Create & start
 	rootCmd.AddCommand(commands.NewStartCmd())

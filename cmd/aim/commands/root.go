@@ -18,6 +18,7 @@ var config = cfg.DefaultConfig()
 // sets up the aim root and ensures that the root exists
 func ParseConfig(cmd *cobra.Command) (*cfg.Config, error) {
 	conf := cfg.DefaultConfig()
+
 	err := viper.Unmarshal(conf)
 	if err != nil {
 		return nil, err

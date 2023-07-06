@@ -47,13 +47,13 @@ type BaseConfig struct { //nolint: maligned
 
 	// The root directory for all data.
 	// This should be set in viper so it can unmarshal into this struct
-	RootDir string `mapstructure:"home"`
+	RootDir string `mapstructure:"home" toml:"home"`
 
 	// Output format: 'plain' (colored text) or 'json'
-	LogFormat string `mapstructure:"log_format"`
+	LogFormat string `mapstructure:"log_format" toml:"log_format"`
 
 	// Output level for logging
-	LogLevel string `mapstructure:"log_level"`
+	LogLevel string `mapstructure:"log_level" toml:"log_level"`
 }
 
 // ValidateBasic performs basic validation (checking param bounds, etc.) and
@@ -78,10 +78,11 @@ func DefaultBaseConfig() BaseConfig {
 
 type Config struct {
 	// Top level options use an anonymous struct
-	BaseConfig `mapstructure:",squash"`
+	BaseConfig `mapstructure:",squash" toml:",squash"`
 
 	// Options for services
-	Api *ApiConfig `mapstructure:"api"`
+	Api       *ApiConfig  `mapstructure:"api" toml:"api"`
+	Databases []*DbConfig `mapstructure:"databases" toml:"databases"`
 }
 
 // DefaultConfig returns a default configuration
@@ -89,6 +90,7 @@ func DefaultConfig() *Config {
 	return &Config{
 		BaseConfig: DefaultBaseConfig(),
 		Api:        DefaultApiConfig(),
+		Databases:  DefaultDatabaseConfig(),
 	}
 }
 
@@ -144,7 +146,11 @@ func (cfg *Config) ValidateBasic() error {
 	if err := cfg.Api.ValidateBasic(); err != nil {
 		return fmt.Errorf("error in [rpc] section: %w", err)
 	}
-
+	for _, database := range cfg.Databases {
+		if err := database.ValidateBasic(); err != nil {
+			return fmt.Errorf("error in [rpc] section: %w", err)
+		}
+	}
 	return nil
 }
 

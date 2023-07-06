@@ -2,6 +2,7 @@ package commands
 
 import (
 	"github.com/BlockPILabs/aa-scan/explorer"
+	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/middleware"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/pprof"
@@ -32,6 +33,13 @@ func NewStartCmd() *cobra.Command {
 		Aliases: []string{"node", "run"},
 		Short:   "Run the aim api",
 		RunE: func(cmd *cobra.Command, args []string) error {
+
+			// db start
+			err := entity.Start(config)
+			if err != nil {
+				return err
+			}
+
 			app := fiber.New(fiber.Config{
 				Prefork:     config.Api.Prefork,
 				BodyLimit:   int(config.Api.MaxBodyBytes),

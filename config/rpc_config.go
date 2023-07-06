@@ -13,25 +13,25 @@ const (
 
 // ApiConfig defines the configuration options for the API server
 type ApiConfig struct {
-	RootDir string `mapstructure:"home"`
+	RootDir string `mapstructure:"home" toml:"home"`
 
 	// TCP or UNIX socket address for the RPC server to listen on
-	ListenAddress string `mapstructure:"laddr"`
+	ListenAddress string `mapstructure:"laddr" toml:"laddr"`
 
 	// A list of origins a cross-domain request can be executed from.
 	// If the special '*' value is present in the list, all origins will be allowed.
 	// An origin may contain a wildcard (*) to replace 0 or more characters (i.e.: http://*.domain.com).
 	// Only one wildcard can be used per origin.
-	CORSAllowedOrigins []string `mapstructure:"cors_allowed_origins"`
+	CORSAllowedOrigins []string `mapstructure:"cors_allowed_origins" toml:"cors_allowed_origins"`
 
 	// A list of methods the client is allowed to use with cross-domain requests.
-	CORSAllowedMethods []string `mapstructure:"cors_allowed_methods"`
+	CORSAllowedMethods []string `mapstructure:"cors_allowed_methods" toml:"cors_allowed_methods"`
 
 	// A list of non simple headers the client is allowed to use with cross-domain requests.
-	CORSAllowedHeaders []string `mapstructure:"cors_allowed_headers"`
+	CORSAllowedHeaders []string `mapstructure:"cors_allowed_headers" toml:"cors_allowed_headers"`
 
-	CORSAllowedCredentials bool `mapstructure:"cors_allowed_credentials"`
-	CORSAMaxAge            int  `mapstructure:"cors_max_age"`
+	CORSAllowedCredentials bool `mapstructure:"cors_allowed_credentials" toml:"cors_allowed_credentials"`
+	CORSAMaxAge            int  `mapstructure:"cors_max_age" toml:"cors_max_age"`
 
 	//// TCP or UNIX socket address for the gRPC server to listen on
 	//// NOTE: This server only supports /broadcast_tx_commit
@@ -45,7 +45,7 @@ type ApiConfig struct {
 	//GRPCMaxOpenConnections int `mapstructure:"grpc_max_open_connections"`
 
 	// Activate unsafe RPC commands like /dial_persistent_peers and /unsafe_flush_mempool
-	Unsafe bool `mapstructure:"unsafe"`
+	Unsafe bool `mapstructure:"unsafe" toml:"unsafe"`
 
 	// Maximum number of simultaneous connections (including WebSocket).
 	// Does not include gRPC connections. See grpc_max_open_connections
@@ -54,21 +54,21 @@ type ApiConfig struct {
 	// 0 - unlimited.
 	// Should be < {ulimit -Sn} - {MaxNumInboundPeers} - {MaxNumOutboundPeers} - {N of wal, db and other open files}
 	// 1024 - 40 - 10 - 50 = 924 = ~900
-	MaxOpenConnections int `mapstructure:"max_open_connections"`
+	MaxOpenConnections int `mapstructure:"max_open_connections" toml:"max_open_connections"`
 
 	// Maximum number of unique clientIDs that can /subscribe
 	// If you're using /broadcast_tx_commit, set to the estimated maximum number
 	// of broadcast_tx_commit calls per block.
-	MaxSubscriptionClients int `mapstructure:"max_subscription_clients"`
+	MaxSubscriptionClients int `mapstructure:"max_subscription_clients" toml:"max_subscription_clients"`
 
 	// Maximum number of unique queries a given client can /subscribe to
 	// If you're using GRPC (or Local RPC client) and /broadcast_tx_commit, set
 	// to the estimated maximum number of broadcast_tx_commit calls per block.
-	MaxSubscriptionsPerClient int `mapstructure:"max_subscriptions_per_client"`
+	MaxSubscriptionsPerClient int `mapstructure:"max_subscriptions_per_client" toml:"max_subscriptions_per_client"`
 
 	// The number of events that can be buffered per subscription before
 	// returning `ErrOutOfCapacity`.
-	SubscriptionBufferSize int `mapstructure:"experimental_subscription_buffer_size"`
+	SubscriptionBufferSize int `mapstructure:"experimental_subscription_buffer_size" toml:"experimental_subscription_buffer_size"`
 
 	// The maximum number of responses that can be buffered per WebSocket
 	// client. If clients cannot read from the WebSocket endpoint fast enough,
@@ -78,7 +78,7 @@ type ApiConfig struct {
 	//
 	// Must be at least the same as `SubscriptionBufferSize`, otherwise
 	// connections may be dropped unnecessarily.
-	WebSocketWriteBufferSize int `mapstructure:"experimental_websocket_write_buffer_size"`
+	WebSocketWriteBufferSize int `mapstructure:"experimental_websocket_write_buffer_size" toml:"experimental_websocket_write_buffer_size"`
 
 	// If a WebSocket client cannot read fast enough, at present we may
 	// silently drop events instead of generating an error or disconnecting the
@@ -87,13 +87,13 @@ type ApiConfig struct {
 	// Enabling this parameter will cause the WebSocket connection to be closed
 	// instead if it cannot read fast enough, allowing for greater
 	// predictability in subscription behavior.
-	CloseOnSlowClient bool `mapstructure:"experimental_close_on_slow_client"`
+	CloseOnSlowClient bool `mapstructure:"experimental_close_on_slow_client" toml:"experimental_close_on_slow_client"`
 
 	// Maximum size of request body, in bytes
-	MaxBodyBytes int64 `mapstructure:"max_body_bytes"`
+	MaxBodyBytes int64 `mapstructure:"max_body_bytes" toml:"max_body_bytes"`
 
 	// Maximum size of request header, in bytes
-	MaxHeaderBytes int `mapstructure:"max_header_bytes"`
+	MaxHeaderBytes int `mapstructure:"max_header_bytes" toml:"max_header_bytes"`
 
 	// The path to a file containing certificate that is used to create the HTTPS server.
 	// Might be either absolute path or path related to AA-Scan config directory.
@@ -104,20 +104,20 @@ type ApiConfig struct {
 	//
 	// NOTE: both tls_cert_file and tls_key_file must be present for AA-Scan to create HTTPS server.
 	// Otherwise, HTTP server is run.
-	TLSCertFile string `mapstructure:"tls_cert_file"`
+	TLSCertFile string `mapstructure:"tls_cert_file" toml:"tls_cert_file"`
 
 	// The path to a file containing matching private key that is used to create the HTTPS server.
 	// Might be either absolute path or path related to AA-Scan config directory.
 	//
 	// NOTE: both tls_cert_file and tls_key_file must be present for AA-Scan to create HTTPS server.
 	// Otherwise, HTTP server is run.
-	TLSKeyFile string `mapstructure:"tls_key_file"`
+	TLSKeyFile string `mapstructure:"tls_key_file" toml:"tls_key_file"`
 
 	// no set no enable.
 	// /debug/pprof/
-	PprofPrefix string `mapstructure:"pprof_prefix"`
+	PprofPrefix string `mapstructure:"pprof_prefix" toml:"pprof_prefix"`
 
-	Prefork bool `mapstructure:"prefork"`
+	Prefork bool `mapstructure:"prefork" toml:"prefork"`
 }
 
 // DefaultApiConfig returns a default configuration for the RPC server
