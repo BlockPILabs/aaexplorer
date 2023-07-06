@@ -1,7 +1,12 @@
 # aa-scan
 
 
+# run
 
+```shell
+go generate ./internal/entity
+go run ./cmd/aim/ --home ./.aim 
+```
 
 
 # Library used
