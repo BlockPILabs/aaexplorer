@@ -133,7 +133,7 @@ install: clean generate
 .PHONY: install
 
 migrate: clean generate
-	CGO_ENABLED=$(CGO_ENABLED) go run  ./cmd/aim/ migrate
+	CGO_ENABLED=$(CGO_ENABLED) go run  ./cmd/aim/ --home ./.aim migrate
 
 .PHONY: migrate
 

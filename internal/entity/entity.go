@@ -41,7 +41,7 @@ func Start(cfg *config.Config) error {
 			}
 			drv.DB().SetConnMaxLifetime(leftTime)
 		}
-		// 从db变量中构造一个ent.Driver对象。
+		// connect
 		client := ent.NewClient(ent.Driver(drv))
 		if err != nil {
 			return err

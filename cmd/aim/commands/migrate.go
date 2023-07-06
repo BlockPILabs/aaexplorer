@@ -19,11 +19,10 @@ var MigrateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		err = db.Schema.Create(cmd.Context())
+		err = db.Debug().Schema.Create(cmd.Context())
 		if err != nil {
 			return err
 		}
-		// Run forever.
-		select {}
+		return nil
 	},
 }
