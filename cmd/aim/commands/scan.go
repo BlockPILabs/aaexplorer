@@ -1,8 +1,12 @@
 package commands
 
 import (
-	"fmt"
+	"context"
+	"github.com/BlockPILabs/aa-scan/parser"
+	"github.com/procyon-projects/chrono"
 	"github.com/spf13/cobra"
+	"log"
+	"time"
 )
 
 // ScanCmd ...
@@ -10,6 +14,15 @@ var ScanCmd = &cobra.Command{
 	Use:   "scan",
 	Short: "scan block",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("scan block")
+		taskScheduler := chrono.NewDefaultTaskScheduler()
+
+		_, err := taskScheduler.ScheduleWithFixedDelay(func(ctx context.Context) {
+			parser.ScanBlock()
+			logger.Info("scan block end")
+		}, 5*time.Second)
+
+		if err == nil {
+			log.Print("Task: scan block has been scheduled successfully.")
+		}
 	},
 }
