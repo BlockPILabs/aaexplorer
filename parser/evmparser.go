@@ -87,7 +87,6 @@ func doParse(block *types.Block, client *ethclient.Client) {
 	var blockTransactionInfos []schema.TransactionInfo
 
 	for _, tx := range transactions {
-
 		input := "0x" + common.Bytes2Hex(tx.Data())
 		if len(input) <= 10 {
 			continue

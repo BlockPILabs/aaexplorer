@@ -29,3 +29,21 @@ func (networkDao) GetNetworks(ctx context.Context) ([]*ent.Network, error) {
 	}
 	return networks, err
 }
+
+func (networkDao) GetNetworkByNetwork(ctx context.Context, network_ string) (*ent.Network, error) {
+
+	ctx, logger := log.With(ctx, "module", "network")
+	db, err := entity.Client(ctx)
+	if err != nil {
+		return nil, err
+	}
+	net, err := db.Network.Query().Where(
+		network.NetworkEQ(network_),
+		network.DeleteTimeIsNil(),
+	).First(ctx)
+	if err != nil {
+		logger.Warn("get networks error")
+		return nil, err
+	}
+	return net, err
+}

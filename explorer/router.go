@@ -14,7 +14,7 @@ func Resister(router fiber.Router) {
 	v1.Get("/networks", controller.GetNetworks).Name("get_networks")
 
 	// Bundles
-	v1.Get("/networks/:network?/bundles", controller.GetBundles).Name("get_bundles")
+	v1.Get("/networks/:network<regex(^[a-z0-9]{1,}$)}>?/bundles", controller.GetBundles).Name("get_bundles")
 }
 
 func Error() {

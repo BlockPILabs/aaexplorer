@@ -1,13 +1,20 @@
 package controller
 
 import (
-	"github.com/BlockPILabs/aa-scan/internal/vo"
+	"fmt"
+	"github.com/BlockPILabs/aa-scan/internal/dao"
 	"github.com/gofiber/fiber/v2"
 )
 
-func GetBundles(ctx *fiber.Ctx) error {
+func GetBundles(fcx *fiber.Ctx) error {
 
-	return vo.NewResultJsonResponse(fiber.Map{
-		"params": ctx.Params("network"),
-	}).JSON(ctx)
+	ctx := fcx.UserContext()
+	networkFlag := fcx.Params("network")
+
+	net, err := dao.NetworkDao.GetNetworkByNetwork(ctx, networkFlag)
+	if err != nil {
+		return err
+	}
+	fmt.Println(net)
+	return nil
 }
