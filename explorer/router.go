@@ -9,7 +9,12 @@ import (
 func Resister(router fiber.Router) {
 	router.Use(fiber_recover.New())
 	v1 := router.Group("/v1")
+	// networks
+
 	v1.Get("/networks", controller.GetNetworks).Name("get_networks")
+
+	// Bundles
+	v1.Get("/networks/:network?/bundles", controller.GetBundles).Name("get_bundles")
 }
 
 func Error() {

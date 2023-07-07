@@ -5,6 +5,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/network"
+	"github.com/BlockPILabs/aa-scan/internal/log"
 )
 
 type networkDao struct {
@@ -13,7 +14,9 @@ type networkDao struct {
 var NetworkDao = networkDao{}
 
 func (networkDao) GetNetworks(ctx context.Context) ([]*ent.Network, error) {
-	db, err := entity.Client()
+
+	ctx, logger := log.With(ctx, "module", "network")
+	db, err := entity.Client(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -21,6 +24,7 @@ func (networkDao) GetNetworks(ctx context.Context) ([]*ent.Network, error) {
 		network.DeleteTimeIsNil(),
 	).All(ctx)
 	if err != nil {
+		logger.Warn("get networks error")
 		return nil, err
 	}
 	return networks, err

@@ -26,3 +26,9 @@ func Context(ctx context.Context) Logger {
 func WithContext(ctx context.Context, logger Logger) context.Context {
 	return context.WithValue(ctx, logContextKey{}, logger)
 }
+
+func With(ctx context.Context, keyvals ...interface{}) (context.Context, Logger) {
+	logger := Context(ctx).With(keyvals...)
+	ctx = WithContext(ctx, logger)
+	return ctx, logger
+}

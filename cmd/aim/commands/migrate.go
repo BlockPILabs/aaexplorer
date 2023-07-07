@@ -15,7 +15,7 @@ var MigrateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		db, err := entity.Client()
+		db, err := entity.Client(cmd.Context())
 		if err != nil {
 			return err
 		}

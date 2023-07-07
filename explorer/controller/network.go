@@ -11,7 +11,7 @@ func GetNetworks(fcx *fiber.Ctx) error {
 
 	ctx := fcx.UserContext()
 
-	log.Context(ctx).Debug("start get networks success")
+	log.Context(ctx).Debug("start get networks")
 	res := &vo.GetNetworksResponse{
 		Pagination: vo.Pagination{
 			Page:       1,

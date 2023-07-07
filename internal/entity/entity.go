@@ -1,9 +1,11 @@
 package entity
 
 import (
+	"context"
 	entsql "entgo.io/ent/dialect/sql"
 	"errors"
 	"fmt"
+	"github.com/BlockPILabs/aa-scan/internal/log"
 	"time"
 
 	"github.com/BlockPILabs/aa-scan/config"
@@ -58,17 +60,19 @@ func Start(cfg *config.Config) error {
 	return nil
 }
 
-func Client(group ...string) (*ent.Client, error) {
+func Client(ctx context.Context, group ...string) (*ent.Client, error) {
 	g := config.Default
 	if len(group) > 0 && len(group[0]) > 0 {
 		g = group[0]
 	}
 	c, ok := clients.Load(g)
 	if !ok {
+		log.Context(ctx).Error("not found group")
 		return nil, errors.New(fmt.Sprintf("not found group %s", g))
 	}
 	client, ok := c.(*ent.Client)
 	if !ok {
+		log.Context(ctx).Error("group error")
 		return nil, errors.New(fmt.Sprintf("group error %s", g))
 	}
 	return client, nil
