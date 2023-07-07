@@ -1,0 +1,47 @@
+package vo
+
+import "github.com/gofiber/fiber/v2"
+
+const vsn = "1.0"
+
+type SetResponseOption func(*JsonResponse) *JsonResponse
+
+type JsonResponse struct {
+	Version string `json:"jsonrpc,omitempty"`
+	Id      string `json:"id,omitempty"`
+	Error   *Error `json:"error,omitempty"`
+	Result  any    `json:"result,omitempty"`
+}
+
+func (r *JsonResponse) JSON(ctx *fiber.Ctx) error {
+	return ctx.JSON(r)
+}
+
+func SetResponseId(id string) SetResponseOption {
+	return func(r *JsonResponse) *JsonResponse {
+		r.Id = id
+		return r
+	}
+}
+
+func SetResponseResult(result any) SetResponseOption {
+	return func(r *JsonResponse) *JsonResponse {
+		r.Result = result
+		return r
+	}
+}
+
+func SetResponseError(error *Error) SetResponseOption {
+	return func(r *JsonResponse) *JsonResponse {
+		r.Error = error
+		return r
+	}
+}
+
+func NewJsonResponse(sets ...SetResponseOption) *JsonResponse {
+	r := &JsonResponse{Version: vsn}
+	for _, set := range sets {
+		r = set(r)
+	}
+	return r
+}

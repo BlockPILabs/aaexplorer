@@ -4,15 +4,16 @@ import (
 	"github.com/BlockPILabs/aa-scan/explorer"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/middleware"
+	aimos "github.com/BlockPILabs/aa-scan/internal/os"
+	"github.com/BlockPILabs/aa-scan/internal/vo"
+	fiber "github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/favicon"
 	"github.com/gofiber/fiber/v2/middleware/pprof"
 	fiber_recover "github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/spf13/cobra"
 	"strings"
 	"time"
-
-	aimos "github.com/BlockPILabs/aa-scan/internal/os"
-	fiber "github.com/gofiber/fiber/v2"
-	"github.com/spf13/cobra"
 )
 
 // AddFlags exposes some common configuration options on the command-line
@@ -45,14 +46,33 @@ func NewStartCmd() *cobra.Command {
 				BodyLimit:   int(config.Api.MaxBodyBytes),
 				Concurrency: config.Api.MaxOpenConnections,
 				ErrorHandler: func(ctx *fiber.Ctx, err error) error {
-					_, err = ctx.WriteString("error")
-					if err != nil {
-						return err
+
+					switch e := err.(type) {
+					case *vo.Error:
+						r := &vo.JsonResponse{
+							Version: "",
+							Id:      "",
+							Error:   e,
+							Result:  nil,
+						}
+						return r.JSON(ctx)
+					case *fiber.Error:
+						r := &vo.JsonResponse{
+							Error: &vo.Error{
+								Code:    e.Code,
+								Message: e.Message,
+							},
+						}
+						return r.JSON(ctx)
+					default:
+						return ctx.SendStatus(fiber.StatusInternalServerError)
 					}
-					return nil
 				},
 			})
 			// Use middleware
+
+			app.Use(favicon.New())
+
 			// logger
 			app.Use(middleware.Logger(logger.With("module", "api")))
 
@@ -75,12 +95,13 @@ func NewStartCmd() *cobra.Command {
 				EnableStackTrace: true,
 			}))
 
+			// register router
+			explorer.Resister(app.Group("/explorer"))
+
 			app.Get("/", func(ftx *fiber.Ctx) error {
 				ftx.WriteString(time.Now().String())
 				return nil
 			})
-			// register router
-			explorer.Resister(app.Group("/explorer"))
 
 			go func() {
 				err := app.Listen(config.Api.ListenAddress)
