@@ -45,3 +45,18 @@ func NewJsonResponse(sets ...SetResponseOption) *JsonResponse {
 	}
 	return r
 }
+func NewResultJsonResponse(result any, sets ...SetResponseOption) *JsonResponse {
+	r := &JsonResponse{Version: vsn, Result: result}
+	for _, set := range sets {
+		r = set(r)
+	}
+	return r
+}
+
+func NewErrorJsonResponse(error *Error, sets ...SetResponseOption) *JsonResponse {
+	r := &JsonResponse{Version: vsn, Error: error}
+	for _, set := range sets {
+		r = set(r)
+	}
+	return r
+}

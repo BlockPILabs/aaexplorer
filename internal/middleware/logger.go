@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func Logger(logger log.Logger) fiber.Handler {
+func Logger() fiber.Handler {
 
 	return func(c *fiber.Ctx) error {
 
@@ -14,10 +14,10 @@ func Logger(logger log.Logger) fiber.Handler {
 		err := c.Next()
 		end := time.Now()
 
-		_logger := logger.With(
+		_logger := log.Context(c.UserContext()).With(
 			"status", c.Response().StatusCode(),
-			"ip", c.IP(),
-			"method", c.Method(),
+			//"ip", c.IP(),
+			//"method", c.Method(),
 			"duration", end.Sub(start).Round(time.Millisecond),
 		)
 

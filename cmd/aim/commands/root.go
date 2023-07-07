@@ -74,6 +74,12 @@ var RootCmd = &cobra.Command{
 		}
 
 		logger = logger.With("module", "main")
+
+		// Set default logger
+		log.SetDefaultLogger(logger)
+		cmd.SetContext(
+			log.WithContext(cmd.Context(), logger),
+		)
 		return nil
 	},
 	//Run: func(cmd *cobra.Command, args []string) {

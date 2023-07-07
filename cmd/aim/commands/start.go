@@ -3,6 +3,7 @@ package commands
 import (
 	"github.com/BlockPILabs/aa-scan/explorer"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
+	"github.com/BlockPILabs/aa-scan/internal/log"
 	"github.com/BlockPILabs/aa-scan/internal/middleware"
 	aimos "github.com/BlockPILabs/aa-scan/internal/os"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
@@ -12,6 +13,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/pprof"
 	fiber_recover "github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/spf13/cobra"
+	"os"
 	"strings"
 	"time"
 )
@@ -34,7 +36,10 @@ func NewStartCmd() *cobra.Command {
 		Aliases: []string{"node", "run"},
 		Short:   "Run the aim api",
 		RunE: func(cmd *cobra.Command, args []string) error {
-
+			logger = logger.With(
+				"child", fiber.IsChild(),
+				"pid", os.Getpid(),
+			)
 			// db start
 			err := entity.Start(config)
 			if err != nil {
@@ -46,35 +51,31 @@ func NewStartCmd() *cobra.Command {
 				BodyLimit:   int(config.Api.MaxBodyBytes),
 				Concurrency: config.Api.MaxOpenConnections,
 				ErrorHandler: func(ctx *fiber.Ctx, err error) error {
-
 					switch e := err.(type) {
 					case *vo.Error:
-						r := &vo.JsonResponse{
-							Version: "",
-							Id:      "",
-							Error:   e,
-							Result:  nil,
-						}
-						return r.JSON(ctx)
+						return vo.NewErrorJsonResponse(e).JSON(ctx)
 					case *fiber.Error:
-						r := &vo.JsonResponse{
-							Error: &vo.Error{
-								Code:    e.Code,
-								Message: e.Message,
-							},
-						}
-						return r.JSON(ctx)
+						return vo.NewErrorJsonResponse(&vo.Error{Code: e.Code, Message: e.Message}).JSON(ctx)
 					default:
-						return ctx.SendStatus(fiber.StatusInternalServerError)
+						return vo.NewErrorJsonResponse(vo.ErrSystem).JSON(ctx)
 					}
 				},
 			})
 			// Use middleware
-
+			app.Use(fiber.Handler(func(ctx *fiber.Ctx) error {
+				_logger := logger.With(
+					"module", "api",
+					"method", string(ctx.Request().Header.Method()),
+					"requestUri", string(ctx.Request().RequestURI()),
+					"remoteIp", ctx.IP(),
+				)
+				ctx.SetUserContext(log.WithContext(ctx.UserContext(), _logger))
+				return ctx.Next()
+			}))
 			app.Use(favicon.New())
 
 			// logger
-			app.Use(middleware.Logger(logger.With("module", "api")))
+			app.Use(middleware.Logger())
 
 			// cros
 			app.Use(cors.New(cors.Config{
@@ -99,8 +100,8 @@ func NewStartCmd() *cobra.Command {
 			explorer.Resister(app.Group("/explorer"))
 
 			app.Get("/", func(ftx *fiber.Ctx) error {
-				ftx.WriteString(time.Now().String())
-				return nil
+				_, err := ftx.WriteString(time.Now().String())
+				return err
 			})
 
 			go func() {

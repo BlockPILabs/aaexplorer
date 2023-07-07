@@ -1,0 +1,28 @@
+package log
+
+import "context"
+
+type logContextKey struct {
+}
+
+var _defaultLogger = NewNopLogger()
+
+func SetDefaultLogger(logger Logger) {
+	_testingLogger = logger
+}
+
+func Context(ctx context.Context) Logger {
+	value := ctx.Value(logContextKey{})
+	if value == nil {
+		return _defaultLogger
+	}
+	l, ok := value.(Logger)
+	if !ok {
+		return _defaultLogger
+	}
+	return l
+}
+
+func WithContext(ctx context.Context, logger Logger) context.Context {
+	return context.WithValue(ctx, logContextKey{}, logger)
+}

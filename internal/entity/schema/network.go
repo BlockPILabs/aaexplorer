@@ -23,7 +23,8 @@ func (Network) Fields() []ent.Field {
 		field.String("http_rpc").StructTag(`json:"http_rpc"`),
 		field.Bool("is_testnet").StructTag(`json:"isTestnet"`),
 		field.Time("create_time").Default(time.Now).StructTag(`json:"createTime"`).Immutable(),
-		field.Time("update_time").Optional().UpdateDefault(time.Now).StructTag(`json:"updateTime"`),
+		field.Time("update_time").Optional().Default(time.Now).UpdateDefault(time.Now).StructTag(`json:"updateTime"`),
+		field.Time("delete_time").Optional().StructTag(`json:"deleteTime"`),
 	}
 }
 
