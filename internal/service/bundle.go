@@ -10,6 +10,6 @@ type bundleService struct {
 
 var BundleService = bundleService{}
 
-func (*bundleService) GetBundlers(ctx context.Context, response vo.GetNetworksResponse) {
+func (*bundleService) GetBundlers(ctx context.Context, response vo.GetBundlersRequest) {
 
 }

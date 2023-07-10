@@ -8,5 +8,7 @@ func _newError(code int, sets ...SetErrorOption) *Error {
 }
 
 var (
-	ErrSystem = _newError(500)
+	// todo common error
+	ErrSystem = _newError(10001, SetErrorMessage("system error"))
+	ErrParams = _newError(10002, SetErrorMessage("params error"))
 )
