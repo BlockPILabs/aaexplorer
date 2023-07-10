@@ -13,8 +13,10 @@ func Resister(router fiber.Router) {
 
 	v1.Get("/networks", controller.GetNetworks).Name("get_networks")
 
+	networksV1 := v1.Group("/networks/:network<regex(^[a-z0-9]{1,}$)}>?")
+	networksV1.Use(controller.NetworkMiddleware())
 	// Bundles
-	v1.Get("/networks/:network<regex(^[a-z0-9]{1,}$)}>?/bundles", controller.GetBundles).Name("get_bundles")
+	networksV1.Get("/bundles", controller.GetBundles).Name("get_bundles")
 }
 
 func Error() {

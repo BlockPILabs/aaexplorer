@@ -11,6 +11,9 @@ import (
 type networkDao struct {
 }
 
+type networkCtxKey struct {
+}
+
 var NetworkDao = networkDao{}
 
 func (networkDao) GetNetworks(ctx context.Context) ([]*ent.Network, error) {
@@ -46,4 +49,20 @@ func (networkDao) GetNetworkByNetwork(ctx context.Context, network_ string) (*en
 		return nil, err
 	}
 	return net, err
+}
+
+func (networkDao) WithContext(ctx context.Context, net *ent.Network) context.Context {
+	if net == nil {
+		return ctx
+	}
+	return context.WithValue(ctx, networkCtxKey{}, net)
+}
+
+func (networkDao) ContextValue(ctx context.Context) (*ent.Network, bool) {
+	v := ctx.Value(networkCtxKey{})
+	if v == nil {
+		return nil, false
+	}
+	net, ok := v.(*ent.Network)
+	return net, ok
 }

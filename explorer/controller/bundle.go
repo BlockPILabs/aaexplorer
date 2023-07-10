@@ -8,13 +8,14 @@ import (
 
 func GetBundles(fcx *fiber.Ctx) error {
 
-	ctx := fcx.UserContext()
-	networkFlag := fcx.Params("network")
-
-	net, err := dao.NetworkDao.GetNetworkByNetwork(ctx, networkFlag)
-	if err != nil {
-		return err
-	}
+	net, _ := dao.NetworkDao.ContextValue(fcx.UserContext())
+	//ctx := fcx.UserContext()
+	//networkFlag := fcx.Params("network")
+	//
+	//net, err := dao.NetworkDao.GetNetworkByNetwork(ctx, networkFlag)
+	//if err != nil {
+	//	return err
+	//}
 	fmt.Println(net)
 	return nil
 }
