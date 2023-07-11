@@ -19,6 +19,8 @@ import (
 const HandleOpsSign = "0x1fad948c"
 const UserOperationEventSign = "0x49628fd1471006c1482da88028e9ce4dbb080b815c9b0344d39e5a8e6ec1419f"
 const LogTransferEventSign = "0xe6497e3ee548a3372136af2fcb0696db31fc6cf20260707645068bd3fe97f3c4"
+const TransferEventSign = "0xe6497e3ee548a3372136af2fcb0696db31fc6cf20260707645068bd3fe97f3c4"
+const AccountDeploySign = "0xd51a9c61267aa6196961883ecf5ff2da6619c37dac0fa92122513fb32c032d2d"
 
 type UserOperationEvent struct {
 	OpsHash       string
@@ -28,10 +30,11 @@ type UserOperationEvent struct {
 	Success       int
 	ActualGasCost int64
 	ActualGasUsed int64
+	Target        string
+	Factory       string
 }
 
 func ScanBlock() {
-	fmt.Println("start execute task")
 
 	client, err := ethclient.Dial("https://patient-crimson-slug.matic.discover.quiknode.pro/4cb47dc694ccf2998581548feed08af5477aa84b/")
 	if err != nil {
@@ -139,8 +142,6 @@ func parseUserOps(input string, tx *types.Transaction, receipt *types.Receipt, t
 		return nil, nil
 	}
 
-	gasFee := tx.GasFeeCap()
-	fmt.Println(gasFee)
 	var userOpsInfos []schema.UserOpsInfo
 	fee := (float64(receipt.GasUsed) / 1e18) * float64(receipt.EffectiveGasPrice.Int64()) / 1e18
 	logs := receipt.Logs
@@ -148,7 +149,6 @@ func parseUserOps(input string, tx *types.Transaction, receipt *types.Receipt, t
 	events, opsValMap := parseLogs(logs)
 
 	arrNumInt := *arrNum
-
 	for i := 1; i <= arrNumInt; i++ {
 		offset := hexToDecimalInt(substring(input, 64*(2+i), 64*(i+3)))
 		if offset == nil {
@@ -210,7 +210,7 @@ func parseUserOps(input string, tx *types.Transaction, receipt *types.Receipt, t
 			userOpsInfo.UserOperationHash = opsVal.OpsHash
 			userOpsInfo.ActualGasCost = opsVal.ActualGasCost
 			userOpsInfo.Status = opsVal.Success
-			userOpsInfo.Fee = float64(opsVal.ActualGasUsed) / 1e18
+			userOpsInfo.Fee = float64(opsVal.ActualGasCost) / 1e18
 		}
 		opsTxValue, opsTxValueOk := opsValMap[sender]
 		if opsTxValueOk {
@@ -288,18 +288,44 @@ func getAddr(initCode string, paymasterAndData string) (string, string) {
 	var paymaster string
 
 	if len(initCode) > 0 {
-		factoryAddr = "0x" + truncateString(initCode, 40)
+		factory := truncateString(initCode, 40)
+		if isAddress(factory) {
+			factoryAddr = "0x" + truncateString(initCode, 40)
+		} else {
+			factoryAddr = ""
+		}
+
 	}
 
 	if len(paymasterAndData) > 0 {
-		paymaster = "0x" + truncateString(paymasterAndData, 40)
+		paymaster = truncateString(paymasterAndData, 40)
+		if isAddress(paymaster) {
+			paymaster = "0x" + paymaster
+		} else {
+			paymaster = ""
+		}
 	}
 	return factoryAddr, paymaster
 }
 
+func isAddress(address string) bool {
+	if len(address) != 40 {
+		return false
+	}
+	for i := 0; i < 5; i++ {
+		if address[i] != '0' {
+			return true
+		}
+	}
+	return false
+}
+
 func parseCallData(callData string) string {
 	target := strings.ToLower(hexToAddress(substring(callData, 8, 8+64)))
-	return target
+	if isAddress(substringFromIndex(target, 2)) {
+		return target
+	}
+	return ""
 }
 
 func truncateString(s string, length int) string {
