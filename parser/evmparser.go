@@ -32,6 +32,7 @@ type UserOperationEvent struct {
 
 func ScanBlock() {
 	fmt.Println("start execute task")
+
 	client, err := ethclient.Dial("https://patient-crimson-slug.matic.discover.quiknode.pro/4cb47dc694ccf2998581548feed08af5477aa84b/")
 	if err != nil {
 		log.Fatal(err)
@@ -199,6 +200,7 @@ func parseUserOps(input string, tx *types.Transaction, receipt *types.Receipt, t
 			MaxFeePerGas:         maxFeePerGas.Int64(),
 			MaxPriorityFeePerGas: maxPriorityFeePerGas.Int64(),
 			TxTime:               int64(txTime),
+			TxTimeFormat:         formatTimestamp(int64(txTime)),
 			InitCode:             "0x" + initCode,
 			Source:               "",
 			Signature:            "0x" + signature,
@@ -220,23 +222,30 @@ func parseUserOps(input string, tx *types.Transaction, receipt *types.Receipt, t
 	}
 
 	transactionInfo := schema.TransactionInfo{
-		TxHash:      tx.Hash().String(),
-		BlockNumber: receipt.BlockNumber.Int64(),
-		Network:     config.Polygon,
-		Bundler:     "",
-		EntryPoint:  tx.To().String(),
-		UserOpsNum:  int64(arrNumInt),
-		Fee:         fee,
-		TxValue:     float64(tx.Value().Uint64()) / 1e18,
-		GasPrice:    tx.GasPrice().String(),
-		GasLimit:    int64(receipt.GasUsed),
-		Status:      int(receipt.Status),
-		TxTime:      int64(txTime),
-		Beneficiary: beneficary,
-		CreateTime:  time.Now(),
+		TxHash:       tx.Hash().String(),
+		BlockNumber:  receipt.BlockNumber.Int64(),
+		Network:      config.Polygon,
+		Bundler:      "",
+		EntryPoint:   strings.ToLower(tx.To().String()),
+		UserOpsNum:   int64(arrNumInt),
+		Fee:          fee,
+		TxValue:      float64(tx.Value().Uint64()) / 1e18,
+		GasPrice:     tx.GasPrice().String(),
+		GasLimit:     int64(receipt.GasUsed),
+		Status:       int(receipt.Status),
+		TxTime:       int64(txTime),
+		TxTimeFormat: formatTimestamp(int64(txTime)),
+		Beneficiary:  beneficary,
+		CreateTime:   time.Now(),
 	}
 
 	return &userOpsInfos, &transactionInfo
+}
+
+func formatTimestamp(timestamp int64) string {
+	t := time.Unix(timestamp, 0)
+	formatted := t.Format("2006-01-02 15:04:05")
+	return formatted
 }
 
 func parseLogs(logs []*types.Log) (map[string]UserOperationEvent, map[string]float64) {

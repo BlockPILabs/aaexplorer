@@ -2,7 +2,8 @@ package commands
 
 import (
 	"context"
-	"github.com/BlockPILabs/aa-scan/parser"
+	aimos "github.com/BlockPILabs/aa-scan/internal/os"
+	"github.com/BlockPILabs/aa-scan/task"
 	"github.com/procyon-projects/chrono"
 	"github.com/spf13/cobra"
 	"log"
@@ -17,12 +18,19 @@ var ScanCmd = &cobra.Command{
 		taskScheduler := chrono.NewDefaultTaskScheduler()
 
 		_, err := taskScheduler.ScheduleWithFixedDelay(func(ctx context.Context) {
-			parser.ScanBlock()
+			//parser.ScanBlock()
 			logger.Info("scan block end")
 		}, 5*time.Second)
 
 		if err == nil {
 			log.Print("Task: scan block has been scheduled successfully.")
 		}
+
+		aimos.TrapSignal(logger, func() {})
+
+		task.InitTask()
+
+		// Run forever.
+		select {}
 	},
 }
