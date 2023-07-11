@@ -16,8 +16,6 @@ func Logger() fiber.Handler {
 
 		_logger := log.Context(c.UserContext()).With(
 			"status", c.Response().StatusCode(),
-			//"ip", c.IP(),
-			//"method", c.Method(),
 			"duration", end.Sub(start).Round(time.Millisecond),
 		)
 

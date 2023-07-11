@@ -12,6 +12,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/favicon"
 	"github.com/gofiber/fiber/v2/middleware/pprof"
 	fiber_recover "github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"os"
 	"strings"
@@ -68,6 +69,7 @@ func NewStartCmd() *cobra.Command {
 					"method", string(ctx.Request().Header.Method()),
 					"requestUri", string(ctx.Request().RequestURI()),
 					"remoteIp", ctx.IP(),
+					"requestId", uuid.NewString(),
 				)
 				ctx.SetUserContext(log.WithContext(ctx.UserContext(), _logger))
 				return ctx.Next()
