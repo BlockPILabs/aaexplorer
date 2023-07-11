@@ -14,9 +14,9 @@ type networkDao struct {
 type networkCtxKey struct {
 }
 
-var NetworkDao = networkDao{}
+var NetworkDao = &networkDao{}
 
-func (networkDao) GetNetworks(ctx context.Context) ([]*ent.Network, error) {
+func (*networkDao) GetNetworks(ctx context.Context) ([]*ent.Network, error) {
 
 	ctx, logger := log.With(ctx, "module", "network")
 	db, err := entity.Client(ctx)
@@ -33,7 +33,7 @@ func (networkDao) GetNetworks(ctx context.Context) ([]*ent.Network, error) {
 	return networks, err
 }
 
-func (networkDao) GetNetworkByNetwork(ctx context.Context, network_ string) (*ent.Network, error) {
+func (*networkDao) GetNetworkByNetwork(ctx context.Context, network_ string) (*ent.Network, error) {
 
 	ctx, logger := log.With(ctx, "module", "network")
 	db, err := entity.Client(ctx)
@@ -51,14 +51,14 @@ func (networkDao) GetNetworkByNetwork(ctx context.Context, network_ string) (*en
 	return net, err
 }
 
-func (networkDao) WithContext(ctx context.Context, net *ent.Network) context.Context {
+func (*networkDao) WithContext(ctx context.Context, net *ent.Network) context.Context {
 	if net == nil {
 		return ctx
 	}
 	return context.WithValue(ctx, networkCtxKey{}, net)
 }
 
-func (networkDao) ContextValue(ctx context.Context) (*ent.Network, bool) {
+func (*networkDao) ContextValue(ctx context.Context) (*ent.Network, bool) {
 	v := ctx.Value(networkCtxKey{})
 	if v == nil {
 		return nil, false

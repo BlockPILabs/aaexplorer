@@ -48,7 +48,9 @@ func Start(cfg *config.Config) error {
 		if err != nil {
 			return err
 		}
-
+		if database.Debug {
+			client = client.Debug()
+		}
 		if i == 0 {
 			clients.Store(config.Default, client)
 		}

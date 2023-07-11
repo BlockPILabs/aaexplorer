@@ -21,6 +21,7 @@ type DbConfig struct {
 	MaxIdleCount    int    `mapstructure:"maxIdleCount" toml:"maxIdleCount"`
 	MaxOpenConns    int    `mapstructure:"maxOpenConns" toml:"maxOpenConns"`
 	MaxLifetime     int64  `mapstructure:"maxLifetime" toml:"maxLifetime"`
+	Debug           bool   `mapstructure:"debug" toml:"debug"`
 }
 
 func DefaultDatabaseConfig() []*DbConfig {

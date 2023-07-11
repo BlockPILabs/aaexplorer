@@ -29,7 +29,7 @@ func GetNetworks(fcx *fiber.Ctx) error {
 	}
 
 	// transfer to vo
-	res.TotalCount = int64(len(networks))
+	res.TotalCount = len(networks)
 	res.Records = make([]*vo.NetworkVo, int(res.TotalCount))
 
 	for i, network := range networks {

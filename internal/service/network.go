@@ -10,9 +10,9 @@ import (
 type networkService struct {
 }
 
-var NetworkService = networkService{}
+var NetworkService = &networkService{}
 
-func (networkService) GetNetworks(ctx context.Context) ([]*ent.Network, error) {
+func (*networkService) GetNetworks(ctx context.Context) ([]*ent.Network, error) {
 	ctx, _ = log.With(ctx, "service", "network")
 	return dao.NetworkDao.GetNetworks(ctx)
 }
