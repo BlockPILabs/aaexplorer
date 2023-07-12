@@ -1,5 +1,7 @@
 package vo
 
+import "github.com/shopspring/decimal"
+
 type BundlesVo struct {
 	// TxHash holds the value of the "tx_hash" field.
 	TxHash string `json:"txHash"`
@@ -14,9 +16,9 @@ type BundlesVo struct {
 	// UserOpsNum holds the value of the "user_ops_num" field.
 	UserOpsNum int64 `json:"userOpsNum"`
 	// TxValue holds the value of the "tx_value" field.
-	TxValue float32 `json:"txValue"`
+	TxValue decimal.Decimal `json:"txValue"`
 	// Fee holds the value of the "fee" field.
-	Fee float32 `json:"fee"`
+	Fee decimal.Decimal `json:"fee"`
 	// Status holds the value of the "status" field.
 	Status int `json:"status"`
 	// TxTime holds the value of the "tx_time" field.
