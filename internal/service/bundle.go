@@ -40,25 +40,19 @@ func (*bundleService) GetBundles(ctx context.Context, req vo.GetBundlesRequest) 
 	res.TotalCount = total
 
 	//
-	res.Records = make([]*vo.BundleVo, len(list))
+	res.Records = make([]*vo.BundlesVo, len(list))
 	for i, info := range list {
-		res.Records[i] = &vo.BundleVo{
-			ID:           info.ID,
-			TxHash:       info.TxHash,
-			BlockNumber:  info.BlockNumber,
-			Network:      info.Network,
-			Bundler:      info.Bundler,
-			EntryPoint:   info.EntryPoint,
-			UserOpsNum:   info.UserOpsNum,
-			TxValue:      info.TxValue,
-			Fee:          info.Fee,
-			GasPrice:     info.GasPrice,
-			GasLimit:     info.GasLimit,
-			Status:       info.Status,
-			TxTime:       info.TxTime,
-			TxTimeFormat: info.TxTimeFormat,
-			Beneficiary:  info.Beneficiary,
-			CreateTime:   info.CreateTime,
+		res.Records[i] = &vo.BundlesVo{
+			TxHash:      info.TxHash,
+			BlockNumber: info.BlockNumber,
+			Network:     info.Network,
+			Bundler:     info.Bundler,
+			EntryPoint:  info.EntryPoint,
+			UserOpsNum:  info.UserOpsNum,
+			TxValue:     info.TxValue,
+			Fee:         info.Fee,
+			Status:      info.Status,
+			TxTime:      info.TxTime,
 		}
 	}
 
