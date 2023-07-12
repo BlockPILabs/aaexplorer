@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/useropsinfo"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
@@ -15,7 +16,9 @@ var UserOpDao = &userOpDao{}
 
 func (*userOpDao) GetSortFields(ctx context.Context) []string {
 	return []string{
+		config.Default,
 		useropsinfo.FieldID,
+		useropsinfo.FieldTxTime,
 	}
 }
 func (dao *userOpDao) Sort(ctx context.Context, query *ent.UserOpsInfoQuery, sort int, order int) *ent.UserOpsInfoQuery {
@@ -24,8 +27,10 @@ func (dao *userOpDao) Sort(ctx context.Context, query *ent.UserOpsInfoQuery, sor
 		switch dao.sortField(ctx, dao.GetSortFields(ctx), sort) {
 		case useropsinfo.FieldID:
 			query.Order(useropsinfo.ByID(opts...))
+		//case useropsinfo.FieldTxTime:
+		//	query.Order(useropsinfo.ByTxTime(opts...))
 		default:
-			break
+			query.Order(useropsinfo.ByTxTime(opts...))
 		}
 	}
 	return query
