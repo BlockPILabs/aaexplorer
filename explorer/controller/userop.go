@@ -7,14 +7,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-const NameGetBundles = "get_bundles"
+const NameGetUserOps = "get_user_ops"
 
-func GetBundles(fcx *fiber.Ctx) error {
+func GetUserOps(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()
 	logger := log.Context(fcx.UserContext())
 
-	logger.Debug("start get bundlers")
-	req := vo.GetBundlersRequest{}
+	logger.Debug("start get userops")
+	req := vo.GetUserOpsRequest{}
 	err := fcx.ParamsParser(&req)
 	if err != nil {
 		logger.Warn("params parse error", "err", err)
@@ -23,9 +23,10 @@ func GetBundles(fcx *fiber.Ctx) error {
 	if err != nil {
 		logger.Warn("query params parse error", "err", err, "network", req.Network)
 	}
-	res, err := service.BundleService.GetBundlers(ctx, req)
+
+	res, err := service.UserOpService.GetUserOps(ctx, req)
 	if err != nil {
-		logger.Error("get bundlers error", "err", err)
+		logger.Error("get userops error", "err", err)
 	}
 	return vo.NewResultJsonResponse(res).JSON(fcx)
 }

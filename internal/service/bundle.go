@@ -33,7 +33,7 @@ func (*bundleService) GetBundlers(ctx context.Context, req vo.GetBundlersRequest
 		return nil, err
 	}
 	//
-	list, total, err := dao.BundleDao.GetBuilders(ctx, client, req.Network, req.PaginationRequest)
+	list, total, err := dao.BundleDao.Pagination(ctx, client, req.Network, req.PaginationRequest)
 	if err != nil {
 		return nil, err
 	}

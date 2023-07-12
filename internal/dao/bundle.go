@@ -34,7 +34,7 @@ func (dao *bundleDao) Sort(ctx context.Context, query *ent.BundlerInfoQuery, sor
 	return query
 }
 
-func (dao *bundleDao) GetBuilders(ctx context.Context, tx *ent.Client, network string, page vo.PaginationRequest) (list []*ent.BundlerInfo, total int, err error) {
+func (dao *bundleDao) Pagination(ctx context.Context, tx *ent.Client, network string, page vo.PaginationRequest) (list ent.BundlerInfos, total int, err error) {
 	query := tx.BundlerInfo.Query().Where(
 		bundlerinfo.NetworkEQ(network),
 	)

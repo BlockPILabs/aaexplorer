@@ -16,14 +16,11 @@ type networkCtxKey struct {
 
 var NetworkDao = &networkDao{}
 
-func (*networkDao) GetNetworks(ctx context.Context) ([]*ent.Network, error) {
+func (*networkDao) GetNetworks(ctx context.Context, tx *ent.Client) ([]*ent.Network, error) {
 
 	ctx, logger := log.With(ctx, "module", "network")
-	db, err := entity.Client(ctx)
-	if err != nil {
-		return nil, err
-	}
-	networks, err := db.Network.Query().Where(
+
+	networks, err := tx.Network.Query().Where(
 		network.DeleteTimeIsNil(),
 	).All(ctx)
 	if err != nil {
