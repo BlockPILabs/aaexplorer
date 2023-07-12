@@ -7,9 +7,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-const NameGetBundles = "get_bundles"
+const NameGetBundlers = "get_bundlers"
 
-func GetBundles(fcx *fiber.Ctx) error {
+func GetBundlers(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()
 	logger := log.Context(fcx.UserContext())
 
@@ -23,7 +23,7 @@ func GetBundles(fcx *fiber.Ctx) error {
 	if err != nil {
 		logger.Warn("query params parse error", "err", err, "network", req.Network)
 	}
-	res, err := service.BundleService.GetBundlers(ctx, req)
+	res, err := service.BundlerService.GetBundlers(ctx, req)
 	if err != nil {
 		logger.Error("get bundlers error", "err", err)
 	}

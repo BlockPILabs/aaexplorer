@@ -8,12 +8,12 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 )
 
-type bundleService struct {
+type bundlerService struct {
 }
 
-var BundleService = &bundleService{}
+var BundlerService = &bundlerService{}
 
-func (*bundleService) GetBundlers(ctx context.Context, req vo.GetBundlersRequest) (*vo.GetBundlersResponse, error) {
+func (*bundlerService) GetBundlers(ctx context.Context, req vo.GetBundlersRequest) (*vo.GetBundlersResponse, error) {
 	ctx, logger := log.With(ctx, "service", "GetBundlers")
 	err := vo.ValidateStruct(req)
 	res := vo.GetBundlersResponse{
@@ -33,7 +33,7 @@ func (*bundleService) GetBundlers(ctx context.Context, req vo.GetBundlersRequest
 		return nil, err
 	}
 	//
-	list, total, err := dao.BundleDao.Pagination(ctx, client, req.Network, req.PaginationRequest)
+	list, total, err := dao.BundlerDao.Pagination(ctx, client, req.Network, req.PaginationRequest)
 	if err != nil {
 		return nil, err
 	}

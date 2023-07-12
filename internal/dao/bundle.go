@@ -7,19 +7,19 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 )
 
-type bundleDao struct {
+type bundlerDao struct {
 	baseDao
 }
 
-var BundleDao = &bundleDao{}
+var BundlerDao = &bundlerDao{}
 
-func (*bundleDao) GetSortFields(ctx context.Context) []string {
+func (*bundlerDao) GetSortFields(ctx context.Context) []string {
 	return []string{
 		bundlerinfo.FieldID,
 		bundlerinfo.FieldBundlesNum,
 	}
 }
-func (dao *bundleDao) Sort(ctx context.Context, query *ent.BundlerInfoQuery, sort int, order int) *ent.BundlerInfoQuery {
+func (dao *bundlerDao) Sort(ctx context.Context, query *ent.BundlerInfoQuery, sort int, order int) *ent.BundlerInfoQuery {
 	opts := dao.orderOptions(ctx, order)
 	if len(opts) > 0 {
 		switch dao.sortField(ctx, dao.GetSortFields(ctx), sort) {
@@ -34,7 +34,7 @@ func (dao *bundleDao) Sort(ctx context.Context, query *ent.BundlerInfoQuery, sor
 	return query
 }
 
-func (dao *bundleDao) Pagination(ctx context.Context, tx *ent.Client, network string, page vo.PaginationRequest) (list ent.BundlerInfos, total int, err error) {
+func (dao *bundlerDao) Pagination(ctx context.Context, tx *ent.Client, network string, page vo.PaginationRequest) (list ent.BundlerInfos, total int, err error) {
 	query := tx.BundlerInfo.Query().Where(
 		bundlerinfo.NetworkEQ(network),
 	)
