@@ -25,6 +25,9 @@ func Resister(router fiber.Router) {
 
 	// userops
 	networksV1.Get("/userops", controller.GetUserOps).Name(controller.NameGetUserOps)
+
+	// paymasters
+	networksV1.Get("/paymasters", controller.GetPaymasters).Name(controller.NameGetPaymasters)
 }
 
 func Error() {
