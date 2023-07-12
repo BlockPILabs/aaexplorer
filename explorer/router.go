@@ -17,6 +17,7 @@ func Resister(router fiber.Router) {
 	networksV1.Use(controller.NetworkMiddleware())
 	// Bundles
 	networksV1.Get("/bundlers", controller.GetBundlers).Name(controller.NameGetBundlers)
+	networksV1.Get("/bundlers/:bundler<regex(0x[a-z0-9]{40}$)}>", controller.GetBundler).Name(controller.NameGetBundler)
 	networksV1.Get("/userops", controller.GetUserOps).Name(controller.NameGetUserOps)
 }
 

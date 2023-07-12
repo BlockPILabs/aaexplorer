@@ -29,3 +29,9 @@ func GetBundlers(fcx *fiber.Ctx) error {
 	}
 	return vo.NewResultJsonResponse(res).JSON(fcx)
 }
+
+const NameGetBundler = "get_bundler"
+
+func GetBundler(fcx *fiber.Ctx) error {
+	return vo.NewResultJsonResponse(fcx.Params("bundler")).JSON(fcx)
+}
