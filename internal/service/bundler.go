@@ -8,15 +8,15 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 )
 
-type bundleService struct {
+type bundlerService struct {
 }
 
-var BundleService = &bundleService{}
+var BundlerService = &bundlerService{}
 
-func (*bundleService) GetBundles(ctx context.Context, req vo.GetBundlesRequest) (*vo.GetBundlesResponse, error) {
+func (*bundlerService) GetBundlers(ctx context.Context, req vo.GetBundlersRequest) (*vo.GetBundlersResponse, error) {
 	ctx, logger := log.With(ctx, "service", "GetBundlers")
 	err := vo.ValidateStruct(req)
-	res := vo.GetBundlesResponse{
+	res := vo.GetBundlersResponse{
 		Pagination: vo.Pagination{
 			TotalCount: 0,
 			PerPage:    req.GetPerPage(),
@@ -33,26 +33,21 @@ func (*bundleService) GetBundles(ctx context.Context, req vo.GetBundlesRequest) 
 		return nil, err
 	}
 	//
-	list, total, err := dao.BundleDao.Pagination(ctx, client, req.Network, req.PaginationRequest)
+	list, total, err := dao.BundlerDao.Pagination(ctx, client, req.Network, req.PaginationRequest)
 	if err != nil {
 		return nil, err
 	}
 	res.TotalCount = total
 
 	//
-	res.Records = make([]*vo.BundlesVo, len(list))
+	res.Records = make([]*vo.BundlersVo, len(list))
 	for i, info := range list {
-		res.Records[i] = &vo.BundlesVo{
-			TxHash:      info.TxHash,
-			BlockNumber: info.BlockNumber,
-			Network:     info.Network,
-			Bundler:     info.Bundler,
-			EntryPoint:  info.EntryPoint,
-			UserOpsNum:  info.UserOpsNum,
-			TxValue:     info.TxValue,
-			Fee:         info.Fee,
-			Status:      info.Status,
-			TxTime:      info.TxTime,
+		res.Records[i] = &vo.BundlersVo{
+			Bundler:      info.Bundler,
+			Network:      info.Network,
+			UserOpsNum:   info.UserOpsNum,
+			BundlesNum:   info.BundlesNum,
+			GasCollected: info.GasCollected,
 		}
 	}
 

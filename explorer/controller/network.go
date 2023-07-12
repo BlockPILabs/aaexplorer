@@ -8,6 +8,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+const NameGetNetworks = "get_networks"
+
 func GetNetworks(fcx *fiber.Ctx) error {
 
 	ctx := fcx.UserContext()

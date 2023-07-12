@@ -1,45 +1,33 @@
 package vo
 
-import "github.com/shopspring/decimal"
-
-type BundlerVo struct {
-	// ID of the ent.
-	ID int64 `json:"id"`
-	// Bundler holds the value of the "bundler" field.
-	Bundler string `json:"bundler"`
+type BundlesVo struct {
+	// TxHash holds the value of the "tx_hash" field.
+	TxHash string `json:"txHash"`
+	// BlockNumber holds the value of the "block_number" field.
+	BlockNumber int64 `json:"blockNumber"`
 	// Network holds the value of the "network" field.
 	Network string `json:"network"`
+	// Bundler holds the value of the "bundler" field.
+	Bundler string `json:"bundler"`
+	// EntryPoint holds the value of the "entry_point" field.
+	EntryPoint string `json:"entryPoint"`
 	// UserOpsNum holds the value of the "user_ops_num" field.
 	UserOpsNum int64 `json:"userOpsNum"`
-	// BundlesNum holds the value of the "bundles_num" field.
-	BundlesNum int64 `json:"bundlesNum"`
-	// GasCollected holds the value of the "gas_collected" field.
-	GasCollected decimal.Decimal `json:"gasCollected"`
-	// UserOpsNumD1 holds the value of the "user_ops_num_d1" field.
-	UserOpsNumD1 int64 `json:"userOpsNumD1"`
-	// BundlesNumD1 holds the value of the "bundles_num_d1" field.
-	BundlesNumD1 int64 `json:"bundlesNumD1"`
-	// GasCollectedD1 holds the value of the "gas_collected_d1" field.
-	GasCollectedD1 decimal.Decimal `json:"gasCollectedD1"`
-	// UserOpsNumD7 holds the value of the "user_ops_num_d7" field.
-	UserOpsNumD7 int64 `json:"userOpsNumD7"`
-	// BundlesNumD7 holds the value of the "bundles_num_d7" field.
-	BundlesNumD7 int64 `json:"bundlesNumD7"`
-	// GasCollectedD7 holds the value of the "gas_collected_d7" field.
-	GasCollectedD7 decimal.Decimal `json:"gasCollected_d7"`
-	// UserOpsNumD30 holds the value of the "user_ops_num_d30" field.
-	UserOpsNumD30 int64 `json:"userOpsNumD30"`
-	// BundlesNumD30 holds the value of the "bundles_num_d30" field.
-	BundlesNumD30 int64 `json:"bundlesNumD30"`
-	// GasCollectedD30 holds the value of the "gas_collected_d30" field.
-	GasCollectedD30 decimal.Decimal `json:"gasCollectedD30"`
+	// TxValue holds the value of the "tx_value" field.
+	TxValue float32 `json:"txValue"`
+	// Fee holds the value of the "fee" field.
+	Fee float32 `json:"fee"`
+	// Status holds the value of the "status" field.
+	Status int `json:"status"`
+	// TxTime holds the value of the "tx_time" field.
+	TxTime int64 `json:"txTime"`
 }
-type GetBundlersRequest struct {
+type GetBundlesRequest struct {
 	PaginationRequest
 	Network string `json:"network" params:"network" validate:"required,min=3"`
 }
 
-type GetBundlersResponse struct {
+type GetBundlesResponse struct {
 	Pagination
-	Records []*BundlerVo `json:"records"`
+	Records []*BundlesVo `json:"records"`
 }

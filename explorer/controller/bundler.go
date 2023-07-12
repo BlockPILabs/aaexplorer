@@ -7,14 +7,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-const NameGetBundles = "get_bundles"
+const NameGetBundlers = "get_bundlers"
 
-func GetBundles(fcx *fiber.Ctx) error {
+func GetBundlers(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()
 	logger := log.Context(fcx.UserContext())
 
-	logger.Debug("start get bundles")
-	req := vo.GetBundlesRequest{}
+	logger.Debug("start get bundlers")
+	req := vo.GetBundlersRequest{}
 	err := fcx.ParamsParser(&req)
 	if err != nil {
 		logger.Warn("params parse error", "err", err)
@@ -23,15 +23,15 @@ func GetBundles(fcx *fiber.Ctx) error {
 	if err != nil {
 		logger.Warn("query params parse error", "err", err, "network", req.Network)
 	}
-	res, err := service.BundleService.GetBundles(ctx, req)
+	res, err := service.BundlerService.GetBundlers(ctx, req)
 	if err != nil {
-		logger.Error("get bundles error", "err", err)
+		logger.Error("get bundlers error", "err", err)
 	}
 	return vo.NewResultJsonResponse(res).JSON(fcx)
 }
 
-const NameGetBundle = "get_bundle"
+const NameGetBundler = "get_bundler"
 
-func GetBundle(fcx *fiber.Ctx) error {
-	return vo.NewResultJsonResponse(fcx.Params("bundle")).JSON(fcx)
+func GetBundler(fcx *fiber.Ctx) error {
+	return vo.NewResultJsonResponse(fcx.Params("bundler")).JSON(fcx)
 }

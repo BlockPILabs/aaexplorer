@@ -3,7 +3,7 @@ package dao
 import (
 	"context"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/bundlerinfo"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactioninfo"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 )
 
@@ -15,18 +15,15 @@ var BundleDao = &bundleDao{}
 
 func (*bundleDao) GetSortFields(ctx context.Context) []string {
 	return []string{
-		bundlerinfo.FieldID,
-		bundlerinfo.FieldBundlesNum,
+		transactioninfo.FieldID,
 	}
 }
-func (dao *bundleDao) Sort(ctx context.Context, query *ent.BundlerInfoQuery, sort int, order int) *ent.BundlerInfoQuery {
+func (dao *bundleDao) Sort(ctx context.Context, query *ent.TransactionInfoQuery, sort int, order int) *ent.TransactionInfoQuery {
 	opts := dao.orderOptions(ctx, order)
 	if len(opts) > 0 {
 		switch dao.sortField(ctx, dao.GetSortFields(ctx), sort) {
-		case bundlerinfo.FieldID:
-			query.Order(bundlerinfo.ByID(opts...))
-		case bundlerinfo.FieldBundlesNum:
-			query.Order(bundlerinfo.ByID(opts...))
+		case transactioninfo.FieldID:
+			query.Order(transactioninfo.ByID(opts...))
 		default:
 			break
 		}
@@ -34,9 +31,9 @@ func (dao *bundleDao) Sort(ctx context.Context, query *ent.BundlerInfoQuery, sor
 	return query
 }
 
-func (dao *bundleDao) GetBuilders(ctx context.Context, tx *ent.Client, network string, page vo.PaginationRequest) (list []*ent.BundlerInfo, total int, err error) {
-	query := tx.BundlerInfo.Query().Where(
-		bundlerinfo.NetworkEQ(network),
+func (dao *bundleDao) Pagination(ctx context.Context, tx *ent.Client, network string, page vo.PaginationRequest) (list ent.TransactionInfos, total int, err error) {
+	query := tx.TransactionInfo.Query().Where(
+		transactioninfo.NetworkEQ(network),
 	)
 	// sort
 	query = dao.Sort(ctx, query, page.Sort, page.Order)
