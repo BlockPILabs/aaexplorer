@@ -5,13 +5,14 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/useropsinfo"
+	"github.com/BlockPILabs/aa-scan/parser"
 	"github.com/procyon-projects/chrono"
+	"github.com/shopspring/decimal"
 	"log"
 	"time"
 )
 
 func InitHourStatis() {
-	doHourStatis()
 	hourScheduler := chrono.NewDefaultTaskScheduler()
 
 	_, err := hourScheduler.ScheduleWithCron(func(ctx context.Context) {
@@ -68,14 +69,14 @@ func doHourStatis() {
 
 func calBundlerStatis(client *ent.Client, bundlerMap map[string][]*ent.UserOpsInfo, startTime time.Time) []*ent.BundlerStatisHourCreate {
 	totalCount := 0
-	var totalFee float32 = 0.0
+	var totalFee decimal.Decimal
 
 	var bundlers []*ent.BundlerStatisHourCreate
 	for key, userOpsInfoList := range bundlerMap {
 		totalCount += len(userOpsInfoList)
 		txHashMap := make(map[string]bool)
 		for _, userOpsInfo := range userOpsInfoList {
-			totalFee += userOpsInfo.Fee
+			totalFee = totalFee.Add(userOpsInfo.Fee)
 			txHashMap[userOpsInfo.TxHash] = true
 		}
 		bundlers = append(bundlers, client.BundlerStatisHour.Create().
@@ -93,13 +94,13 @@ func calBundlerStatis(client *ent.Client, bundlerMap map[string][]*ent.UserOpsIn
 
 func calPaymasterStatis(client *ent.Client, bundlerMap map[string][]*ent.UserOpsInfo, startTime time.Time) []*ent.PaymasterStatisHourCreate {
 	totalCount := 0
-	var totalFee float32 = 0.0
+	var totalFee decimal.Decimal
 
 	var paymasters []*ent.PaymasterStatisHourCreate
 	for key, userOpsInfoList := range bundlerMap {
 		totalCount += len(userOpsInfoList)
 		for _, userOpsInfo := range userOpsInfoList {
-			totalFee += float32(userOpsInfo.ActualGasCost) / 1e18
+			totalFee = totalFee.Add(parser.DivRav(userOpsInfo.ActualGasCost))
 		}
 		paymasters = append(paymasters, client.PaymasterStatisHour.Create().
 			SetPaymaster(key).

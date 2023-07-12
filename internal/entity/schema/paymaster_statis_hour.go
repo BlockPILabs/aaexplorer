@@ -2,20 +2,22 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
+	"github.com/shopspring/decimal"
 	"time"
 )
 
 type PaymasterStatisHour struct {
-	ID           int64     `json:"id"`
-	Paymaster    string    `json:"paymaster"`
-	Network      string    `json:"network"`
-	UserOpsNum   int64     `json:"user_ops_num"`
-	GasSponsored float64   `json:"gas_sponsored"`
-	StatisTime   time.Time `json:"statis_time"`
-	CreateTime   time.Time `json:"create_time"`
+	ID           int64           `json:"id"`
+	Paymaster    string          `json:"paymaster"`
+	Network      string          `json:"network"`
+	UserOpsNum   int64           `json:"user_ops_num"`
+	GasSponsored decimal.Decimal `json:"gas_sponsored"`
+	StatisTime   time.Time       `json:"statis_time"`
+	CreateTime   time.Time       `json:"create_time"`
 	ent.Schema
 }
 
@@ -33,8 +35,8 @@ func (PaymasterStatisHour) Fields() []ent.Field {
 			StructTag(`json:"network"`),
 		field.Int64("user_ops_num").
 			StructTag(`json:"userOpsNum"`),
-		field.Float32("gas_sponsored").
-			StructTag(`json:"gasSponsored"`),
+		field.Int64("gas_sponsored").
+			StructTag(`json:"gasSponsored"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
 		field.Time("statis_time").
 			StructTag(`json:"statisTime"`).
 			Immutable(),
