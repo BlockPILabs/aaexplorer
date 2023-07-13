@@ -3,32 +3,34 @@ package schema
 import (
 	"database/sql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"fmt"
 	"github.com/lib/pq"
+	"github.com/shopspring/decimal"
 	"log"
 	"time"
 )
 
 type TransactionInfo struct {
-	ID           int64     `db:"id"`
-	TxHash       string    `db:"tx_hash"`
-	BlockNumber  int64     `db:"block_number"`
-	Network      string    `db:"network"`
-	Bundler      string    `db:"bundler"`
-	EntryPoint   string    `db:"entry_point"`
-	UserOpsNum   int64     `db:"user_ops_num"`
-	TxValue      float64   `db:"tx_value"`
-	Fee          float64   `db:"fee"`
-	GasPrice     string    `db:"gas_price"`
-	GasLimit     int64     `db:"gas_limit"`
-	Status       int       `db:"status"`
-	TxTime       int64     `db:"tx_time"`
-	TxTimeFormat string    `db:"tx_time_format"`
-	Beneficiary  string    `db:"beneficiary"`
-	CreateTime   time.Time `db:"create_time"`
+	ID           int64           `db:"id"`
+	TxHash       string          `db:"tx_hash"`
+	BlockNumber  int64           `db:"block_number"`
+	Network      string          `db:"network"`
+	Bundler      string          `db:"bundler"`
+	EntryPoint   string          `db:"entry_point"`
+	UserOpsNum   int64           `db:"user_ops_num"`
+	TxValue      decimal.Decimal `db:"tx_value"`
+	Fee          decimal.Decimal `db:"fee"`
+	GasPrice     string          `db:"gas_price"`
+	GasLimit     int64           `db:"gas_limit"`
+	Status       int             `db:"status"`
+	TxTime       int64           `db:"tx_time"`
+	TxTimeFormat string          `db:"tx_time_format"`
+	Beneficiary  string          `db:"beneficiary"`
+	CreateTime   time.Time       `db:"create_time"`
 	ent.Schema
 }
 
@@ -55,10 +57,10 @@ func (TransactionInfo) Fields() []ent.Field {
 			StructTag(`json:"entryPoint"`),
 		field.Int64("user_ops_num").
 			StructTag(`json:"userOpsNum"`),
-		field.Float32("tx_value").
-			StructTag(`json:"txValue"`),
-		field.Float32("fee").
-			StructTag(`json:"fee"`),
+		field.Int64("tx_value").
+			StructTag(`json:"txValue"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
+		field.Int64("fee").
+			StructTag(`json:"fee"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
 		field.String("gas_price").
 			StructTag(`json:"gasPrice"`),
 		field.Int64("gas_limit").

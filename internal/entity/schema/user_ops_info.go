@@ -3,45 +3,47 @@ package schema
 import (
 	"database/sql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"github.com/lib/pq"
+	"github.com/shopspring/decimal"
 	"log"
 	"time"
 )
 
 type UserOpsInfo struct {
-	ID                   int64     `db:"id"`
-	UserOperationHash    string    `db:"user_operation_hash"`
-	TxHash               string    `db:"tx_hash"`
-	BlockNumber          int64     `db:"block_number"`
-	Network              string    `db:"network"`
-	Sender               string    `db:"sender"`
-	Target               string    `db:"target"`
-	TxValue              float64   `db:"tx_value"`
-	Fee                  float64   `db:"fee"`
-	Bundler              string    `db:"bundler"`
-	EntryPoint           string    `db:"entry_point"`
-	Factory              string    `db:"factory"`
-	Paymaster            string    `db:"paymaster"`
-	PaymasterAndData     string    `db:"paymaster_and_data"`
-	Signature            string    `db:"signature"`
-	Calldata             string    `db:"calldata"`
-	Nonce                int64     `db:"nonce"`
-	CallGasLimit         int64     `db:"call_gas_limit"`
-	PreVerificationGas   int64     `db:"pre_verification_gas"`
-	VerificationGasLimit int64     `db:"verification_gas_limit"`
-	MaxFeePerGas         int64     `db:"max_fee_per_gas"`
-	MaxPriorityFeePerGas int64     `db:"max_priority_fee_per_gas"`
-	TxTime               int64     `db:"tx_time"`
-	TxTimeFormat         string    `db:"tx_time_format"`
-	InitCode             string    `db:"init_code"`
-	Status               int       `db:"status"`
-	Source               string    `db:"source"`
-	ActualGasCost        int64     `db:"actual_gas_cost"`
-	ActualGasUsed        int64     `db:"actual_gas_used"`
-	CreateTime           time.Time `db:"create_time"`
+	ID                   int64           `db:"id"`
+	UserOperationHash    string          `db:"user_operation_hash"`
+	TxHash               string          `db:"tx_hash"`
+	BlockNumber          int64           `db:"block_number"`
+	Network              string          `db:"network"`
+	Sender               string          `db:"sender"`
+	Target               string          `db:"target"`
+	TxValue              decimal.Decimal `db:"tx_value"`
+	Fee                  decimal.Decimal `db:"fee"`
+	Bundler              string          `db:"bundler"`
+	EntryPoint           string          `db:"entry_point"`
+	Factory              string          `db:"factory"`
+	Paymaster            string          `db:"paymaster"`
+	PaymasterAndData     string          `db:"paymaster_and_data"`
+	Signature            string          `db:"signature"`
+	Calldata             string          `db:"calldata"`
+	Nonce                int64           `db:"nonce"`
+	CallGasLimit         int64           `db:"call_gas_limit"`
+	PreVerificationGas   int64           `db:"pre_verification_gas"`
+	VerificationGasLimit int64           `db:"verification_gas_limit"`
+	MaxFeePerGas         int64           `db:"max_fee_per_gas"`
+	MaxPriorityFeePerGas int64           `db:"max_priority_fee_per_gas"`
+	TxTime               int64           `db:"tx_time"`
+	TxTimeFormat         string          `db:"tx_time_format"`
+	InitCode             string          `db:"init_code"`
+	Status               int             `db:"status"`
+	Source               string          `db:"source"`
+	ActualGasCost        int64           `db:"actual_gas_cost"`
+	ActualGasUsed        int64           `db:"actual_gas_used"`
+	CreateTime           time.Time       `db:"create_time"`
 	ent.Schema
 }
 
@@ -65,10 +67,10 @@ func (UserOpsInfo) Fields() []ent.Field {
 			StructTag(`json:"sender"`),
 		field.String("target").
 			StructTag(`json:"target"`),
-		field.Float32("tx_value").
-			StructTag(`json:"txValue"`),
-		field.Float32("fee").
-			StructTag(`json:"fee"`),
+		field.Int64("tx_value").
+			StructTag(`json:"txValue"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
+		field.Int64("fee").
+			StructTag(`json:"fee"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
 		field.String("bundler").
 			StructTag(`json:"bundler"`),
 		field.String("entry_point").

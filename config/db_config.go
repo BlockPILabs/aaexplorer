@@ -22,6 +22,7 @@ type DbConfig struct {
 	MaxOpenConns    int    `mapstructure:"maxOpenConns" toml:"maxOpenConns"`
 	MaxLifetime     int64  `mapstructure:"maxLifetime" toml:"maxLifetime"`
 	Debug           bool   `mapstructure:"debug" toml:"debug"`
+	SslMode         string `mapstructure:"sslMode" toml:"sslMode"`
 }
 
 func DefaultDatabaseConfig() []*DbConfig {
@@ -72,11 +73,24 @@ func (cfg DbConfig) buildPostgresqlDsn() (string, error) {
 		dsn.WriteByte('/')
 		dsn.WriteString(cfg.Name)
 	}
+	params := strings.Builder{}
 	if len(cfg.ApplicationName) > 0 {
-		dsn.WriteByte('?')
-		dsn.WriteString("application_name=")
-		dsn.WriteString(cfg.ApplicationName)
+		params.WriteString("application_name=")
+		params.WriteString(cfg.ApplicationName)
+		params.WriteByte('&')
 	}
+	if len(cfg.SslMode) > 0 {
+		params.WriteString("sslmode=")
+		params.WriteString(cfg.SslMode)
+		params.WriteByte('&')
+	}
+
+	if params.Len() > 0 {
+
+		dsn.WriteByte('?')
+		dsn.WriteString(params.String())
+	}
+
 	return dsn.String(), nil
 }
 

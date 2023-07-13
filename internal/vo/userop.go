@@ -1,5 +1,7 @@
 package vo
 
+import "github.com/shopspring/decimal"
+
 type UserOpVo struct {
 	// UserOperationHash holds the value of the "user_operation_hash" field.
 	UserOperationHash string `json:"userOperationHash"`
@@ -14,9 +16,9 @@ type UserOpVo struct {
 	// Target holds the value of the "target" field.
 	Target string `json:"target"`
 	// TxValue holds the value of the "tx_value" field.
-	TxValue float32 `json:"txValue"`
+	TxValue decimal.Decimal `json:"txValue"`
 	// Fee holds the value of the "fee" field.
-	Fee float32 `json:"fee"`
+	Fee decimal.Decimal `json:"fee"`
 	// TxTime holds the value of the "tx_time" field.
 	TxTime int64 `json:"txTime"`
 	// TxTimeFormat holds the value of the "tx_time_format" field.

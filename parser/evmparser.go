@@ -3,13 +3,16 @@ package parser
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 	"github.com/BlockPILabs/aa-scan/config"
+	"github.com/BlockPILabs/aa-scan/internal/entity"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/schema"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/shopspring/decimal"
 	"log"
+	"math"
 	"math/big"
 	"strconv"
 	"strings"
@@ -21,6 +24,14 @@ const UserOperationEventSign = "0x49628fd1471006c1482da88028e9ce4dbb080b815c9b03
 const LogTransferEventSign = "0xe6497e3ee548a3372136af2fcb0696db31fc6cf20260707645068bd3fe97f3c4"
 const TransferEventSign = "0xe6497e3ee548a3372136af2fcb0696db31fc6cf20260707645068bd3fe97f3c4"
 const AccountDeploySign = "0xd51a9c61267aa6196961883ecf5ff2da6619c37dac0fa92122513fb32c032d2d"
+
+var (
+	callSign = map[string]string{
+		"0x912ccaa3": "executeBatchCall",
+		"0x47e1da2a": "executeBatch",
+		"0xb61d27f6": "execute",
+	}
+)
 
 type UserOperationEvent struct {
 	OpsHash       string
@@ -36,6 +47,7 @@ type UserOperationEvent struct {
 
 func ScanBlock() {
 
+	startMillis := getCurrentTimestampMillis()
 	client, err := ethclient.Dial("https://patient-crimson-slug.matic.discover.quiknode.pro/4cb47dc694ccf2998581548feed08af5477aa84b/")
 	if err != nil {
 		log.Fatal(err)
@@ -57,14 +69,13 @@ func ScanBlock() {
 	} else {
 		nextBlockNumber = record.LastBlockNumber + 1
 	}
-
+	nextBlockNumber = 44787202
 	block, err := client.BlockByNumber(context.Background(), big.NewInt(nextBlockNumber))
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 	doParse(block, client)
-	fmt.Println("parse end")
 
 	if record == nil {
 		scanRecord := &schema.BlockScanRecord{
@@ -81,6 +92,13 @@ func ScanBlock() {
 		schema.UpdateBlockScanRecordByID(record.ID, record)
 	}
 
+	endMillis := getCurrentTimestampMillis()
+	log.Printf("Block parse end, [%d], [%d]\n", nextBlockNumber, endMillis-startMillis)
+
+}
+
+func getCurrentTimestampMillis() int64 {
+	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
 func doParse(block *types.Block, client *ethclient.Client) {
@@ -105,13 +123,9 @@ func doParse(block *types.Block, client *ethclient.Client) {
 		if err != nil {
 			continue
 		}
-		//from, err := client.TransactionSender(context.Background(), tx, common.Hash{}, receipt.TransactionIndex)
-		//if err != nil {
-		//	log.Fatal(err)
-		//	continue
-		//}
-		//fmt.Println(from)
-		userOpsInfos, transactionInfo := parseUserOps(input, tx, receipt, block.Time())
+		from := getFrom(tx, client)
+
+		userOpsInfos, transactionInfo := parseUserOps(input, tx, receipt, block.Time(), from, block.BaseFee())
 
 		if userOpsInfos != nil {
 			for _, userOps := range *userOpsInfos {
@@ -124,11 +138,105 @@ func doParse(block *types.Block, client *ethclient.Client) {
 		}
 
 	}
-	schema.BulkInsertUserOpsInfo(blockUserOpsInfos)
-	schema.BulkInsertTransactions(blockTransactionInfos)
+	insertUserOpsInfo(blockUserOpsInfos)
+	insertTransactions(blockTransactionInfos)
 }
 
-func parseUserOps(input string, tx *types.Transaction, receipt *types.Receipt, txTime uint64) (*[]schema.UserOpsInfo, *schema.TransactionInfo) {
+func getFrom(tx *types.Transaction, client *ethclient.Client) string {
+	chainID, err := client.NetworkID(context.Background())
+	if err != nil {
+		log.Fatal(err)
+		return ""
+	}
+	signer := types.LatestSignerForChainID(chainID)
+	from, err := types.Sender(signer, tx)
+	if err != nil {
+		log.Fatal(err)
+		return ""
+	}
+	return strings.ToLower(from.String())
+}
+
+func insertTransactions(infos []schema.TransactionInfo) {
+	if len(infos) == 0 {
+		return
+	}
+	client, err := entity.Client(context.Background())
+	if err != nil {
+		return
+	}
+
+	var transactionInfoCreates []*ent.TransactionInfoCreate
+	for _, tx := range infos {
+		txCreate := client.TransactionInfo.Create().
+			SetFee(tx.Fee).
+			SetBundler(tx.Bundler).
+			SetNetwork(tx.Network).
+			SetStatus(tx.Status).
+			SetTxTime(tx.TxTime).
+			SetTxHash(tx.TxHash).
+			SetTxTimeFormat(tx.TxTimeFormat).
+			SetEntryPoint(tx.EntryPoint).
+			SetBlockNumber(tx.BlockNumber).
+			SetUserOpsNum(tx.UserOpsNum).
+			SetBeneficiary(tx.Beneficiary).
+			SetGasLimit(tx.GasLimit).
+			SetGasPrice(tx.GasPrice).
+			SetTxValue(tx.TxValue)
+
+		transactionInfoCreates = append(transactionInfoCreates, txCreate)
+	}
+	_, err = client.TransactionInfo.CreateBulk(transactionInfoCreates...).Save(context.Background())
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func insertUserOpsInfo(infos []schema.UserOpsInfo) {
+	client, err := entity.Client(context.Background())
+	if err != nil {
+		return
+	}
+	var userOpsInfoCreates []*ent.UserOpsInfoCreate
+	for _, ops := range infos {
+		userOpsCreate := client.UserOpsInfo.Create().
+			SetUserOperationHash(ops.UserOperationHash).
+			SetFactory(ops.Factory).
+			SetPaymaster(ops.Paymaster).
+			SetNetwork(ops.Network).
+			SetBundler(ops.Bundler).
+			SetActualGasCost(ops.ActualGasCost).
+			SetActualGasUsed(ops.ActualGasUsed).
+			SetBlockNumber(ops.BlockNumber).
+			SetCalldata(ops.Calldata).
+			SetCallGasLimit(ops.CallGasLimit).
+			SetEntryPoint(ops.EntryPoint).
+			SetFee(ops.Fee).
+			SetInitCode(ops.InitCode).
+			SetMaxFeePerGas(ops.MaxFeePerGas).
+			SetMaxPriorityFeePerGas(ops.MaxPriorityFeePerGas).
+			SetNonce(ops.Nonce).
+			SetPaymasterAndData(ops.PaymasterAndData).
+			SetPreVerificationGas(ops.PreVerificationGas).
+			SetVerificationGasLimit(ops.VerificationGasLimit).
+			SetTxValue(ops.TxValue).
+			SetTxTimeFormat(ops.TxTimeFormat).
+			SetTxTime(ops.TxTime).
+			SetTxHash(ops.TxHash).
+			SetTarget(ops.Target).
+			SetStatus(ops.Status).
+			SetSource(ops.Source).
+			SetSignature(ops.Signature).
+			SetSender(ops.Sender)
+		userOpsInfoCreates = append(userOpsInfoCreates, userOpsCreate)
+	}
+	_, err = client.UserOpsInfo.CreateBulk(userOpsInfoCreates...).Save(context.Background())
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func parseUserOps(input string, tx *types.Transaction, receipt *types.Receipt, txTime uint64, from string, baseFee *big.Int) (*[]schema.UserOpsInfo, *schema.TransactionInfo) {
 
 	start := truncateString(input, 64)
 	startIdx := hexToDecimal(start)
@@ -143,7 +251,7 @@ func parseUserOps(input string, tx *types.Transaction, receipt *types.Receipt, t
 	}
 
 	var userOpsInfos []schema.UserOpsInfo
-	fee := (float64(receipt.GasUsed) / 1e18) * float64(receipt.EffectiveGasPrice.Int64()) / 1e18
+	fee := decimal.NewFromInt(int64(receipt.GasUsed)).Mul(DivRav(receipt.EffectiveGasPrice.Int64()))
 	logs := receipt.Logs
 
 	events, opsValMap := parseLogs(logs)
@@ -186,8 +294,8 @@ func parseUserOps(input string, tx *types.Transaction, receipt *types.Receipt, t
 			Network:              config.Polygon,
 			Sender:               sender,
 			Target:               target,
-			Bundler:              "",
-			EntryPoint:           tx.To().String(),
+			Bundler:              from,
+			EntryPoint:           strings.ToLower(tx.To().String()),
 			Factory:              factoryAddr,
 			Paymaster:            paymaster,
 			PaymasterAndData:     "0x" + paymasterAndData,
@@ -210,7 +318,7 @@ func parseUserOps(input string, tx *types.Transaction, receipt *types.Receipt, t
 			userOpsInfo.UserOperationHash = opsVal.OpsHash
 			userOpsInfo.ActualGasCost = opsVal.ActualGasCost
 			userOpsInfo.Status = opsVal.Success
-			userOpsInfo.Fee = float64(opsVal.ActualGasCost) / 1e18
+			userOpsInfo.Fee = decimal.NewFromInt(opsVal.ActualGasCost).Div(decimal.NewFromFloat(math.Pow10(18)))
 		}
 		opsTxValue, opsTxValueOk := opsValMap[sender]
 		if opsTxValueOk {
@@ -224,11 +332,11 @@ func parseUserOps(input string, tx *types.Transaction, receipt *types.Receipt, t
 		TxHash:       tx.Hash().String(),
 		BlockNumber:  receipt.BlockNumber.Int64(),
 		Network:      config.Polygon,
-		Bundler:      "",
+		Bundler:      from,
 		EntryPoint:   strings.ToLower(tx.To().String()),
 		UserOpsNum:   int64(arrNumInt),
 		Fee:          fee,
-		TxValue:      float64(tx.Value().Uint64()) / 1e18,
+		TxValue:      decimal.NewFromInt(tx.Value().Int64()).Div(decimal.NewFromFloat(math.Pow10(18))),
 		GasPrice:     tx.GasPrice().String(),
 		GasLimit:     int64(receipt.GasUsed),
 		Status:       int(receipt.Status),
@@ -241,16 +349,20 @@ func parseUserOps(input string, tx *types.Transaction, receipt *types.Receipt, t
 	return &userOpsInfos, &transactionInfo
 }
 
+func DivRav(data int64) decimal.Decimal {
+	return decimal.NewFromInt(data).DivRound(decimal.NewFromFloat(math.Pow10(18)), 20)
+}
+
 func formatTimestamp(timestamp int64) string {
 	t := time.Unix(timestamp, 0)
 	formatted := t.Format("2006-01-02 15:04:05")
 	return formatted
 }
 
-func parseLogs(logs []*types.Log) (map[string]UserOperationEvent, map[string]float64) {
+func parseLogs(logs []*types.Log) (map[string]UserOperationEvent, map[string]decimal.Decimal) {
 
 	events := make(map[string]UserOperationEvent)
-	opsTxValMap := make(map[string]float64)
+	opsTxValMap := make(map[string]decimal.Decimal)
 	for _, log := range logs {
 		topics := log.Topics
 		if len(topics) < 1 {
@@ -275,7 +387,7 @@ func parseLogs(logs []*types.Log) (map[string]UserOperationEvent, map[string]flo
 			}
 			events[event.Sender+strconv.Itoa(int(event.Nonce))] = event
 		} else if sign == LogTransferEventSign {
-			txValue := float64(hexToDecimal(truncateString(data, 64)).Int64()) / 1e18
+			txValue := DivRav(hexToDecimal(truncateString(data, 64)).Int64())
 			opsTxValMap[hexToAddress(topics[2].String())] = txValue
 		}
 

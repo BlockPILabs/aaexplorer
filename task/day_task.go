@@ -5,7 +5,9 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/useropsinfo"
+	"github.com/BlockPILabs/aa-scan/parser"
 	"github.com/procyon-projects/chrono"
+	"github.com/shopspring/decimal"
 	"log"
 	"time"
 )
@@ -25,11 +27,9 @@ func InitDayStatis() {
 
 func doDayStatis() {
 	client, err := entity.Client(context.Background())
-	//cli, err := sql.Open("postgres", "postgres://postgres:root@127.0.0.1:5432/postgres?sslmode=disable")
 	if err != nil {
 		return
 	}
-	//client := ent.NewClient(ent.Driver(cli))
 	now := time.Now()
 	startTime := time.Date(now.Year(), now.Month(), now.Day()-5, 0, 0, 0, 0, now.Location())
 	endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
@@ -138,14 +138,14 @@ func bulkInsertBundlerStatsDay(ctx context.Context, client *ent.Client, data []*
 
 func calBundlerStatisDay(client *ent.Client, bundlerMap map[string][]*ent.UserOpsInfo, startTime time.Time) []*ent.BundlerStatisDayCreate {
 	totalCount := 0
-	var totalFee float32 = 0.0
+	var totalFee decimal.Decimal
 
 	var bundlers []*ent.BundlerStatisDayCreate
 	for key, userOpsInfoList := range bundlerMap {
 		totalCount += len(userOpsInfoList)
 		txHashMap := make(map[string]bool)
 		for _, userOpsInfo := range userOpsInfoList {
-			totalFee += userOpsInfo.Fee
+			totalFee = totalFee.Add(userOpsInfo.Fee)
 			txHashMap[userOpsInfo.TxHash] = true
 		}
 		bundlers = append(bundlers, client.BundlerStatisDay.Create().
@@ -163,13 +163,13 @@ func calBundlerStatisDay(client *ent.Client, bundlerMap map[string][]*ent.UserOp
 
 func calPaymasterStatisDay(client *ent.Client, bundlerMap map[string][]*ent.UserOpsInfo, startTime time.Time) []*ent.PaymasterStatisDayCreate {
 	totalCount := 0
-	var totalFee float32 = 0.0
+	var totalFee decimal.Decimal
 
 	var paymasters []*ent.PaymasterStatisDayCreate
 	for key, userOpsInfoList := range bundlerMap {
 		totalCount += len(userOpsInfoList)
 		for _, userOpsInfo := range userOpsInfoList {
-			totalFee += float32(userOpsInfo.ActualGasCost) / 1e18
+			totalFee = totalFee.Add(parser.DivRav(userOpsInfo.ActualGasCost))
 		}
 		paymasters = append(paymasters, client.PaymasterStatisDay.Create().
 			SetPaymaster(key).
