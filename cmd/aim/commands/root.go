@@ -80,6 +80,7 @@ var RootCmd = &cobra.Command{
 		cmd.SetContext(
 			log.WithContext(cmd.Context(), logger),
 		)
+
 		return nil
 	},
 	//Run: func(cmd *cobra.Command, args []string) {

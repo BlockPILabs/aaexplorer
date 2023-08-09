@@ -8,30 +8,11 @@ import (
 	"time"
 )
 
-type T1ransactions struct {
-	Time                 time.Time
-	BlockNum             int64
-	CreateTime           time.Time
-	To                   string
-	Gas                  string
-	From                 string
-	Hash                 string
-	Type                 string
-	Input                string
-	Nonce                string
-	Value                string
-	ChainID              string
-	GasPrice             string
-	BlockHash            string
-	AccessList           string
-	BlockNumber          string
-	MaxFeePerGas         string
-	TransactionIndex     string
-	MaxPriorityFeePerGas string
+type Transactions struct {
 	ent.Schema
 }
 
-func (T1ransactions) Fields() []ent.Field {
+func (Transactions) Fields() []ent.Field {
 	return []ent.Field{
 		field.Time("time").
 			StructTag(`json:"time"`),
@@ -92,12 +73,12 @@ func (T1ransactions) Fields() []ent.Field {
 	}
 }
 
-func (T1ransactions) Edges() []ent.Edge {
+func (Transactions) Edges() []ent.Edge {
 	return nil
 }
 
-func (T1ransactions) Annotations() []schema.Annotation {
+func (Transactions) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "t1ransactions"},
+		entsql.Annotation{Table: "transactions"},
 	}
 }
