@@ -144,7 +144,3 @@ func day1Task() {
 
 	}
 }
-
-//1.hour task 增加userOp type,hot aa tx, aa contract 统计数据
-//2.day task 也增加相应统计数据
-//3.
