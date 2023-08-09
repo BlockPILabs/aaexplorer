@@ -13,6 +13,7 @@ import (
 )
 
 func InitHourStatis() {
+	doHourStatis()
 	hourScheduler := chrono.NewDefaultTaskScheduler()
 
 	_, err := hourScheduler.ScheduleWithCron(func(ctx context.Context) {
@@ -32,7 +33,7 @@ func doHourStatis() {
 	}
 	//client := ent.NewClient(ent.Driver(cli))
 	now := time.Now()
-	startTime := time.Date(now.Year(), now.Month(), now.Day()-5, 0, 0, 0, 0, now.Location())
+	startTime := time.Date(now.Year(), now.Month(), now.Day()-7, 0, 0, 0, 0, now.Location())
 	endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	opsInfos, err := client.UserOpsInfo.
 		Query().
@@ -57,6 +58,8 @@ func doHourStatis() {
 
 	}
 
+	dailyStatisticHour := calHourStatistic(client, opsInfos, startTime)
+
 	bundlerList := calBundlerStatis(client, bundlerMap, startTime)
 	paymasterList := calPaymasterStatis(client, paymasterMap, startTime)
 	factoryList := calFactoryStatis(client, factoryMap, startTime)
@@ -64,7 +67,30 @@ func doHourStatis() {
 	bulkInsertBundlerStatsHour(context.Background(), client, bundlerList)
 	bulkInsertPaymasterStatsHour(context.Background(), client, paymasterList)
 	bulkInsertFactoryStatsHour(context.Background(), client, factoryList)
+	dailyStatisticHour.Save(context.Background())
+}
 
+func calHourStatistic(client *ent.Client, infos []*ent.UserOpsInfo, startTime time.Time) *ent.DailyStatisticHourCreate {
+	if len(infos) == 0 {
+		return nil
+	}
+	var totalGasFee decimal.Decimal
+	var txMap = make(map[string]bool)
+	var walletMap = make(map[string]bool)
+	for _, opsInfo := range infos {
+		totalGasFee = opsInfo.Fee.Add(totalGasFee)
+		txMap[opsInfo.TxHash] = true
+		walletMap[opsInfo.Sender] = true
+	}
+	dailyStatistic := client.DailyStatisticHour.Create().
+		SetNetwork(infos[0].Network).
+		SetUserOpsNum(int64(len(infos))).
+		SetStatisticTime(startTime).
+		SetActiveWallet(int64(len(walletMap))).
+		SetGasFee(totalGasFee).
+		SetTxNum(int64(len(txMap)))
+
+	return dailyStatistic
 }
 
 func calBundlerStatis(client *ent.Client, bundlerMap map[string][]*ent.UserOpsInfo, startTime time.Time) []*ent.BundlerStatisHourCreate {

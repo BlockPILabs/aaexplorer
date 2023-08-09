@@ -28,21 +28,21 @@ func (PaymasterInfo) Fields() []ent.Field {
 			MaxLen(255).
 			StructTag(`json:"network"`),
 		field.Int64("user_ops_num").
-			StructTag(`json:"userOpsNum"`),
+			StructTag(`json:"userOpsNum"`).Optional(),
 		field.Int64("gas_sponsored").
-			StructTag(`json:"gasSponsored"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
+			StructTag(`json:"gasSponsored"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}).Optional(),
 		field.Int64("user_ops_num_d1").
-			StructTag(`json:"userOpsNumD1"`),
+			StructTag(`json:"userOpsNumD1"`).Optional(),
 		field.Int64("gas_sponsored_d1").
-			StructTag(`json:"gasSponsoredD1"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
+			StructTag(`json:"gasSponsoredD1"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}).Optional(),
 		field.Int64("user_ops_num_d7").
-			StructTag(`json:"userOpsNumD7"`),
+			StructTag(`json:"userOpsNumD7"`).Optional(),
 		field.Int64("gas_sponsored_d7").
-			StructTag(`json:"gasSponsoredD7"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
+			StructTag(`json:"gasSponsoredD7"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}).Optional(),
 		field.Int64("user_ops_num_d30").
-			StructTag(`json:"userOpsNumD30"`),
-		field.Float("gas_sponsored_d30").
-			StructTag(`json:"gasSponsoredD30"`),
+			StructTag(`json:"userOpsNumD30"`).Optional(),
+		field.Int64("gas_sponsored_d30").
+			StructTag(`json:"gasSponsoredD30"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}).Optional(),
 		field.Time("create_time").
 			Default(time.Now).
 			StructTag(`json:"createTime"`).

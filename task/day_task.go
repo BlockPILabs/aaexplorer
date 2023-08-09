@@ -56,6 +56,8 @@ func doDayStatis() {
 
 	}
 
+	dailyStatisticDay := calDailyStatistic(client, opsInfos, startTime)
+
 	bundlerList := calBundlerStatisDay(client, bundlerMap, startTime)
 	paymasterList := calPaymasterStatisDay(client, paymasterMap, startTime)
 	factoryList := calFactoryStatisDay(client, factoryMap, startTime)
@@ -63,6 +65,30 @@ func doDayStatis() {
 	bulkInsertBundlerStatsDay(context.Background(), client, bundlerList)
 	bulkInsertPaymasterStatsDay(context.Background(), client, paymasterList)
 	bulkInsertFactoryStatsDay(context.Background(), client, factoryList)
+	dailyStatisticDay.Save(context.Background())
+}
+
+func calDailyStatistic(client *ent.Client, infos []*ent.UserOpsInfo, startTime time.Time) *ent.DailyStatisticDayCreate {
+	if len(infos) == 0 {
+		return nil
+	}
+	var totalGasFee decimal.Decimal
+	var txMap = make(map[string]bool)
+	var walletMap = make(map[string]bool)
+	for _, opsInfo := range infos {
+		totalGasFee = opsInfo.Fee.Add(totalGasFee)
+		txMap[opsInfo.TxHash] = true
+		walletMap[opsInfo.Sender] = true
+	}
+	dailyStatistic := client.DailyStatisticDay.Create().
+		SetNetwork(infos[0].Network).
+		SetUserOpsNum(int64(len(infos))).
+		SetStatisticTime(startTime).
+		SetActiveWallet(int64(len(walletMap))).
+		SetGasFee(totalGasFee).
+		SetTxNum(int64(len(txMap)))
+
+	return dailyStatistic
 }
 
 func bulkInsertFactoryStatsDay(ctx context.Context, client *ent.Client, data []*ent.FactoryStatisDayCreate) error {

@@ -25,21 +25,21 @@ func (FactoryInfo) Fields() []ent.Field {
 			MaxLen(255).
 			StructTag(`json:"network"`),
 		field.Int("account_num").
-			StructTag(`json:"accountNum"`),
+			StructTag(`json:"accountNum"`).Optional(),
 		field.Int("account_deploy_num").
-			StructTag(`json:"accountDeployNum"`),
+			StructTag(`json:"accountDeployNum"`).Optional(),
 		field.Int("account_num_d1").
-			StructTag(`json:"accountNumD1"`),
+			StructTag(`json:"accountNumD1"`).Optional(),
 		field.Int("account_deploy_num_d1").
-			StructTag(`json:"accountDeployNumD1"`),
+			StructTag(`json:"accountDeployNumD1"`).Optional(),
 		field.Int("account_num_d7").
-			StructTag(`json:"accountNumD7"`),
+			StructTag(`json:"accountNumD7"`).Optional(),
 		field.Int("account_deploy_num_d7").
-			StructTag(`json:"accountDeployNumD7"`),
+			StructTag(`json:"accountDeployNumD7"`).Optional(),
 		field.Int("account_num_d30").
-			StructTag(`json:"accountNumD30"`),
+			StructTag(`json:"accountNumD30"`).Optional(),
 		field.Int("account_deploy_num_d30").
-			StructTag(`json:"accountDeployNumD30"`),
+			StructTag(`json:"accountDeployNumD30"`).Optional(),
 		field.Time("create_time").
 			Default(time.Now).
 			StructTag(`json:"createTime"`).

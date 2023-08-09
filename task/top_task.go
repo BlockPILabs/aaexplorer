@@ -79,20 +79,21 @@ func doTopFactoryHour() {
 	}
 
 	factoryInfoMap := make(map[string]*ent.FactoryInfo)
-	for _, factory := range factoryInfoMap {
+	for _, factory := range factoryStatisHours {
 		factoryAddr := factory.Factory
 		factoryInfo, bundlerInfoOk := factoryInfoMap[factoryAddr]
 		if bundlerInfoOk {
-			factoryInfo.AccountDeployNum = factoryInfo.AccountDeployNum + factory.AccountDeployNum
-			factoryInfo.AccountNum = factoryInfo.AccountNum + factory.AccountNum
-			factoryInfo.AccountNumD1 = factoryInfo.AccountNumD1 + factory.AccountNumD1
-			factoryInfo.AccountDeployNumD1 = factoryInfo.AccountDeployNumD1 + factory.AccountDeployNumD1
+
+			factoryInfo.AccountDeployNum = factoryInfo.AccountNum + int(factory.AccountNum)
+			factoryInfo.AccountNum = factoryInfo.AccountDeployNum + int(factory.AccountDeployNum)
+			factoryInfo.AccountNumD1 = factoryInfo.AccountNumD1 + int(factory.AccountNum)
+			factoryInfo.AccountDeployNumD1 = factoryInfo.AccountDeployNumD1 + int(factory.AccountDeployNum)
 		} else {
 			factoryInfo = &ent.FactoryInfo{
-				AccountDeployNum:   factory.AccountDeployNum,
-				AccountNum:         factory.AccountNum,
-				AccountNumD1:       factory.AccountNumD1,
-				AccountDeployNumD1: factory.AccountDeployNumD1,
+				AccountDeployNum:   int(factory.AccountDeployNum),
+				AccountNum:         int(factory.AccountNum),
+				AccountNumD1:       int(factory.AccountNum),
+				AccountDeployNumD1: int(factory.AccountDeployNum),
 			}
 		}
 		factoryInfo.Factory = factory.Factory
@@ -102,6 +103,9 @@ func doTopFactoryHour() {
 	}
 
 	for factory, factoryInfo := range factoryInfoMap {
+		if factory == "" {
+			continue
+		}
 		saveOrUpdateFactory(client, factory, factoryInfo)
 	}
 }
@@ -167,6 +171,9 @@ func doTopPaymasterHour() {
 	}
 
 	for paymaster, paymasterInfo := range paymasterInfoMap {
+		if paymaster == "" {
+			continue
+		}
 		saveOrUpdatePaymaster(client, paymaster, paymasterInfo)
 	}
 
@@ -237,6 +244,9 @@ func doTopBundlersHour() {
 	}
 
 	for bundler, bundlerInfo := range bundlerInfoMap {
+		if bundler == "" {
+			continue
+		}
 		saveOrUpdateBundler(client, bundler, bundlerInfo)
 	}
 }
@@ -244,14 +254,13 @@ func doTopBundlersHour() {
 func saveOrUpdateBundler(client *ent.Client, bundler string, info *ent.BundlerInfo) {
 	bundlerInfos, err := client.BundlerInfo.
 		Query().
-		Where(bundlerinfo.Bundler(bundler)).
+		Where(bundlerinfo.BundlerEQ(bundler)).
 		All(context.Background())
 	if err != nil {
 		log.Fatalf("saveOrUpdateBundler err, %s, msg:{%s}\n", bundler, err)
 	}
 	if len(bundlerInfos) == 0 {
-
-		client.BundlerInfo.Create().
+		_, err := client.BundlerInfo.Create().
 			SetBundler(info.Bundler).
 			SetNetwork(info.Network).
 			SetGasCollectedD1(info.GasCollectedD1).
@@ -261,29 +270,35 @@ func saveOrUpdateBundler(client *ent.Client, bundler string, info *ent.BundlerIn
 			SetUserOpsNumD1(info.UserOpsNumD1).
 			SetBundlesNumD1(info.BundlesNumD1).
 			Save(context.Background())
+		if err != nil {
+			log.Printf("Save bundler err, %s\n", err)
+		}
 	} else {
 		oldBundler := bundlerInfos[0]
-		client.BundlerInfo.UpdateOneID(oldBundler.ID).
+		err = client.BundlerInfo.UpdateOneID(oldBundler.ID).
 			SetBundlesNum(oldBundler.BundlesNum + info.BundlesNum).
 			SetUserOpsNum(oldBundler.UserOpsNum + info.UserOpsNum).
 			SetGasCollected(oldBundler.GasCollected.Add(info.GasCollected)).
 			SetBundlesNumD1(oldBundler.BundlesNumD1 + info.BundlesNumD1).
 			SetUserOpsNumD1(oldBundler.UserOpsNumD1 + info.UserOpsNumD1).
-			SetGasCollectedD1(oldBundler.GasCollectedD1.Add(info.GasCollectedD1))
+			SetGasCollectedD1(oldBundler.GasCollectedD1.Add(info.GasCollectedD1)).Exec(context.Background())
+		if err != nil {
+			log.Printf("Update bundler err, %s\n", err)
+		}
 	}
 }
 
 func saveOrUpdatePaymaster(client *ent.Client, paymaster string, info *ent.PaymasterInfo) {
 	paymasterInfos, err := client.PaymasterInfo.
 		Query().
-		Where(paymasterinfo.Paymaster(paymaster)).
+		Where(paymasterinfo.PaymasterEQ(paymaster)).
 		All(context.Background())
 	if err != nil {
 		log.Fatalf("saveOrUpdatePaymaster err, %s, msg:{%s}\n", paymaster, err)
 	}
-	if len(paymasterInfos) == 0 {
+	if paymasterInfos == nil || len(paymasterInfos) == 0 {
 
-		client.PaymasterInfo.Create().
+		_, err := client.PaymasterInfo.Create().
 			SetPaymaster(info.Paymaster).
 			SetNetwork(info.Network).
 			SetUserOpsNum(info.UserOpsNum).
@@ -291,27 +306,33 @@ func saveOrUpdatePaymaster(client *ent.Client, paymaster string, info *ent.Payma
 			SetUserOpsNumD1(info.UserOpsNumD1).
 			SetGasSponsoredD1(info.GasSponsoredD1).
 			Save(context.Background())
+		if err != nil {
+			log.Printf("Save paymaster err, %s\n", err)
+		}
 	} else {
 		oldPaymaster := paymasterInfos[0]
-		client.PaymasterInfo.UpdateOneID(oldPaymaster.ID).
+		err = client.PaymasterInfo.UpdateOneID(oldPaymaster.ID).
 			SetUserOpsNum(oldPaymaster.UserOpsNum + info.UserOpsNum).
 			SetGasSponsored(oldPaymaster.GasSponsored.Add(info.GasSponsored)).
 			SetUserOpsNumD1(oldPaymaster.UserOpsNumD1 + info.UserOpsNumD1).
-			SetGasSponsoredD1(oldPaymaster.GasSponsoredD1.Add(info.GasSponsoredD1))
+			SetGasSponsoredD1(oldPaymaster.GasSponsoredD1.Add(info.GasSponsoredD1)).Exec(context.Background())
+		if err != nil {
+			log.Printf("Update paymaster err, %s\n", err)
+		}
 	}
 }
 
 func saveOrUpdateFactory(client *ent.Client, factory string, info *ent.FactoryInfo) {
 	factoryInfos, err := client.FactoryInfo.
 		Query().
-		Where(factoryinfo.Factory(factory)).
+		Where(factoryinfo.FactoryEQ(factory)).
 		All(context.Background())
 	if err != nil {
 		log.Fatalf("saveOrUpdateFactory err, %s, msg:{%s}\n", factory, err)
 	}
 	if len(factoryInfos) == 0 {
 
-		client.FactoryInfo.Create().
+		_, err := client.FactoryInfo.Create().
 			SetFactory(info.Factory).
 			SetNetwork(info.Network).
 			SetAccountNum(info.AccountNum).
@@ -319,12 +340,18 @@ func saveOrUpdateFactory(client *ent.Client, factory string, info *ent.FactoryIn
 			SetAccountNumD1(info.AccountNumD1).
 			SetAccountDeployNumD1(info.AccountDeployNumD1).
 			Save(context.Background())
+		if err != nil {
+			log.Printf("Save factory err, %s\n", err)
+		}
 	} else {
 		oldFactory := factoryInfos[0]
-		client.FactoryInfo.UpdateOneID(oldFactory.ID).
+		err = client.FactoryInfo.UpdateOneID(oldFactory.ID).
 			SetAccountDeployNum(oldFactory.AccountDeployNum + info.AccountDeployNum).
 			SetAccountNum(oldFactory.AccountNum + info.AccountNum).
 			SetAccountDeployNumD1(oldFactory.AccountDeployNumD1 + info.AccountDeployNumD1).
-			SetAccountNumD1(oldFactory.AccountNumD1 + info.AccountNumD1)
+			SetAccountNumD1(oldFactory.AccountNumD1 + info.AccountNumD1).Exec(context.Background())
+		if err != nil {
+			log.Printf("Update factory err, %s\n", err)
+		}
 	}
 }

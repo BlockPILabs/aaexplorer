@@ -25,13 +25,9 @@ const LogTransferEventSign = "0xe6497e3ee548a3372136af2fcb0696db31fc6cf202607076
 const TransferEventSign = "0xe6497e3ee548a3372136af2fcb0696db31fc6cf20260707645068bd3fe97f3c4"
 const AccountDeploySign = "0xd51a9c61267aa6196961883ecf5ff2da6619c37dac0fa92122513fb32c032d2d"
 
-var (
-	callSign = map[string]string{
-		"0x912ccaa3": "executeBatchCall",
-		"0x47e1da2a": "executeBatch",
-		"0xb61d27f6": "execute",
-	}
-)
+const ExecuteSign = "0xb61d27f6"
+const ExecuteBatchSign = "0x47e1da2a"
+const ExecuteBatchCallSign = "0x912ccaa3"
 
 type UserOperationEvent struct {
 	OpsHash       string
@@ -45,17 +41,22 @@ type UserOperationEvent struct {
 	Factory       string
 }
 
+type CallDetail struct {
+	target string
+	value  decimal.Decimal
+	data   string
+}
+
 func ScanBlock() {
 
 	startMillis := getCurrentTimestampMillis()
 	client, err := ethclient.Dial("https://patient-crimson-slug.matic.discover.quiknode.pro/4cb47dc694ccf2998581548feed08af5477aa84b/")
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("RPC client err, %s\n", err)
 		return
 	}
 	record, err := schema.GetBlockScanRecordsByNetwork(config.Polygon)
 	if err != nil {
-		log.Fatal(err)
 		return
 	}
 	var nextBlockNumber int64
@@ -72,7 +73,6 @@ func ScanBlock() {
 	nextBlockNumber = 44787202
 	block, err := client.BlockByNumber(context.Background(), big.NewInt(nextBlockNumber))
 	if err != nil {
-		log.Fatal(err)
 		return
 	}
 	doParse(block, client)
@@ -145,13 +145,12 @@ func doParse(block *types.Block, client *ethclient.Client) {
 func getFrom(tx *types.Transaction, client *ethclient.Client) string {
 	chainID, err := client.NetworkID(context.Background())
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("get networkId err, %s\n", err)
 		return ""
 	}
 	signer := types.LatestSignerForChainID(chainID)
 	from, err := types.Sender(signer, tx)
 	if err != nil {
-		log.Fatal(err)
 		return ""
 	}
 	return strings.ToLower(from.String())
@@ -286,7 +285,11 @@ func parseUserOps(input string, tx *types.Transaction, receipt *types.Receipt, t
 
 		factoryAddr, paymaster := getAddr(initCode, paymasterAndData)
 
-		target := parseCallData(callData)
+		callDetails := parseCallData(callData)
+		var target = ""
+		if callDetails != nil && len(callDetails) > 0 {
+			target = callDetails[0].target
+		}
 
 		userOpsInfo := schema.UserOpsInfo{
 			TxHash:               tx.Hash().String(),
@@ -318,12 +321,14 @@ func parseUserOps(input string, tx *types.Transaction, receipt *types.Receipt, t
 			userOpsInfo.UserOperationHash = opsVal.OpsHash
 			userOpsInfo.ActualGasCost = opsVal.ActualGasCost
 			userOpsInfo.Status = opsVal.Success
-			userOpsInfo.Fee = decimal.NewFromInt(opsVal.ActualGasCost).Div(decimal.NewFromFloat(math.Pow10(18)))
+			userOpsInfo.Fee = DivRav(opsVal.ActualGasCost)
 		}
 		opsTxValue, opsTxValueOk := opsValMap[sender]
 		if opsTxValueOk {
 			userOpsInfo.TxValue = opsTxValue
 		}
+
+		//userOpsCalldatas := getUserOpsCalldatas(callDetails, tx, receipt, txTime, userOpsInfo.UserOperationHash, sender)
 
 		userOpsInfos = append(userOpsInfos, userOpsInfo)
 	}
@@ -336,7 +341,7 @@ func parseUserOps(input string, tx *types.Transaction, receipt *types.Receipt, t
 		EntryPoint:   strings.ToLower(tx.To().String()),
 		UserOpsNum:   int64(arrNumInt),
 		Fee:          fee,
-		TxValue:      decimal.NewFromInt(tx.Value().Int64()).Div(decimal.NewFromFloat(math.Pow10(18))),
+		TxValue:      DivRav(tx.Value().Int64()),
 		GasPrice:     tx.GasPrice().String(),
 		GasLimit:     int64(receipt.GasUsed),
 		Status:       int(receipt.Status),
@@ -347,6 +352,32 @@ func parseUserOps(input string, tx *types.Transaction, receipt *types.Receipt, t
 	}
 
 	return &userOpsInfos, &transactionInfo
+}
+
+func getUserOpsCalldatas(details []*CallDetail, tx *types.Transaction, receipt *types.Receipt, txTime uint64, userOpsHash, sender string) []*ent.UserOpsCalldataCreate {
+	if len(details) == 0 {
+		return nil
+	}
+	client, err := entity.Client(context.Background())
+	if err != nil {
+		log.Printf("UserOpsCalldata err, %s\n", err)
+	}
+	var userOpsCalldatas []*ent.UserOpsCalldataCreate
+	for _, detail := range details {
+		opsCalldata := client.UserOpsCalldata.Create().
+			SetUserOpsHash(userOpsHash).
+			SetTxHash(tx.Hash().String()).
+			SetTxValue(detail.value).
+			SetBlockNumber(receipt.BlockNumber.Int64()).
+			SetTxTime(int64(txTime)).
+			SetSender(sender).
+			SetSource("").
+			SetTarget(detail.target).
+			SetCalldata(detail.data)
+
+		userOpsCalldatas = append(userOpsCalldatas, opsCalldata)
+	}
+	return userOpsCalldatas
 }
 
 func DivRav(data int64) decimal.Decimal {
@@ -424,7 +455,7 @@ func isAddress(address string) bool {
 	if len(address) != 40 {
 		return false
 	}
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 15; i++ {
 		if address[i] != '0' {
 			return true
 		}
@@ -432,12 +463,81 @@ func isAddress(address string) bool {
 	return false
 }
 
-func parseCallData(callData string) string {
-	target := strings.ToLower(hexToAddress(substring(callData, 8, 8+64)))
-	if isAddress(substringFromIndex(target, 2)) {
-		return target
+func parseCallData(callData string) []*CallDetail {
+	if len(callData) < 8 {
+		return nil
 	}
-	return ""
+	sign := substring(callData, 0, 8)
+	paramData := substringFromIndex(callData, 8)
+	var callDetails []*CallDetail
+	switch sign {
+	case ExecuteSign:
+		callDetails = parseExecute(paramData)
+		break
+	case ExecuteBatchSign:
+		callDetails = parseExecuteBatch(paramData)
+		break
+	case ExecuteBatchCallSign:
+		callDetails = parseExecuteBatchCall(paramData)
+		break
+	}
+	return callDetails
+}
+
+func parseExecuteBatchCall(paramData string) []*CallDetail {
+	offset1 := hexToDecimalInt(substring(paramData, 0, 64*1))
+	offset2 := hexToDecimalInt(substring(paramData, 64*1, 64*2))
+	offset3 := hexToDecimalInt(substring(paramData, 64*2, 64*3))
+	num1 := hexToDecimalInt(substring(paramData, *offset1*2, *offset1*2+64*1))
+	var callDetails []*CallDetail
+	for i := 1; i <= *num1; i++ {
+		target := hexToAddress(substring(paramData, *offset1*2+64*i, *offset1*2+64*(i+1)))
+		value := DivRav(hexToDecimal(substring(paramData, *offset2*2+64*i, *offset2*2+64*(i+1))).Int64())
+		data := substring(paramData, *offset3*2+64*i, *offset3*2+64*(i+1))
+		callDetails = append(callDetails, &CallDetail{
+			target: target,
+			value:  value,
+			data:   data,
+		})
+	}
+	return callDetails
+}
+
+func parseExecuteBatch(paramData string) []*CallDetail {
+	offset1 := hexToDecimalInt(substring(paramData, 0, 64*1))
+	offset2 := hexToDecimalInt(substring(paramData, 64*1, 64*2))
+	offset3 := hexToDecimalInt(substring(paramData, 64*2, 64*3))
+	num1 := hexToDecimalInt(substring(paramData, *offset1*2, *offset1*2+64*1))
+	//num2 := hexToDecimalInt(substring(paramData, *offset2*2, *offset2*2+64*1))
+	//num3 := hexToDecimalInt(substring(paramData, *offset3*2, *offset3*2+64*1))
+	var callDetails []*CallDetail
+	for i := 1; i <= *num1; i++ {
+		target := hexToAddress(substring(paramData, *offset1*2+64*i, *offset1*2+64*(i+1)))
+		value := DivRav(hexToDecimal(substring(paramData, *offset2*2+64*i, *offset2*2+64*(i+1))).Int64())
+		data := substring(paramData, *offset3*2+64*i, *offset3*2+64*(i+1))
+		callDetails = append(callDetails, &CallDetail{
+			target: target,
+			value:  value,
+			data:   data,
+		})
+	}
+	return callDetails
+}
+
+func parseExecute(paramData string) []*CallDetail {
+	target := strings.ToLower(hexToAddress(substring(paramData, 0, 64*1)))
+	value := DivRav(hexToDecimal(substring(paramData, 64*1, 64*2)).Int64())
+	offset := hexToDecimalInt(substring(paramData, 64*2, 64*3))
+	len := hexToDecimalInt(substring(paramData, *offset*2, *offset*2+64*1))
+	data := substring(paramData, *offset*2+64*1, *offset*2+64*1+*len*2)
+	var details []*CallDetail
+	details = append(details, &CallDetail{
+		target: target,
+		value:  value,
+		data:   data,
+	})
+
+	return details
 }
 
 func truncateString(s string, length int) string {
