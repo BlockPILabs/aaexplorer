@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactioninfo"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
@@ -15,7 +16,9 @@ var BundleDao = &bundleDao{}
 
 func (*bundleDao) GetSortFields(ctx context.Context) []string {
 	return []string{
+		config.Default,
 		transactioninfo.FieldID,
+		transactioninfo.FieldTxTime,
 	}
 }
 func (dao *bundleDao) Sort(ctx context.Context, query *ent.TransactionInfoQuery, sort int, order int) *ent.TransactionInfoQuery {
@@ -24,8 +27,10 @@ func (dao *bundleDao) Sort(ctx context.Context, query *ent.TransactionInfoQuery,
 		switch dao.sortField(ctx, dao.GetSortFields(ctx), sort) {
 		case transactioninfo.FieldID:
 			query.Order(transactioninfo.ByID(opts...))
+		//case transactioninfo.FieldTxTime:
+		//	query.Order(transactioninfo.ByTxTime(opts...))
 		default:
-			break
+			query.Order(transactioninfo.ByTxTime(opts...))
 		}
 	}
 	return query

@@ -18,4 +18,7 @@ const (
 	MaxPerPage      = 1000
 	CreateInBatches = 1000
 	MinPerPage      = 0
+
+	OrderAsc  = 1
+	OrderDesc = -1
 )
