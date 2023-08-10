@@ -13,9 +13,9 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"sync"
 
-	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/lib/pq" // postgres driver
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/go-sql-driver/mysql" // mysql driver
+	_ "github.com/lib/pq"              // postgres driver
+	_ "github.com/mattn/go-sqlite3"    // sqlite3
 )
 
 type client struct {
