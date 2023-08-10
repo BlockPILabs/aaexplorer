@@ -43,8 +43,15 @@ func Start(cfg *config.Config) error {
 			}
 			drv.DB().SetConnMaxLifetime(leftTime)
 		}
+
+		opts := []ent.Option{
+			ent.Driver(drv),
+		}
+		if database.Schema != nil {
+			opts = append(opts, ent.AlternateSchema(*database.Schema))
+		}
 		// connect
-		client := ent.NewClient(ent.Driver(drv))
+		client := ent.NewClient(opts...)
 		if err != nil {
 			return err
 		}
