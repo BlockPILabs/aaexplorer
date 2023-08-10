@@ -25,7 +25,6 @@ type DbConfig struct {
 	MaxLifetime     int64             `mapstructure:"maxLifetime" toml:"maxLifetime"`
 	Debug           bool              `mapstructure:"debug" toml:"debug"`
 	SslMode         string            `mapstructure:"sslMode" toml:"sslMode"`
-	FallbackDefault bool              `mapstructure:"fallbackDefault" toml:"fallbackDefault"`
 }
 
 func DefaultDatabaseConfig() []*DbConfig {

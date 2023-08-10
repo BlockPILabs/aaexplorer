@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/BlockPILabs/aa-scan/internal/log"
+	"strings"
 	"time"
 
 	"github.com/BlockPILabs/aa-scan/config"
@@ -16,6 +17,11 @@ import (
 	_ "github.com/lib/pq" // postgres driver
 	_ "github.com/mattn/go-sqlite3"
 )
+
+type client struct {
+	Client *ent.Client
+	Config *config.DbConfig
+}
 
 var clients = &sync.Map{}
 
@@ -51,18 +57,22 @@ func Start(cfg *config.Config) error {
 			opts = append(opts, ent.AlternateSchema(*database.Schema))
 		}
 		// connect
-		client := ent.NewClient(opts...)
+		c := ent.NewClient(opts...)
 		if err != nil {
 			return err
 		}
 		if database.Debug {
-			client = client.Debug()
+			c = c.Debug()
+		}
+		_c := client{
+			Client: c,
+			Config: database,
 		}
 		if i == 0 {
-			clients.Store(config.Default, client)
+			clients.Store(config.Default, _c)
 		}
 		if len(database.Group) > 0 {
-			clients.Store(database.Group, client)
+			clients.Store(database.Group, _c)
 		}
 
 	}
@@ -76,13 +86,19 @@ func Client(ctx context.Context, group ...string) (*ent.Client, error) {
 	}
 	c, ok := clients.Load(g)
 	if !ok {
+		if li := strings.LastIndexByte(g, ':'); li >= 0 {
+			return Client(ctx, g[0:li])
+		}
+		if g != config.Default {
+			return Client(ctx)
+		}
 		log.Context(ctx).Error("not found group")
 		return nil, errors.New(fmt.Sprintf("not found group %s", g))
 	}
-	client, ok := c.(*ent.Client)
+	cc, ok := c.(*client)
 	if !ok {
 		log.Context(ctx).Error("group error")
 		return nil, errors.New(fmt.Sprintf("group error %s", g))
 	}
-	return client, nil
+	return cc.Client, nil
 }
