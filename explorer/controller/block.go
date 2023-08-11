@@ -45,6 +45,10 @@ func GetBlock(fcx *fiber.Ctx) error {
 	if err != nil {
 		logger.Warn("params parse error", "err", err)
 	}
+	err = fcx.QueryParser(&req)
+	if err != nil {
+		logger.Warn("query params parse error", "err", err, "network", req.Network)
+	}
 	response, err := service.BlockService.GetBlock(ctx, req)
 	if err != nil {
 		return err
