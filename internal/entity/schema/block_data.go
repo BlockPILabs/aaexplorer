@@ -30,7 +30,6 @@ type BlockData struct {
 	Sha3Uncles       string    `db:"sha3_uncles"`
 	Withdrawals      string    `db:"withdrawals" json:"withdrawals"`
 	ReceiptsRoot     string    `db:"receipts_root"`
-	Transactions     string    `db:"transactions" json:"transactions"`
 	BaseFeePerGas    string    `db:"base_fee_per_gas"`
 	TotalDifficulty  string    `db:"total_difficulty"`
 	WithdrawalsRoot  string    `db:"withdrawals_root"`
@@ -40,10 +39,10 @@ type BlockData struct {
 
 func (BlockData) Fields() []ent.Field {
 	return []ent.Field{
+		field.Int64("id").
+			StructTag(`json:"blockNum"`).Unique().StorageKey("block_num"),
 		field.Time("time").
 			StructTag(`json:"time"`),
-		field.Int64("block_num").
-			StructTag(`json:"blockNum"`),
 		field.Time("create_time").
 			StructTag(`json:"createTime"`),
 		field.String("hash").
@@ -98,8 +97,6 @@ func (BlockData) Fields() []ent.Field {
 		field.String("receipts_root").
 			MaxLen(255).
 			StructTag(`json:"receiptsRoot"`),
-		field.String("transactions").
-			StructTag(`json:"transactions"`),
 		field.String("base_fee_per_gas").
 			MaxLen(255).
 			StructTag(`json:"baseFeePerGas"`),

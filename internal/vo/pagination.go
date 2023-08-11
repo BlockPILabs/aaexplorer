@@ -21,6 +21,13 @@ type PaginationRequest struct {
 	Order   int `json:"order" query:"order" params:"order" validate:"min=-1,max=1"` // order sort : -1 desc   1 asc
 }
 
+func NewDefaultPaginationRequest() PaginationRequest {
+	return PaginationRequest{
+		PerPage: config.DefaultPerPage,
+		Page:    config.MinPage,
+	}
+}
+
 func (r *PaginationRequest) GetOffset() int {
 	return (r.GetPage() - 1) * r.GetPerPage()
 }

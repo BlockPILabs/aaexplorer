@@ -42,7 +42,7 @@ func (*networkDao) GetNetworkByNetwork(ctx context.Context, network_ string) (*e
 		network.DeleteTimeIsNil(),
 	).First(ctx)
 	if err != nil {
-		logger.Warn("get networks error")
+		logger.Warn("get networks error", "err", err)
 		return nil, err
 	}
 	return net, err

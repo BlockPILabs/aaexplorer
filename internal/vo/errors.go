@@ -9,6 +9,8 @@ func _newError(code int, sets ...SetErrorOption) *Error {
 
 var (
 	// todo common error
-	ErrSystem = _newError(10001, SetErrorMessage("system error"))
-	ErrParams = _newError(10002, SetErrorMessage("params error"))
+	ErrSystem          = _newError(10001, SetErrorMessage("system error"))
+	ErrParams          = _newError(10002, SetErrorMessage("params error"))
+	ErrDataNotFound    = _newError(10004, SetErrorMessage("data not found"))
+	ErrNetworkNotFound = ErrDataNotFound.SetMessage("network not found")
 )

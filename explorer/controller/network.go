@@ -11,7 +11,6 @@ import (
 const NameGetNetworks = "get_networks"
 
 func GetNetworks(fcx *fiber.Ctx) error {
-
 	ctx := fcx.UserContext()
 
 	log.Context(ctx).Debug("start get networks")
@@ -45,6 +44,11 @@ func GetNetworks(fcx *fiber.Ctx) error {
 	log.Context(ctx).Debug("get networks success", "totalCount", res.TotalCount)
 	return vo.NewResultJsonResponse(res).JSON(fcx)
 }
+func GetNetwork(fcx *fiber.Ctx) error {
+	ctx := fcx.UserContext()
+	network, _ := dao.NetworkDao.ContextValue(ctx)
+	return vo.NewResultJsonResponse(network).JSON(fcx)
+}
 
 // NetworkMiddleware check network params
 func NetworkMiddleware() fiber.Handler {
@@ -54,7 +58,7 @@ func NetworkMiddleware() fiber.Handler {
 
 		nw, err := dao.NetworkDao.GetNetworkByNetwork(ctx, networkFlag)
 		if err != nil {
-			return err
+			return vo.ErrNetworkNotFound
 		}
 		// set value
 		fcx.SetUserContext(
