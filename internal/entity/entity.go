@@ -64,7 +64,7 @@ func Start(cfg *config.Config) error {
 		if database.Debug {
 			c = c.Debug()
 		}
-		_c := client{
+		_c := &client{
 			Client: c,
 			Config: database,
 		}
@@ -98,7 +98,7 @@ func Client(ctx context.Context, group ...string) (*ent.Client, error) {
 	cc, ok := c.(*client)
 	if !ok {
 		log.Context(ctx).Error("group error")
-		return nil, errors.New(fmt.Sprintf("group error %s", g))
+		return nil, errors.New(fmt.Sprintf("group connect error %s", g))
 	}
 	return cc.Client, nil
 }

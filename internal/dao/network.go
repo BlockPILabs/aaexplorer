@@ -24,7 +24,7 @@ func (*networkDao) GetNetworks(ctx context.Context, tx *ent.Client) ([]*ent.Netw
 		network.DeleteTimeIsNil(),
 	).All(ctx)
 	if err != nil {
-		logger.Warn("get networks error")
+		logger.Warn("get networks error", "err", err)
 		return nil, err
 	}
 	return networks, err
