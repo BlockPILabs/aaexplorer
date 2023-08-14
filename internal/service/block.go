@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/BlockPILabs/aa-scan/internal/dao"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/blockdatadecode"
 	"github.com/BlockPILabs/aa-scan/internal/log"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 	"github.com/jackc/pgtype"
@@ -33,7 +34,12 @@ func (*blockService) GetBlocks(ctx context.Context, req vo.GetBlocksRequest) (*v
 	if err != nil {
 		return &res, err
 	}
-
+	req.Select = []string{
+		blockdatadecode.FieldID,
+		blockdatadecode.FieldTransactionCount,
+		blockdatadecode.FieldCreateTime,
+		blockdatadecode.FieldTime,
+	}
 	list, total, err := dao.BlockDao.Pagination(ctx, client, req.Network, req.PaginationRequest)
 	if err != nil {
 		return &res, err
@@ -44,44 +50,44 @@ func (*blockService) GetBlocks(ctx context.Context, req vo.GetBlocksRequest) (*v
 	res.Records = make([]*vo.BlocksVo, len(list))
 	for i, info := range list {
 		res.Records[i] = &vo.BlocksVo{
-			Time:             info.Time,
-			ID:               info.ID,
-			CreateTime:       info.CreateTime,
-			Hash:             info.Hash,
-			Size:             info.Size,
-			Miner:            info.Miner,
-			Nonce:            info.Nonce,
-			Uncles:           make([]string, 0),
-			GasUsed:          info.GasUsed,
-			MixHash:          info.MixHash,
-			GasLimit:         info.GasLimit,
-			ExtraData:        info.ExtraData,
-			LogsBloom:        info.LogsBloom,
-			StateRoot:        info.StateRoot,
-			Timestamp:        info.Timestamp,
-			Difficulty:       info.Difficulty,
-			ParentHash:       info.ParentHash,
-			Sha3Uncles:       info.Sha3Uncles,
-			ReceiptsRoot:     info.ReceiptsRoot,
-			BaseFeePerGas:    info.BaseFeePerGas,
-			TotalDifficulty:  info.TotalDifficulty,
-			TransactionsRoot: info.TransactionsRoot,
+			//Time:             info.Time,
+			ID:         info.ID,
+			CreateTime: info.CreateTime,
+			//Hash:             info.Hash,
+			//Size:             info.Size,
+			//Miner:            info.Miner,
+			//Nonce:            info.Nonce,
+			//Uncles:           make([]string, 0),
+			//GasUsed:          info.GasUsed,
+			//MixHash:          info.MixHash,
+			//GasLimit:         info.GasLimit,
+			//ExtraData:        info.ExtraData,
+			//LogsBloom:        info.LogsBloom,
+			//StateRoot:        info.StateRoot,
+			//Timestamp:        info.Timestamp,
+			//Difficulty:       info.Difficulty,
+			//ParentHash:       info.ParentHash,
+			//Sha3Uncles:       info.Sha3Uncles,
+			//ReceiptsRoot:     info.ReceiptsRoot,
+			//BaseFeePerGas:    info.BaseFeePerGas,
+			//TotalDifficulty:  info.TotalDifficulty,
+			//TransactionsRoot: info.TransactionsRoot,
 		}
-		if info.Uncles != nil && info.Uncles.Status != pgtype.Null {
-			info.Uncles.AssignTo(&res.Records[i].Uncles)
-		}
+		//if info.Uncles != nil && info.Uncles.Status != pgtype.Null {
+		//	info.Uncles.AssignTo(&res.Records[i].Uncles)
+		//}
 	}
 
 	return &res, nil
 }
-func (*blockService) GetBlock(ctx context.Context, req vo.GetBlockRequest) (*vo.BlocksVo, error) {
+func (*blockService) GetBlock(ctx context.Context, req vo.GetBlockRequest) (*vo.BlockVo, error) {
 	ctx, logger := log.With(ctx, "service", "GetBlock")
 	err := vo.ValidateStruct(req)
 	if err != nil {
 		logger.Error("params error", "req", req, "err", err.Error())
 		return nil, vo.ErrParams.SetData(err)
 	}
-	res := vo.BlocksVo{}
+	res := vo.BlockVo{}
 
 	client, err := entity.Client(ctx, req.Network)
 	if err != nil {
@@ -91,7 +97,7 @@ func (*blockService) GetBlock(ctx context.Context, req vo.GetBlockRequest) (*vo.
 	if err != nil {
 		return nil, err
 	}
-	res = vo.BlocksVo{
+	res = vo.BlockVo{
 		Time:             info.Time,
 		ID:               info.ID,
 		CreateTime:       info.CreateTime,

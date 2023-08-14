@@ -27,6 +27,7 @@ func GetBlocks(fcx *fiber.Ctx) error {
 	if err != nil {
 		logger.Warn("query params parse error", "err", err, "network", req.Network)
 	}
+
 	res, err := service.BlockService.GetBlocks(ctx, req)
 	if err != nil {
 		logger.Error("get bundles error", "err", err)

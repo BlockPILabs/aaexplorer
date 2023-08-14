@@ -38,7 +38,7 @@ func (dao *blockDao) Sort(ctx context.Context, query *ent.BlockDataDecodeQuery, 
 }
 
 func (dao *blockDao) Pagination(ctx context.Context, tx *ent.Client, network string, page vo.PaginationRequest) (list ent.BlockDataDecodes, total int, err error) {
-	query := tx.BlockDataDecode.Query().Where()
+	query := tx.BlockDataDecode.Query()
 	// sort
 	query = dao.Sort(ctx, query, page.Sort, page.Order)
 
@@ -49,7 +49,7 @@ func (dao *blockDao) Pagination(ctx context.Context, tx *ent.Client, network str
 	}
 
 	// limit
-	query = query.
+	query = query.Select(page.Select...).
 		Offset(page.GetOffset()).
 		Limit(page.PerPage)
 

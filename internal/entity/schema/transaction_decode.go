@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
@@ -56,7 +57,9 @@ func (TransactionDecode) Fields() []ent.Field {
 		//max_priority_fee_per_gas numeric,
 		field.Int64("max_priority_fee_per_gas").StructTag(`json:"maxPriorityFeePerGas"`).GoType(decimal.Decimal{}),
 		//access_list              jsonb
-		field.JSON("access_list", &pgtype.JSON{}).StructTag(`json:"accessList"`),
+		field.Other("access_list", &pgtype.JSONB{}).StructTag(`json:"accessList"`).SchemaType(map[string]string{
+			dialect.Postgres: "jsonb",
+		}),
 	}
 }
 
