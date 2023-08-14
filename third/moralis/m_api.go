@@ -8,9 +8,11 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/predicate"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/userassetinfo"
 	"github.com/shopspring/decimal"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"strings"
 	"time"
@@ -28,6 +30,10 @@ type TokenBalance struct {
 	Decimals     int32           `json:"decimals"`
 	Balance      decimal.Decimal `json:"balance,string"`
 	PossibleSpam bool            `json:"possible_spam"`
+}
+
+type NativeTokenBalance struct {
+	Balance decimal.Decimal
 }
 
 type TokenPrice struct {
@@ -74,8 +80,6 @@ func GetTokenBalance(address string, network string) []*TokenBalance {
 
 	data := string(body)
 
-	//fmt.Println(res)
-	//fmt.Println(data)
 	var tokenBalanceArr []*TokenBalance
 
 	err := json.Unmarshal([]byte(data), &tokenBalanceArr)
@@ -86,12 +90,8 @@ func GetTokenBalance(address string, network string) []*TokenBalance {
 
 	var tokens []string
 	for _, t := range tokenBalanceArr {
-		fmt.Println(json.Marshal(t))
 		tokens = append(tokens, t.TokenAddress)
 	}
-
-	GetTokenPriceBatch(tokens)
-	fmt.Println("aaaaa")
 
 	return tokenBalanceArr
 
@@ -154,7 +154,6 @@ func GetTokenPrice(token string, network string) *TokenPrice {
 	body, _ := io.ReadAll(res.Body)
 
 	data := string(body)
-	fmt.Println(data)
 
 	var tokenPrice *TokenPrice
 
@@ -166,6 +165,31 @@ func GetTokenPrice(token string, network string) *TokenPrice {
 
 	return tokenPrice
 
+}
+
+func GetNativeTokenBalance(accountAddress string, network string) decimal.Decimal {
+	url := MoralisUrl + "/" + accountAddress + "/balance?chain=" + network
+
+	req, _ := http.NewRequest("GET", url, nil)
+
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("X-API-Key", ApiKey)
+
+	res, _ := http.DefaultClient.Do(req)
+
+	defer res.Body.Close()
+	body, _ := io.ReadAll(res.Body)
+
+	data := string(body)
+
+	var nativeTokenBalance *NativeTokenBalance
+
+	err := json.Unmarshal([]byte(data), &nativeTokenBalance)
+	if err != nil {
+		return decimal.Zero
+	}
+
+	return nativeTokenBalance.Balance.DivRound(decimal.New(int64(math.Pow10(18)), 0), 18)
 }
 
 type TokenPriceInfo struct {
@@ -214,26 +238,34 @@ type WalletBalanceResp struct {
 	Percent         string
 }
 
-func GetUserAsset(accountAddress string, network string) []*UserAssetInfo {
-	var userAssetInfos []*UserAssetInfo
+func GetUserAsset(accountAddress string, network string) []*ent.UserAssetInfo {
+	client, err := entity.Client(context.Background())
+	if err != nil {
+		return nil
+	}
+	userAssetInfos, err := client.UserAssetInfo.Query().Where(userassetinfo.AccountAddressEqualFold(accountAddress), userassetinfo.NetworkEqualFold(network)).All(context.Background())
+	if err != nil {
+		return nil
+	}
 	if len(userAssetInfos) == 0 {
 		return nil
 	}
+
 	lastTime := userAssetInfos[0].LastTime
 	curTime := time.Now().UnixNano() / 1e6
 	if curTime-lastTime < 5*60*1000 {
 		return userAssetInfos
 	}
+
 	tokenBalances := GetTokenBalance(accountAddress, network)
-	//TODO change last time
 	if len(tokenBalances) == 0 {
 		return userAssetInfos
 	}
 	var userAssetInfoCreates []*ent.UserAssetInfoCreate
-	client, err := entity.Client(context.Background())
 	if err != nil {
 		return nil
 	}
+
 	for _, tokenBalance := range tokenBalances {
 		userAssetCreate := client.UserAssetInfo.Create().
 			SetAccountAddress(accountAddress).
@@ -256,9 +288,5 @@ func GetUserAsset(accountAddress string, network string) []*UserAssetInfo {
 }
 
 func getMEV() {
-	//1.查询失败的交易
-	//2.查询相同sender，相同nonce的交易，查询出成功的
-	//3.如果有，先看from，from不一样，再对比区块，区块差小于等于1，则是被抢跑的，标记处MEV
-	//4.
 
 }

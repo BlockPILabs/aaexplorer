@@ -15,6 +15,7 @@ type MevInfo struct {
 	TxHash        string
 	BlockNumber   int64
 	Network       string
+	RelatedTxHash string
 	TxFromTag     string
 	TxFrom        string
 	TxTo          string
@@ -35,6 +36,9 @@ func (MevInfo) Fields() []ent.Field {
 		field.String("tx_hash").
 			MaxLen(255).
 			StructTag(`json:"txHash"`),
+		field.String("related_tx_hash").
+			MaxLen(255).
+			StructTag(`json:"relatedTxHash"`),
 		field.Int64("block_number").
 			StructTag(`json:"blockNumber"`),
 		field.String("network").

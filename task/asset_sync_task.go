@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/assetchangetrace"
@@ -56,12 +57,44 @@ func AssetSync() {
 	}
 	syncAccountBalance(client, accounts)
 	syncTokenPrice(client, tokens)
+	syncWTokenPrice(client)
 	client.AssetChangeTrace.Update().
 		Where(assetchangetrace.IDIn(changes[:]...)).
 		SetSyncFlag(1).
 		SetLastChangeTime(time.Now()).
 		Exec(context.Background())
 	//syncAssetValue(client, accountAddrs, tokenAddrs)
+}
+
+func syncWTokenPrice(client *ent.Client) {
+	var wtokens = make(map[string]string)
+	wtokens[config.WBNB] = config.BSC
+	wtokens[config.WETH] = config.Eth
+	wtokens[config.WMATIC] = config.Polygon
+	for token, value := range wtokens {
+		tokenPrice := moralis.GetTokenPrice(token, value)
+		curMillis := time.Now().UnixMilli()
+		exist, err := client.TokenPriceInfo.Query().Where(tokenpriceinfo.ContractAddressEqualFold(token), tokenpriceinfo.NetworkEqualFold(value)).Exist(context.Background())
+		if err != nil {
+			continue
+		}
+		if exist {
+			client.TokenPriceInfo.Update().
+				Where(tokenpriceinfo.ContractAddressEQ(token)).
+				SetTokenPrice(tokenPrice.UsdPrice).
+				SetLastTime(curMillis).
+				Exec(context.Background())
+		} else {
+			client.TokenPriceInfo.Create().
+				SetTokenPrice(tokenPrice.UsdPrice).
+				SetSymbol(tokenPrice.TokenSymbol).
+				SetContractAddress(token).
+				SetNetwork(value).
+				SetLastTime(curMillis).Save(context.Background())
+		}
+
+	}
+
 }
 
 func syncAssetValue(client *ent.Client, accounts []string, tokens []string) {
@@ -90,7 +123,7 @@ func syncTokenPrice(client *ent.Client, tokens []*ent.AssetChangeTrace) map[stri
 	for _, token := range tokens {
 		tokenPrice := moralis.GetTokenPrice(token.Address, token.Network)
 		curMillis := time.Now().UnixMilli()
-		exist, err := client.TokenPriceInfo.Query().Where(tokenpriceinfo.ContractAddressEqualFold(token.Address)).Exist(context.Background())
+		exist, err := client.TokenPriceInfo.Query().Where(tokenpriceinfo.ContractAddressEqualFold(token.Address), tokenpriceinfo.NetworkEqualFold(token.Network)).Exist(context.Background())
 		if err != nil {
 			continue
 		}
@@ -123,6 +156,8 @@ func syncAccountBalance(client *ent.Client, accounts []*ent.AssetChangeTrace) ma
 	var accountMap = make(map[string][]*moralis.TokenBalance)
 	for _, account := range accounts {
 		tokenBalances := moralis.GetTokenBalance(account.Address, account.Network)
+		nativeTokenBalance := moralis.GetNativeTokenBalance(account.Address, account.Network)
+		tokenBalances = addNativeToken(tokenBalances, nativeTokenBalance, account.Address, account.Network, client)
 		if len(tokenBalances) == 0 {
 			continue
 		}
@@ -149,4 +184,33 @@ func syncAccountBalance(client *ent.Client, accounts []*ent.AssetChangeTrace) ma
 	}
 
 	return accountMap
+}
+
+func addNativeToken(balances []*moralis.TokenBalance, native decimal.Decimal, address string, network string, client *ent.Client) []*moralis.TokenBalance {
+	if native.Equal(decimal.Zero) {
+		return balances
+	}
+	if balances == nil || len(balances) == 0 {
+		balances = []*moralis.TokenBalance{}
+	}
+	userAssetCreate := &moralis.TokenBalance{
+		Balance:  native,
+		Name:     getNativeName(network),
+		Decimals: config.EvmDecimal,
+	}
+	balances = append(balances, userAssetCreate)
+	return balances
+}
+
+func getNativeName(network string) string {
+
+	if network == config.EthNetwork {
+		return config.EthNative
+	} else if network == config.BscNetwork {
+		return config.BscNative
+	} else if network == config.PolygonNetwork {
+		return config.PolygonNative
+	}
+
+	return ""
 }
