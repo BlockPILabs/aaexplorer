@@ -6,16 +6,22 @@ import (
 	"errors"
 	"fmt"
 	"github.com/BlockPILabs/aa-scan/internal/log"
+	"strings"
 	"time"
 
 	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"sync"
 
-	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/lib/pq" // postgres driver
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/go-sql-driver/mysql" // mysql driver
+	_ "github.com/lib/pq"              // postgres driver
+	_ "github.com/mattn/go-sqlite3"    // sqlite3
 )
+
+type client struct {
+	Client *ent.Client
+	Config *config.DbConfig
+}
 
 var clients = &sync.Map{}
 
@@ -43,19 +49,30 @@ func Start(cfg *config.Config) error {
 			}
 			drv.DB().SetConnMaxLifetime(leftTime)
 		}
+
+		opts := []ent.Option{
+			ent.Driver(drv),
+		}
+		if database.Schema != nil {
+			opts = append(opts, ent.AlternateSchema(*database.Schema))
+		}
 		// connect
-		client := ent.NewClient(ent.Driver(drv))
+		c := ent.NewClient(opts...)
 		if err != nil {
 			return err
 		}
 		if database.Debug {
-			client = client.Debug()
+			c = c.Debug()
+		}
+		_c := &client{
+			Client: c,
+			Config: database,
 		}
 		if i == 0 {
-			clients.Store(config.Default, client)
+			clients.Store(config.Default, _c)
 		}
 		if len(database.Group) > 0 {
-			clients.Store(database.Group, client)
+			clients.Store(database.Group, _c)
 		}
 
 	}
@@ -69,13 +86,19 @@ func Client(ctx context.Context, group ...string) (*ent.Client, error) {
 	}
 	c, ok := clients.Load(g)
 	if !ok {
+		if li := strings.LastIndexByte(g, ':'); li >= 0 {
+			return Client(ctx, g[0:li])
+		}
+		if g != config.Default {
+			return Client(ctx)
+		}
 		log.Context(ctx).Error("not found group")
 		return nil, errors.New(fmt.Sprintf("not found group %s", g))
 	}
-	client, ok := c.(*ent.Client)
+	cc, ok := c.(*client)
 	if !ok {
 		log.Context(ctx).Error("group error")
-		return nil, errors.New(fmt.Sprintf("group error %s", g))
+		return nil, errors.New(fmt.Sprintf("group connect error %s", g))
 	}
-	return client, nil
+	return cc.Client, nil
 }

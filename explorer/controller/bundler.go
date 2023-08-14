@@ -14,7 +14,9 @@ func GetBundlers(fcx *fiber.Ctx) error {
 	logger := log.Context(fcx.UserContext())
 
 	logger.Debug("start get bundlers")
-	req := vo.GetBundlersRequest{}
+	req := vo.GetBundlersRequest{
+		PaginationRequest: vo.NewDefaultPaginationRequest(),
+	}
 	err := fcx.ParamsParser(&req)
 	if err != nil {
 		logger.Warn("params parse error", "err", err)

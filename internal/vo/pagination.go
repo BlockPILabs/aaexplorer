@@ -15,10 +15,18 @@ type PaginationAny struct {
 }
 
 type PaginationRequest struct {
-	PerPage int `json:"perPage" query:"perPage" params:"perPage" validate:"required,min=1"`
-	Page    int `json:"page" query:"page" params:"page" validate:"required,min=1"`  // page number
-	Sort    int `json:"sort" query:"sort" params:"sort" validate:"min=0,max=50"`    // sort field idx
-	Order   int `json:"order" query:"order" params:"order" validate:"min=-1,max=1"` // order sort : -1 desc   1 asc
+	PerPage int      `json:"perPage" query:"perPage" params:"perPage" validate:"required,min=1"`
+	Page    int      `json:"page" query:"page" params:"page" validate:"required,min=1"`  // page number
+	Sort    int      `json:"sort" query:"sort" params:"sort" validate:"min=0,max=50"`    // sort field idx
+	Order   int      `json:"order" query:"order" params:"order" validate:"min=-1,max=1"` // order sort : -1 desc   1 asc
+	Select  []string `json:"-" query:"-" params:"-" `
+}
+
+func NewDefaultPaginationRequest() PaginationRequest {
+	return PaginationRequest{
+		PerPage: config.DefaultPerPage,
+		Page:    config.MinPage,
+	}
 }
 
 func (r *PaginationRequest) GetOffset() int {

@@ -3,6 +3,7 @@ package config
 import (
 	"entgo.io/ent/dialect"
 	"fmt"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/version"
 	"strconv"
 	"strings"
@@ -10,19 +11,20 @@ import (
 )
 
 type DbConfig struct {
-	Group           string `mapstructure:"group" toml:"group"`
-	Type            string `mapstructure:"type" toml:"type"`
-	Host            string `mapstructure:"host" toml:"host"`
-	Port            int    `mapstructure:"port" toml:"port"`
-	User            string `mapstructure:"user" toml:"user"`
-	Pass            string `mapstructure:"pass" toml:"pass"`
-	Name            string `mapstructure:"name" toml:"name"`
-	ApplicationName string `mapstructure:"applicationName" toml:"applicationName"`
-	MaxIdleCount    int    `mapstructure:"maxIdleCount" toml:"maxIdleCount"`
-	MaxOpenConns    int    `mapstructure:"maxOpenConns" toml:"maxOpenConns"`
-	MaxLifetime     int64  `mapstructure:"maxLifetime" toml:"maxLifetime"`
-	Debug           bool   `mapstructure:"debug" toml:"debug"`
-	SslMode         string `mapstructure:"sslMode" toml:"sslMode"`
+	Group           string            `mapstructure:"group" toml:"group"`
+	Schema          *ent.SchemaConfig `mapstructure:"schema" toml:"schema"`
+	Type            string            `mapstructure:"type" toml:"type"`
+	Host            string            `mapstructure:"host" toml:"host"`
+	Port            int               `mapstructure:"port" toml:"port"`
+	User            string            `mapstructure:"user" toml:"user"`
+	Pass            string            `mapstructure:"pass" toml:"pass"`
+	Name            string            `mapstructure:"name" toml:"name"`
+	ApplicationName string            `mapstructure:"applicationName" toml:"applicationName"`
+	MaxIdleCount    int               `mapstructure:"maxIdleCount" toml:"maxIdleCount"`
+	MaxOpenConns    int               `mapstructure:"maxOpenConns" toml:"maxOpenConns"`
+	MaxLifetime     int64             `mapstructure:"maxLifetime" toml:"maxLifetime"`
+	Debug           bool              `mapstructure:"debug" toml:"debug"`
+	SslMode         string            `mapstructure:"sslMode" toml:"sslMode"`
 }
 
 func DefaultDatabaseConfig() []*DbConfig {
@@ -35,6 +37,7 @@ func DefaultDatabaseConfig() []*DbConfig {
 			User:            "postgres",
 			Pass:            "123456",
 			Name:            "postgres",
+			Schema:          &ent.SchemaConfig{},
 			ApplicationName: version.Name,
 			MaxIdleCount:    50,
 			MaxOpenConns:    100,

@@ -14,7 +14,9 @@ func GetPaymasters(fcx *fiber.Ctx) error {
 	logger := log.Context(fcx.UserContext())
 
 	logger.Debug("start get paymasters")
-	req := vo.GetPaymastersRequest{}
+	req := vo.GetPaymastersRequest{
+		PaginationRequest: vo.NewDefaultPaginationRequest(),
+	}
 	err := fcx.ParamsParser(&req)
 	if err != nil {
 		logger.Warn("params parse error", "err", err)

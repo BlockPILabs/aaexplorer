@@ -14,7 +14,9 @@ func GetUserOps(fcx *fiber.Ctx) error {
 	logger := log.Context(fcx.UserContext())
 
 	logger.Debug("start get userops")
-	req := vo.GetUserOpsRequest{}
+	req := vo.GetUserOpsRequest{
+		PaginationRequest: vo.NewDefaultPaginationRequest(),
+	}
 	err := fcx.ParamsParser(&req)
 	if err != nil {
 		logger.Warn("params parse error", "err", err)
