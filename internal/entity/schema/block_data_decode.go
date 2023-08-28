@@ -16,9 +16,10 @@ type BlockDataDecode struct {
 
 func (BlockDataDecode) Fields() []ent.Field {
 	return []ent.Field{
-		field.Int64("id").StorageKey("number").StructTag(`json:"number"`).GoType(decimal.Decimal{}),
+		field.Int64("id").StorageKey("id").StructTag(`json:"id"`).GoType(decimal.Decimal{}),
 		field.Time("time").StructTag(`json:"time"`),
 		field.Time("create_time").StructTag(`json:"createTime"`),
+		field.Int64("number").StructTag("number"),
 		field.String("hash").NotEmpty().MaxLen(255).StructTag(`json:"hash"`),
 		field.String("parent_hash").StructTag(`json:"parentHash"`),
 		field.Int64("nonce").StructTag(`json:"nonce"`).GoType(decimal.Decimal{}),
