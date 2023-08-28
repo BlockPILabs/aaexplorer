@@ -3,6 +3,7 @@ package parser
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
@@ -116,6 +117,7 @@ func doParse(block *types.Block, client *ethclient.Client) {
 		sign := input[:10]
 		input = input[10:]
 		if sign != HandleOpsSign {
+			addMevTx(tx, client)
 			continue
 		}
 
@@ -140,6 +142,34 @@ func doParse(block *types.Block, client *ethclient.Client) {
 	}
 	insertUserOpsInfo(blockUserOpsInfos)
 	insertTransactions(blockTransactionInfos)
+}
+
+func addMevTx(tx *types.Transaction, client *ethclient.Client) {
+	receipt, err := client.TransactionReceipt(context.Background(), tx.Hash())
+	if err != nil {
+		return
+	}
+	logs := receipt.Logs
+	events, _ := parseLogs(logs)
+	if len(events) == 0 {
+		return
+	}
+	cli, err := entity.Client(context.Background())
+	if err != nil {
+		return
+	}
+	for key, event := range events {
+		sender := substring(key, 0, 42)
+		nonce, err := strconv.Atoi(substringFromIndex(key, 42))
+		if err != nil {
+			continue
+		}
+		fmt.Println(event)
+		fmt.Println(sender)
+		fmt.Println(nonce)
+		cli.AAUserOpsCalldata.Create().SetSender(sender).SetNetwork("").SetTxHash(tx.Hash().String()).SetTarget(event.Target).SetBlockNumber(receipt.BlockNumber.Int64()).Save(context.Background())
+	}
+
 }
 
 func getFrom(tx *types.Transaction, client *ethclient.Client) string {

@@ -78,7 +78,7 @@ func GetWalletBalanceDetail(accountAddress string, network string) []*WalletBala
 }
 
 func GetNativePrice(network string) *decimal.Decimal {
-	client, err := entity.Client(context.Background())
+	client, err := entity.Client(context.Background(), network)
 	if err != nil {
 		return nil
 	}
@@ -110,6 +110,13 @@ func GetNativePrice(network string) *decimal.Decimal {
 	}
 
 	return &prices[0].TokenPrice
+}
+
+type WhaleOverview struct {
+	TxDominance     decimal.Decimal
+	Represent       decimal.Decimal
+	TotalBalance    decimal.Decimal
+	TotalBalanceETH decimal.Decimal
 }
 
 func WalletTracker(accountAddress string, network string) {

@@ -2,8 +2,11 @@ package task
 
 import (
 	"context"
+	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/tokenpriceinfo"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/userassetinfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/useropsinfo"
 	"github.com/BlockPILabs/aa-scan/parser"
 	"github.com/procyon-projects/chrono"
@@ -31,6 +34,7 @@ func doHourStatis() {
 	if err != nil {
 		return
 	}
+
 	//client := ent.NewClient(ent.Driver(cli))
 	now := time.Now()
 	startTime := time.Date(now.Year(), now.Month(), now.Day()-7, 0, 0, 0, 0, now.Location())
@@ -68,6 +72,67 @@ func doHourStatis() {
 	bulkInsertPaymasterStatsHour(context.Background(), client, paymasterList)
 	bulkInsertFactoryStatsHour(context.Background(), client, factoryList)
 	dailyStatisticHour.Save(context.Background())
+	saveWhaleStatisticHour(context.Background(), client, startTime)
+}
+
+func saveWhaleStatisticHour(ctx context.Context, client *ent.Client, time time.Time) {
+	assetInfos, err := client.UserAssetInfo.Query().Where(userassetinfo.NetworkEQ("")).All(ctx)
+	if err != nil {
+		return
+	}
+	if len(assetInfos) == 0 {
+		return
+	}
+	var contractMap = make(map[string]int)
+	var contracts []string
+	for _, asset := range assetInfos {
+
+		_, ok := contractMap[asset.ContractAddress]
+		if !ok {
+			contractMap[asset.ContractAddress] = 1
+			contracts = append(contracts, asset.ContractAddress)
+		}
+	}
+	priceInfos, err := client.TokenPriceInfo.Query().Where(tokenpriceinfo.ContractAddressIn(contracts[:]...)).All(ctx)
+	if err != nil {
+		return
+	}
+	if len(priceInfos) == 0 {
+		return
+	}
+	var priceMap = make(map[string]decimal.Decimal)
+	for _, priceInfo := range priceInfos {
+		priceMap[priceInfo.ContractAddress] = priceInfo.TokenPrice
+	}
+
+	var valueMap = make(map[string]decimal.Decimal)
+	for _, asset := range assetInfos {
+		preValue, accountOk := valueMap[asset.AccountAddress]
+		if !accountOk {
+			preValue = decimal.Zero
+		}
+		price, ok := priceMap[asset.ContractAddress]
+		if !ok {
+			valueMap[asset.AccountAddress] = preValue
+		} else {
+			valueMap[asset.AccountAddress] = asset.Amount.Mul(price).Add(preValue)
+		}
+
+	}
+
+	var totalUsd = decimal.Zero
+	var addrCount = 0
+	for _, value := range valueMap {
+		if value.Cmp(decimal.NewFromInt(config.WhaleUsd)) < 0 {
+			continue
+		}
+		addrCount += 1
+		totalUsd = totalUsd.Add(value)
+
+	}
+	whaleHour := client.WhaleStatisticHour.Create().SetWhaleNum(int64(addrCount)).SetTotalUsd(totalUsd).SetNetwork("").SetStatisticTime(time)
+	whaleHour.Save(ctx)
+
 }
 
 func calHourStatistic(client *ent.Client, infos []*ent.UserOpsInfo, startTime time.Time) *ent.DailyStatisticHourCreate {
