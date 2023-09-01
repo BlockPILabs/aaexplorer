@@ -16,7 +16,8 @@ type Network struct {
 // Fields of the Network.
 func (Network) Fields() []ent.Field {
 	return []ent.Field{
-		field.Int8("id").StructTag(`json:"id"`),
+		field.Int64("id").StructTag(`json:"id"`),
+		field.Int64("chain_id").StructTag(`json:"chainId"`),
 		field.String("name").MaxLen(255).StructTag(`json:"name"`),
 		field.String("network").Unique().MaxLen(127).StructTag(`json:"network"`),
 		field.String("logo").MaxLen(255).StructTag(`json:"logo"`),

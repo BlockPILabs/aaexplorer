@@ -3,7 +3,7 @@ package task
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
+	"encoding/json"
 	"entgo.io/ent/dialect/sql"
 	"fmt"
 	"github.com/BlockPILabs/aa-scan/config"
@@ -17,11 +17,16 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/log"
 	"github.com/BlockPILabs/aa-scan/internal/service"
 	"github.com/BlockPILabs/aa-scan/internal/utils"
+	"github.com/BlockPILabs/aa-scan/task/aa"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
+	"golang.org/x/sync/errgroup"
+	"math/big"
 	"strconv"
 	"strings"
 	"sync"
@@ -57,10 +62,11 @@ type CallDetail struct {
 }
 
 type _evmParser struct {
-	logger     log.Logger
-	config     *config.Config
-	startBlock map[string]int64
-	abi        abi.ABI
+	logger          log.Logger
+	config          *config.Config
+	startBlock      map[string]int64
+	abi             abi.ABI
+	handleOpsMethod *abi.Method
 }
 
 type parserBlock struct {
@@ -73,6 +79,7 @@ type parserTransaction struct {
 	receipt         *ent.TransactionReceiptDecode
 	userOpInfo      *ent.AaBlockInfo
 	userops         []*ent.AAUserOpsInfo
+	logs            []*aa.Log
 	userOpsCalldata []*ent.AAUserOpsCalldata
 }
 
@@ -96,6 +103,11 @@ func InitEvmParse(config *config.Config, logger log.Logger) error {
 	}
 
 	t.abi = jsonAbi
+	t.handleOpsMethod, err = jsonAbi.MethodById(hexutil.MustDecode(HandleOpsSign))
+	if err != nil {
+		logger.Error("abi method parse error", "err", err)
+		return err
+	}
 
 	_, err = dayScheduler.ScheduleWithCron(func(ctx context.Context) {
 		t.ScanBlock(log.WithContext(ctx, logger.With("action", "ScanBlock")))
@@ -246,15 +258,17 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 			tx.Commit()
 			wg.Done()
 		}()
-		blockDataDecodes, transactionDecodes, receiptDecodes, blocksMap, transactionMap := t.getParseData(ctx, client, blockIds...)
-		fmt.Println(blockDataDecodes)
-		fmt.Println(transactionDecodes)
-		fmt.Println(receiptDecodes)
-		fmt.Println(blocksMap)
-		fmt.Println(transactionMap)
-
+		blockDataDecodes, transactionDecodes, receiptDecodes, blocksMap, transactionMap, err := t.getParseData(ctx, client, blockIds...)
+		_ = (blockDataDecodes)
+		_ = (transactionDecodes)
+		_ = (receiptDecodes)
+		_ = (blocksMap)
+		_ = (transactionMap)
+		if err != nil {
+			log.Context(ctx).Error("get parse data error", "err", err)
+		}
 		for _, block := range blocksMap {
-			t.doParse(block)
+			t.doParse(network, block)
 		}
 
 	}()
@@ -268,56 +282,52 @@ func (t *_evmParser) getParseData(ctx context.Context, client *ent.Client, block
 	transactionReceiptDecodes []*ent.TransactionReceiptDecode,
 	blocksMap map[int64]*parserBlock,
 	transactionMap map[string]*parserTransaction,
+	retErr error,
 ) {
 
-	wg := sync.WaitGroup{}
-	wg.Add(3)
+	timeoutCtx, _ := context.WithTimeout(ctx, time.Minute)
 
-	go func() {
-		defer func() {
-			wg.Done()
-		}()
+	g, _ := errgroup.WithContext(timeoutCtx)
+	g.Go(func() error {
+
 		var err error
 		blockDataDecodes, err = client.BlockDataDecode.Query().
 			Where(
 				blockdatadecode.IDIn(
 					blockIds...,
 				),
-			).All(ctx)
+			).All(timeoutCtx)
 		if err != nil {
 			log.Context(ctx).Error("not find BlockDataDecode", "err", err)
 		}
-	}()
+		return err
+	})
 
-	go func() {
-		defer func() {
-			wg.Done()
-		}()
+	g.Go(func() error {
 		var err error
 
 		transactionDecodes, err = client.TransactionDecode.Query().
 			Where(
 				transactiondecode.BlockNumberIn(blockIds...),
-			).All(ctx)
+			).All(timeoutCtx)
 		if err != nil {
 			log.Context(ctx).Error("not find TransactionDecode", "err", err)
 		}
-	}()
+		return err
+	})
 
-	go func() {
-		defer func() {
-			wg.Done()
-		}()
+	g.Go(func() error {
 		var err error
 		transactionReceiptDecodes, err = client.TransactionReceiptDecode.Query().
 			Where(
 				transactionreceiptdecode.BlockNumberIn(blockIds...),
-			).All(ctx)
+			).All(timeoutCtx)
 		if err != nil {
 			log.Context(ctx).Error("not find TransactionReceiptDecode", "err", err)
 		}
-	}()
-	wg.Wait()
+		return err
+	})
+	retErr = g.Wait()
 
 	blocksMap = map[int64]*parserBlock{}
 	transactionMap = map[string]*parserTransaction{}
@@ -372,7 +382,7 @@ func (t *_evmParser) getCurrentTimestampMillis() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
-func (t *_evmParser) doParse(block *parserBlock) {
+func (t *_evmParser) doParse(network *ent.Network, block *parserBlock) {
 
 	parserTransactions := block.transitions
 
@@ -391,7 +401,7 @@ func (t *_evmParser) doParse(block *parserBlock) {
 			continue
 		}
 
-		userOpsInfos, transactionInfo := t.parseUserOps(input, block, parserTx)
+		userOpsInfos, transactionInfo := t.parseUserOps(network, block, parserTx)
 
 		if userOpsInfos != nil {
 			for _, userOps := range *userOpsInfos {
@@ -501,8 +511,69 @@ func (t *_evmParser) insertUserOpsInfo(infos []schema.UserOpsInfo) {
 	}
 }
 
-func (t *_evmParser) parseUserOps(input string, block *parserBlock, parserTx *parserTransaction) (*[]schema.UserOpsInfo, *schema.TransactionInfo) {
+func (t *_evmParser) parseUserOps(network *ent.Network, block *parserBlock, parserTx *parserTransaction) (*[]schema.UserOpsInfo, *schema.TransactionInfo) {
 
+	data, err := hexutil.Decode(parserTx.transaction.Input)
+	if err != nil {
+		return nil, nil
+	}
+
+	unpack, err := t.handleOpsMethod.Inputs.UnpackValues(data[4:])
+	if err != nil {
+		return nil, nil
+	}
+	if len(unpack) < 2 {
+		return nil, nil
+	}
+
+	beneficiary := parserTx.transaction.FromAddr
+	if beneficiaryAddr, ok := unpack[1].(common.Address); ok {
+		beneficiary = beneficiaryAddr.Hex()
+	}
+
+	opsBytes, _ := json.Marshal(unpack[0])
+	var ops []*aa.UserOperation
+	_ = json.Unmarshal(opsBytes, &ops)
+	err = json.Unmarshal([]byte(parserTx.receipt.Logs), &parserTx.logs)
+	if err != nil {
+		return nil, nil
+	}
+
+	events, opsValMap := t.parseLogs(parserTx.logs)
+	fmt.Println(events)
+	fmt.Println(opsValMap)
+
+	var userOpsInfos []ent.AAUserOpsInfo
+	for _, op := range ops {
+		callDetails := t.parseCallData(hexutil.Encode(op.CallData))
+		var target = ""
+		if callDetails != nil && len(callDetails) > 0 {
+			target = callDetails[0].target
+		}
+		fmt.Println(target)
+		userOpHash := op.GetUserOpHash(common.HexToAddress(parserTx.transaction.ToAddr), big.NewInt(network.ChainID))
+		userOpsInfo := ent.AAUserOpsInfo{
+			UserOperationHash: userOpHash.Hex(),
+		}
+
+		userOpsInfos = append(userOpsInfos, userOpsInfo)
+		fmt.Println(userOpsInfos)
+	}
+
+	fmt.Println(beneficiary)
+	//
+	//fmt.Println(ret[0])
+	//
+	//ops, ok := (ret[0]).([]*aa.UserOperation)
+	//if !ok {
+	//	return nil, nil
+	//}
+	//
+	//for _, op := range ops {
+	//	fmt.Println(op)
+	//}
+	//
+	//fmt.Println(ops)
 	/*
 		start := utils.TruncateString(input, 64)
 		startIdx := utils.HexToDecimal(start)
@@ -649,7 +720,7 @@ func (t *_evmParser) getUserOpsCalldatas(details []*CallDetail, tx *types.Transa
 	return userOpsCalldatas
 }
 
-func (t *_evmParser) parseLogs(logs []*types.Log) (map[string]UserOperationEvent, map[string]decimal.Decimal) {
+func (t *_evmParser) parseLogs(logs []*aa.Log) (map[string]UserOperationEvent, map[string]decimal.Decimal) {
 
 	events := make(map[string]UserOperationEvent)
 	opsTxValMap := make(map[string]decimal.Decimal)
@@ -658,18 +729,18 @@ func (t *_evmParser) parseLogs(logs []*types.Log) (map[string]UserOperationEvent
 		if len(topics) < 1 {
 			continue
 		}
-		sign := topics[0].String()
-		dataStr := hex.EncodeToString(log.Data)
+		sign := topics[0]
+		dataStr := log.Data
 		if len(dataStr) <= 2 {
 			continue
 		}
-		data := hex.EncodeToString(log.Data)
+		data := log.Data[2:]
 		if sign == UserOperationEventSign {
 
 			event := UserOperationEvent{
-				OpsHash:       topics[1].String(),
-				Sender:        strings.ToLower(utils.HexToAddress(topics[2].String())),
-				Paymaster:     strings.ToLower(utils.HexToAddress(topics[3].String())),
+				OpsHash:       topics[1],
+				Sender:        strings.ToLower(utils.HexToAddress(topics[2])),
+				Paymaster:     strings.ToLower(utils.HexToAddress(topics[3])),
 				Nonce:         utils.HexToDecimal(utils.Substring(data, 0, 64*1)).Int64(),
 				Success:       *utils.HexToDecimalInt(utils.Substring(data, 64*1, 64*2)),
 				ActualGasCost: utils.HexToDecimal(utils.Substring(data, 64*2, 64*3)).Int64(),
@@ -678,7 +749,7 @@ func (t *_evmParser) parseLogs(logs []*types.Log) (map[string]UserOperationEvent
 			events[event.Sender+strconv.Itoa(int(event.Nonce))] = event
 		} else if sign == LogTransferEventSign {
 			txValue := utils.DivRav(utils.HexToDecimal(utils.TruncateString(data, 64)).Int64())
-			opsTxValMap[utils.HexToAddress(topics[2].String())] = txValue
+			opsTxValMap[utils.HexToAddress(topics[2])] = txValue
 		}
 
 	}
