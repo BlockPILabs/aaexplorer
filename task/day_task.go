@@ -5,7 +5,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/useropsinfo"
-	"github.com/BlockPILabs/aa-scan/parser"
+	"github.com/BlockPILabs/aa-scan/internal/utils"
 	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
 	"log"
@@ -195,7 +195,7 @@ func calPaymasterStatisDay(client *ent.Client, bundlerMap map[string][]*ent.User
 	for key, userOpsInfoList := range bundlerMap {
 		totalCount += len(userOpsInfoList)
 		for _, userOpsInfo := range userOpsInfoList {
-			totalFee = totalFee.Add(parser.DivRav(userOpsInfo.ActualGasCost))
+			totalFee = totalFee.Add(utils.DivRav(userOpsInfo.ActualGasCost))
 		}
 		paymasters = append(paymasters, client.PaymasterStatisDay.Create().
 			SetPaymaster(key).

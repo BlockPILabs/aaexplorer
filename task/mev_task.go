@@ -6,7 +6,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropsinfo"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactionreceipt"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactionreceiptdecode"
 )
 
 func MEVTask() {
@@ -16,7 +16,7 @@ func MEVTask() {
 		return
 	}
 	var blockMumber = 11234455
-	failedReceipts, err := client.TransactionReceipt.Query().Where(transactionreceipt.StatusEQ("0X0"), transactionreceipt.BlockNumEQ(int64(blockMumber))).All(context.Background())
+	failedReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.StatusEQ("0X0"), transactionreceiptdecode.BlockNumberEQ(int64(blockMumber))).All(context.Background())
 	if err != nil {
 		return
 	}
@@ -25,7 +25,7 @@ func MEVTask() {
 	}
 	var failedHashes []string
 	for _, receipt := range failedReceipts {
-		failedHashes = append(failedHashes, receipt.TransactionHash)
+		failedHashes = append(failedHashes, receipt.ID)
 	}
 	failedOps, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.TxHashIn(failedHashes[:]...)).All(context.Background())
 	if err != nil {
@@ -60,8 +60,8 @@ func MEVTask() {
 			if txHash == same.TxHash {
 				continue
 			}
-			successReceipts, err := client.TransactionReceipt.Query().
-				Where(transactionreceipt.TransactionHashEQ(same.TxHash), transactionreceipt.StatusEQ("0x1")).All(context.Background())
+			successReceipts, err := client.TransactionReceiptDecode.Query().
+				Where(transactionreceiptdecode.ID(same.TxHash), transactionreceiptdecode.StatusEQ("0x1")).All(context.Background())
 			if err != nil {
 				continue
 			}
@@ -69,7 +69,7 @@ func MEVTask() {
 				continue
 			}
 
-			successOps, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.TxHashEQ(successReceipts[0].TransactionHash)).All(context.Background())
+			successOps, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.TxHashEQ(successReceipts[0].ID)).All(context.Background())
 			if err != nil {
 				continue
 			}

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/blockdata"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/blockdatadecode"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/blockscanrecord"
 )
 
@@ -28,14 +28,14 @@ func ScanBlock() {
 		fmt.Println(network)
 		//1.get max block num by network
 		//2.
-		blockData, err := client.BlockData.Query().Order(ent.Desc(blockdata.FieldBlockNum)).Limit(1).All(context.Background())
+		blockData, err := client.BlockDataDecode.Query().Order(ent.Desc(blockdatadecode.FieldID)).Limit(1).All(context.Background())
 		if err != nil {
 			continue
 		}
 		if len(blockData) == 0 {
 			continue
 		}
-		for i := last + 1; i <= blockData[0].BlockNum; i++ {
+		for i := last + 1; i <= blockData[0].ID.IntPart(); i++ {
 			//do biz
 
 			client.BlockScanRecord.Update().Where(blockscanrecord.IDEQ(record.ID)).SetLastBlockNumber(i).Exec(context.Background())

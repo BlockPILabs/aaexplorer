@@ -81,8 +81,9 @@ type Config struct {
 	BaseConfig `mapstructure:",squash" toml:",squash"`
 
 	// Options for services
-	Api       *ApiConfig  `mapstructure:"api" toml:"api"`
-	Databases []*DbConfig `mapstructure:"databases" toml:"databases"`
+	Api       *ApiConfig       `mapstructure:"api" toml:"api"`
+	Databases []*DbConfig      `mapstructure:"databases" toml:"databases"`
+	EvmParser *EvmParserConfig `mapstructure:"evmparser" toml:"evmparser"`
 }
 
 // DefaultConfig returns a default configuration
@@ -91,6 +92,7 @@ func DefaultConfig() *Config {
 		BaseConfig: DefaultBaseConfig(),
 		Api:        DefaultApiConfig(),
 		Databases:  DefaultDatabaseConfig(),
+		EvmParser:  DefaultEvmParserConfig(),
 	}
 }
 

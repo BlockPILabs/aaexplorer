@@ -8,16 +8,17 @@ import (
 	"time"
 )
 
-type TransactionReceipt struct {
+type TransactionReceiptDecode struct {
 	ent.Schema
 }
 
-func (TransactionReceipt) Fields() []ent.Field {
+func (TransactionReceiptDecode) Fields() []ent.Field {
 	return []ent.Field{
+		field.String("id").StorageKey("transaction_hash").
+			MaxLen(255).
+			StructTag(`json:"transactionHash"`),
 		field.Time("time").
 			StructTag(`json:"time"`),
-		field.Int64("block_num").
-			StructTag(`json:"blockNum"`),
 		field.Time("create_time").
 			Default(time.Now).
 			StructTag(`json:"createTime"`).
@@ -25,8 +26,7 @@ func (TransactionReceipt) Fields() []ent.Field {
 		field.String("block_hash").
 			MaxLen(255).
 			StructTag(`json:"blockHash"`),
-		field.String("block_number").
-			MaxLen(255).
+		field.Int64("block_number").
 			StructTag(`json:"blockNumber"`),
 		field.String("contract_address").
 			MaxLen(255).
@@ -37,7 +37,7 @@ func (TransactionReceipt) Fields() []ent.Field {
 		field.String("effective_gas_price").
 			MaxLen(255).
 			StructTag(`json:"effective_gas_price"`),
-		field.String("from").
+		field.String("from_addr").
 			MaxLen(255).
 			StructTag(`json:"from"`),
 		field.String("gas_used").
@@ -52,12 +52,9 @@ func (TransactionReceipt) Fields() []ent.Field {
 		field.String("status").
 			MaxLen(255).
 			StructTag(`json:"status"`),
-		field.String("to").
+		field.String("to_addr").
 			MaxLen(255).
 			StructTag(`json:"to"`),
-		field.String("transaction_hash").
-			MaxLen(255).
-			StructTag(`json:"transactionHash"`),
 		field.String("transaction_index").
 			MaxLen(255).
 			StructTag(`json:"transactionIndex"`),
@@ -67,12 +64,12 @@ func (TransactionReceipt) Fields() []ent.Field {
 	}
 }
 
-func (TransactionReceipt) Edges() []ent.Edge {
+func (TransactionReceiptDecode) Edges() []ent.Edge {
 	return nil
 }
 
-func (TransactionReceipt) Annotations() []schema.Annotation {
+func (TransactionReceiptDecode) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "transaction_receipt"},
+		entsql.Annotation{Table: "transaction_receipt_decode"},
 	}
 }
