@@ -21,6 +21,11 @@ const (
 	WETH   = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
 	WMATIC = "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
 	WBNB   = "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c"
+
+	WhaleUsd           = 50000
+	AddressTypeAccount = 1
+	AddressTypeToken   = 2
+	ZeroAddress        = "0x0000000000000000000000000000000000000000"
 )
 
 const (

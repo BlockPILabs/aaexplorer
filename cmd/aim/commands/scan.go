@@ -15,6 +15,7 @@ import (
 	"github.com/procyon-projects/chrono"
 	"github.com/spf13/cobra"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -44,6 +45,8 @@ var ScanCmd = &cobra.Command{
 		//getAbi()
 		//moralis.TestToken("0x3a55815977ab0e12E4Fcf1a66165142C41dbda26")
 		task.InitEvmParse(config, logger.With("module", "task"))
+		test2()
+		task.AssetSync()
 		aimos.TrapSignal(logger, func() {})
 
 		//task.InitTask()
@@ -51,6 +54,47 @@ var ScanCmd = &cobra.Command{
 		// Run forever.
 		select {}
 	},
+}
+
+func test2() {
+	ipfsURI := "ipfs://c5b0c8a705e0fbd783562ca9680813e064c97a0e8de4f71501601c1d6d1d00b8"
+	ipfsHash := extractCIDFromURI(ipfsURI)
+
+	ipfsContent, err := fetchIPFSContent(ipfsHash)
+	if err != nil {
+		fmt.Println("Error fetching IPFS content:", err)
+		return
+	}
+
+	fmt.Println("IPFS Content:", string(ipfsContent))
+}
+
+func extractCIDFromURI(ipfsURI string) string {
+	parts := strings.Split(ipfsURI, "://")
+	if len(parts) != 2 || parts[0] != "ipfs" {
+		return ""
+	}
+	return parts[1]
+}
+
+func fetchIPFSContent(ipfsHash string) ([]byte, error) {
+	url := fmt.Sprintf("https://dweb.link/ipfs/%s", ipfsHash)
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Failed to fetch IPFS content. Status code: %d", resp.StatusCode)
+	}
+
+	content, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return content, nil
 }
 
 func test1() {

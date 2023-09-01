@@ -46,7 +46,7 @@ func AssetSync() {
 	var changes []int64
 
 	for _, changeTrace := range changeTraces {
-		if changeTrace.AddressType == 1 {
+		if changeTrace.AddressType == config.AddressTypeAccount {
 			accounts = append(accounts, changeTrace)
 			accountAddrs = append(accountAddrs, changeTrace.Address)
 		} else {

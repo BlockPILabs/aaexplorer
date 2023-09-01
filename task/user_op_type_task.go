@@ -83,6 +83,7 @@ func doTaskDay(days int) {
 			SetUserOpSign(source).
 			SetNetwork(opsCalldatas[0].Network)
 		userOpCreates = append(userOpCreates, userOpCreate)
+
 	}
 	client.UserOpTypeStatistic.Delete().
 		Where(useroptypestatistic.StatisticTypeEQ("d"+string(days)), useroptypestatistic.NetworkEQ(network)).Exec(context.Background())
