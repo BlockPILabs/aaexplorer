@@ -13,7 +13,6 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactiondecode"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactionreceiptdecode"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/shopspring/decimal"
 	"log"
 	"strings"
 	"time"
@@ -51,23 +50,23 @@ func ScanBlock() {
 		fmt.Println(network)
 		//1.get max block num by network
 		//2.
-		blockData, err := cli.BlockDataDecode.Query().Order(ent.Desc(blockdatadecode.FieldNumber)).Limit(1).All(context.Background())
+		blockData, err := cli.BlockDataDecode.Query().Order(ent.Desc(blockdatadecode.FieldID)).Limit(1).All(context.Background())
 		if err != nil {
 			continue
 		}
 		if len(blockData) == 0 {
 			continue
 		}
-		for i := last + 1; i <= blockData[0].Number; i++ {
+		for i := last + 1; i <= blockData[0].ID; i++ {
 			//do biz
-			transactions, err := cli.TransactionDecode.Query().Where(transactiondecode.BlockNumberEQ(decimal.NewFromInt(i))).All(context.Background())
+			transactions, err := cli.TransactionDecode.Query().Where(transactiondecode.BlockNumberEQ(i)).All(context.Background())
 			if err != nil {
 				continue
 			}
 			if len(transactions) == 0 {
 				continue
 			}
-			receipts, err := cli.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.BlockNumberEQ(decimal.NewFromInt(int64(i)))).All(context.Background())
+			receipts, err := cli.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.BlockNumberEQ(i)).All(context.Background())
 			if err != nil {
 				continue
 			}
@@ -157,8 +156,8 @@ func saveTrace(network string, address string, addressType int, receipt *ent.Tra
 	trace := cli.AssetChangeTrace.Create().
 		SetNetwork(network).
 		SetSyncFlag(0).
-		SetTxHash(receipt.TransactionHash).
-		SetBlockNumber(receipt.BlockNumber.CoefficientInt64()).
+		SetTxHash(receipt.ID).
+		SetBlockNumber(receipt.BlockNumber).
 		SetLastChangeTime(time.Now()).
 		SetAddress(address).
 		SetAddressType(addressType)

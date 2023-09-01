@@ -45,8 +45,8 @@ var ScanCmd = &cobra.Command{
 		//getAbi()
 		//moralis.TestToken("0x3a55815977ab0e12E4Fcf1a66165142C41dbda26")
 		task.InitEvmParse(config, logger.With("module", "task"))
-		test2()
-		task.AssetSync()
+		//test2()
+		//task.AssetSync()
 		aimos.TrapSignal(logger, func() {})
 
 		//task.InitTask()
