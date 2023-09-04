@@ -1,0 +1,12 @@
+# vim /etc/systemd/system/aim.service
+# sudo systemctl daemon-reload
+[Unit]
+Description=aa scan api service 
+Documentation=https://aa-scan-api.testnet.204001.xyz/
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/nginx/nginx.conf
+WorkingDirectory=/blockpi/aa-scan
+ExecStart=/blockpi/aa-scan/aim --home ./.aim start
+PrivateTmp=true
