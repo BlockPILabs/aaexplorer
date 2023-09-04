@@ -14,7 +14,6 @@ require (
 	github.com/gofiber/fiber/v2 v2.47.0
 	github.com/google/uuid v1.3.0
 	github.com/jackc/pgtype v1.14.0
-	github.com/ipfs/go-cid v0.4.1
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/pelletier/go-toml v1.9.5
@@ -24,6 +23,7 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.13.0
 	github.com/stretchr/testify v1.8.4
+	golang.org/x/sync v0.1.0
 )
 
 require (
@@ -82,7 +82,6 @@ require (
 	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.9.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect

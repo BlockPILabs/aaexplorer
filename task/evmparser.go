@@ -134,11 +134,11 @@ func (t *_evmParser) ScanBlock(ctx context.Context) {
 
 		wg := &sync.WaitGroup{}
 		for _, network := range networks {
-			if _, ok := t.startBlock[network.Network]; !ok {
-				t.startBlock[network.Network] = 0
+			if _, ok := t.startBlock[network.ID]; !ok {
+				t.startBlock[network.ID] = 0
 			}
 			wg.Add(1)
-			ctx := log.WithContext(ctx, t.logger.With("network", network.Network))
+			ctx := log.WithContext(ctx, t.logger.With("network", network.ID))
 			if t.ScanBlockByNetwork(ctx, network, wg) {
 				fiend = true
 			}
@@ -203,7 +203,7 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 		}
 	}()
 	log.Context(ctx).Info("start block", "net", network)
-	client, err := entity.Client(ctx, network.Network)
+	client, err := entity.Client(ctx, network.ID)
 	if err != nil {
 		log.Context(ctx).Error("network db client", "err", err)
 		return false
@@ -227,7 +227,7 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 	aaBlockSyncs, err := tx.AaBlockSync.Query().
 		Where(
 			aablocksync.Scanned(false),
-			aablocksync.IDGT(t.startBlock[network.Network]),
+			aablocksync.IDGT(t.startBlock[network.ID]),
 		).
 		ForUpdate(sql.WithLockAction(sql.SkipLocked)).
 		Order(
@@ -249,7 +249,7 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 	blockIds := make([]int64, len(aaBlockSyncs))
 	for i, blockSync := range aaBlockSyncs {
 		blockIds[i] = blockSync.ID
-		t.startBlock[network.Network] = blockSync.ID
+		t.startBlock[network.ID] = blockSync.ID
 	}
 
 	ctx = log.WithContext(context.Background(), log.Context(ctx))

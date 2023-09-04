@@ -34,7 +34,7 @@ func Resister(router fiber.Router) {
 	networksV1.Get("/block/:block<regex((^0x[a-z0-9]{64}$|^\\d+$))}>", controller.GetBlock).Name(controller.NameGetBlock)
 
 	//user
-	networksV1.Get("/user")
+	//networksV1.Get("/user")
 }
 
 func Error() {

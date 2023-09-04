@@ -38,7 +38,7 @@ func (*networkDao) GetNetworkByNetwork(ctx context.Context, network_ string) (*e
 		return nil, err
 	}
 	net, err := db.Network.Query().Where(
-		network.NetworkEQ(network_),
+		network.IDEQ(network_),
 		network.DeleteTimeIsNil(),
 	).First(ctx)
 	if err != nil {
