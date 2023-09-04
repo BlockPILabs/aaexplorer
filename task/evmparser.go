@@ -23,6 +23,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/jackc/pgtype"
 	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
 	"golang.org/x/sync/errgroup"
@@ -40,6 +41,7 @@ const TransferEventSign = "0xe6497e3ee548a3372136af2fcb0696db31fc6cf202607076450
 const AccountDeploySign = "0xd51a9c61267aa6196961883ecf5ff2da6619c37dac0fa92122513fb32c032d2d"
 
 const ExecuteSign = "0xb61d27f6"
+const ExecuteCall = "0x9e5d4c49"
 const ExecuteBatchSign = "0x47e1da2a"
 const ExecuteBatchCallSign = "0x912ccaa3"
 
@@ -547,13 +549,54 @@ func (t *_evmParser) parseUserOps(network *ent.Network, block *parserBlock, pars
 	for _, op := range ops {
 		callDetails := t.parseCallData(hexutil.Encode(op.CallData))
 		var target = ""
-		if callDetails != nil && len(callDetails) > 0 {
-			target = callDetails[0].target
+		var targetsMap = map[string]string{}
+		var targets = []string{}
+		for i, callDetail := range callDetails {
+			if i == 0 {
+				target = callDetail.target
+			}
+			if _, ok := targetsMap[callDetail.target]; !ok {
+				targetsMap[callDetail.target] = callDetail.target
+				targets = append(targets, callDetail.target)
+			}
 		}
-		fmt.Println(target)
+		var pgTarges = pgtype.TextArray{}
+		pgTarges.Set(targets)
+
 		userOpHash := op.GetUserOpHash(common.HexToAddress(parserTx.transaction.ToAddr), big.NewInt(network.ChainID))
 		userOpsInfo := ent.AAUserOpsInfo{
-			UserOperationHash: userOpHash.Hex(),
+			ID:                   userOpHash.Hex(),
+			Time:                 parserTx.transaction.Time,
+			TxHash:               parserTx.transaction.ID,
+			BlockNumber:          parserTx.transaction.BlockNumber,
+			Network:              network.ID,
+			Sender:               op.Sender.Hex(),
+			Target:               target,
+			Targets:              &pgTarges,
+			TxValue:              parserTx.transaction.Value,
+			Fee:                  parserTx.transaction.Gas,
+			Bundler:              parserTx.transaction.FromAddr,
+			EntryPoint:           parserTx.transaction.ToAddr,
+			Factory:              "",
+			Paymaster:            "",
+			PaymasterAndData:     hexutil.Encode(op.PaymasterAndData),
+			Signature:            hexutil.Encode(op.Signature),
+			Calldata:             hexutil.Encode(op.CallData),
+			CalldataContract:     "",
+			Nonce:                op.Nonce.Int64(),
+			CallGasLimit:         op.CallGasLimit.Int64(),
+			PreVerificationGas:   op.PreVerificationGas.Int64(),
+			VerificationGasLimit: op.VerificationGasLimit.Int64(),
+			MaxFeePerGas:         op.MaxFeePerGas.Int64(),
+			MaxPriorityFeePerGas: op.MaxPriorityFeePerGas.Int64(),
+			TxTime:               parserTx.transaction.Time,
+			InitCode:             hexutil.Encode(op.InitCode),
+			Status:               0,
+			Source:               "",
+			ActualGasCost:        0,
+			ActualGasUsed:        0,
+			CreateTime:           time.Now(),
+			UsdAmount:            decimal.Decimal{},
 		}
 
 		userOpsInfos = append(userOpsInfos, userOpsInfo)
@@ -785,11 +828,14 @@ func (t *_evmParser) parseCallData(callData string) []*CallDetail {
 	if len(callData) < 8 {
 		return nil
 	}
-	sign := utils.Substring(callData, 0, 8)
-	paramData := utils.SubstringFromIndex(callData, 8)
+	sign := utils.Substring(callData, 0, 10)
+	paramData := utils.SubstringFromIndex(callData, 10)
 	var callDetails []*CallDetail
 	switch sign {
 	case ExecuteSign:
+		callDetails = t.parseExecute(paramData)
+		break
+	case ExecuteCall:
 		callDetails = t.parseExecute(paramData)
 		break
 	case ExecuteBatchSign:
