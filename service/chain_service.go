@@ -59,18 +59,18 @@ func ScanBlock() {
 		if len(blockData) == 0 {
 			continue
 		}
-		maxNum, err := decimal.NewFromString(blockData[0].ID.String())
+		maxNum, err := decimal.NewFromString(string(blockData[0].ID))
 		for i := last + 1; i <= maxNum.BigInt().Int64(); i++ {
 			//do biz
 			//task.MEVTask(i, network)
-			transactions, err := cli.TransactionDecode.Query().Where(transactiondecode.BlockNumberEQ(decimal.NewFromInt(i))).All(context.Background())
+			transactions, err := cli.TransactionDecode.Query().Where(transactiondecode.BlockNumberEQ(i)).All(context.Background())
 			if err != nil {
 				continue
 			}
 			if len(transactions) == 0 {
 				continue
 			}
-			receipts, err := cli.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.BlockNumberEQ(decimal.NewFromInt(int64(i)))).All(context.Background())
+			receipts, err := cli.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.BlockNumberEQ(i)).All(context.Background())
 			if err != nil {
 				continue
 			}
@@ -161,7 +161,7 @@ func saveTrace(network string, address string, addressType int, receipt *ent.Tra
 		SetNetwork(network).
 		SetSyncFlag(0).
 		SetTxHash(receipt.ID).
-		SetBlockNumber(receipt.BlockNumber.CoefficientInt64()).
+		SetBlockNumber(receipt.BlockNumber).
 		SetLastChangeTime(time.Now()).
 		SetAddress(address).
 		SetAddressType(addressType)

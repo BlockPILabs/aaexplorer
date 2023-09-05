@@ -7,7 +7,6 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropsinfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactionreceiptdecode"
-	"github.com/shopspring/decimal"
 	"log"
 )
 
@@ -18,7 +17,7 @@ func MEVTask(blockNumber int64, network string) {
 		return
 
 	}
-	failedReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.StatusEQ("0x0"), transactionreceiptdecode.BlockNumberEQ(decimal.NewFromInt(blockNumber))).All(context.Background())
+	failedReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.StatusEQ("0x0"), transactionreceiptdecode.BlockNumberEQ(blockNumber)).All(context.Background())
 	if err != nil {
 		return
 	}

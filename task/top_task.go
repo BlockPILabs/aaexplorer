@@ -68,7 +68,7 @@ func doTopFactoryHour() {
 		return
 	}
 	for _, record := range records {
-		network := record.Network
+		network := record.Name
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			continue
@@ -150,7 +150,7 @@ func doTopPaymasterHour() {
 		return
 	}
 	for _, record := range records {
-		network := record.Network
+		network := record.Name
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			continue
@@ -235,7 +235,7 @@ func doTopBundlersHour() {
 		return
 	}
 	for _, record := range records {
-		network := record.Network
+		network := record.Name
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			continue

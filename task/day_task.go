@@ -9,7 +9,6 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/tokenpriceinfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactionreceiptdecode"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/userassetinfo"
-	"github.com/BlockPILabs/aa-scan/parser"
 	"github.com/BlockPILabs/aa-scan/service"
 	"github.com/BlockPILabs/aa-scan/third/moralis"
 	"github.com/procyon-projects/chrono"
@@ -41,7 +40,7 @@ func doDayStatistic() {
 		return
 	}
 	for _, record := range records {
-		network := record.Network
+		network := record.Name
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			continue
@@ -196,8 +195,8 @@ func calDailyStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, txHashes 
 
 	var spentGas = decimal.Zero
 	for _, receipt := range receipts {
-		if receipt.CumulativeGasUsed != nil {
-			spentGas = spentGas.Sub(RayDiv(*receipt.CumulativeGasUsed))
+		if receipt.CumulativeGasUsed != 0 {
+			spentGas = spentGas.Sub(RayDiv(decimal.NewFromInt(receipt.CumulativeGasUsed)))
 		}
 	}
 
@@ -340,7 +339,7 @@ func calPaymasterStatisDay(client *ent.Client, bundlerMap map[string][]*ent.AAUs
 	for key, userOpsInfoList := range bundlerMap {
 		totalCount += len(userOpsInfoList)
 		for _, userOpsInfo := range userOpsInfoList {
-			totalFee = totalFee.Add(parser.DivRav(userOpsInfo.ActualGasCost))
+			totalFee = totalFee.Add(RayDiv(decimal.NewFromInt(userOpsInfo.ActualGasCost)))
 		}
 		nativeBalance := moralis.GetNativeTokenBalance(key, network)
 		paymasters = append(paymasters, client.PaymasterStatisDay.Create().

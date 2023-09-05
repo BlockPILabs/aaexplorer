@@ -9,7 +9,6 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/tokenpriceinfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactionreceiptdecode"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/userassetinfo"
-	"github.com/BlockPILabs/aa-scan/parser"
 	"github.com/BlockPILabs/aa-scan/service"
 	"github.com/BlockPILabs/aa-scan/third/moralis"
 	"github.com/procyon-projects/chrono"
@@ -42,7 +41,7 @@ func doHourStatistic() {
 		return
 	}
 	for _, record := range records {
-		network := record.Network
+		network := record.Name
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			continue
@@ -178,7 +177,7 @@ func getCostMap(receipts []*ent.TransactionReceiptDecode) map[string]decimal.Dec
 		if !costOk {
 			cost = decimal.Zero
 		}
-		cost = cost.Add(RayDiv(*receipt.CumulativeGasUsed))
+		cost = cost.Add(RayDiv(decimal.NewFromInt(receipt.CumulativeGasUsed)))
 		receiptMap[bundler] = cost
 	}
 	return receiptMap
@@ -282,8 +281,8 @@ func calHourStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, txHashes m
 
 	var spentGas = decimal.Zero
 	for _, receipt := range receipts {
-		if receipt.CumulativeGasUsed != nil {
-			spentGas = spentGas.Sub(RayDiv(*receipt.CumulativeGasUsed))
+		if receipt.CumulativeGasUsed != 0 {
+			spentGas = spentGas.Sub(RayDiv(decimal.NewFromInt(receipt.CumulativeGasUsed)))
 		}
 	}
 
@@ -361,7 +360,7 @@ func calPaymasterStatis(client *ent.Client, bundlerMap map[string][]*ent.AAUserO
 	for key, userOpsInfoList := range bundlerMap {
 		totalCount += len(userOpsInfoList)
 		for _, userOpsInfo := range userOpsInfoList {
-			totalFee = totalFee.Add(parser.DivRav(userOpsInfo.ActualGasCost))
+			totalFee = totalFee.Add(RayDiv(decimal.NewFromInt(userOpsInfo.ActualGasCost)))
 		}
 		nativeBalance := moralis.GetNativeTokenBalance(key, network)
 		paymasters = append(paymasters, client.PaymasterStatisHour.Create().

@@ -31,17 +31,14 @@ func (TransactionReceiptDecode) Fields() []ent.Field {
 		field.String("contract_address").
 			MaxLen(255).
 			StructTag(`json:"contractAddress"`),
-		field.String("cumulative_gas_used").
-			MaxLen(255).
+		field.Int64("cumulative_gas_used").
 			StructTag(`json:"cumulativeGasUsed"`),
-		field.String("effective_gas_price").
-			MaxLen(255).
+		field.Int64("effective_gas_price").
 			StructTag(`json:"effective_gas_price"`),
 		field.String("from_addr").
 			MaxLen(255).
 			StructTag(`json:"from"`),
-		field.String("gas_used").
-			MaxLen(255).
+		field.Int64("gas_used").
 			StructTag(`json:"gasUsed"`),
 		field.String("logs").
 			MaxLen(255).
