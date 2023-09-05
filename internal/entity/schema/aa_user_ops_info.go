@@ -51,7 +51,7 @@ func (AAUserOpsInfo) Fields() []ent.Field {
 		field.Int64("actual_gas_used").StructTag(`json:"actualGasUsed"`),
 		field.Time("create_time").StructTag(`json:"createTime"`),
 		field.Time("update_time").StructTag(`json:"updateTime"`),
-		field.Int64("usd_amount").StructTag(`json:"usdAmount"`).GoType(decimal.Decimal{}),
+		field.Int64("usd_amount").StructTag(`json:"usdAmount"`).GoType(decimal.Decimal{}).Optional().Nillable(),
 	}
 }
 

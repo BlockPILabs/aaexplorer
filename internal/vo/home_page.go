@@ -2,7 +2,6 @@ package vo
 
 import (
 	"github.com/shopspring/decimal"
-	"time"
 )
 
 type DailyStatisticRequest struct {
@@ -23,7 +22,7 @@ type DailyStatisticResponse struct {
 }
 
 type DailyStatisticDetail struct {
-	Time                  time.Time       `json:"time"`
+	Time                  int64           `json:"time"`
 	UserOpsNum            int64           `json:"userOpsNum"`
 	ActiveAAWallet        int64           `json:"activeAAWallet"`
 	AccumulativeGasFee    decimal.Decimal `json:"accumulativeGasFee"`
