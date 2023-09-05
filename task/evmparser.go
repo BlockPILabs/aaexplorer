@@ -159,16 +159,17 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 			wg.Done()
 		}
 	}()
-	log.Context(ctx).Info("start block", "net", network)
+	logger := log.Context(ctx)
+	logger.Info("start block", "net", network)
 	client, err := entity.Client(ctx, network.ID)
 	if err != nil {
-		log.Context(ctx).Error("network db client", "err", err)
+		logger.Error("network db client", "err", err)
 		return false
 	}
 
 	tx, err := client.Tx(ctx)
 	if err != nil {
-		log.Context(ctx).Error("network db client tx", "err", err)
+		logger.Error("network db client tx", "err", err)
 		return false
 	}
 
@@ -195,13 +196,14 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 		Limit(t.config.EvmParser.Multi).
 		All(ctx)
 	if err != nil {
-		log.Context(ctx).Error("find AaBlockSync  tx", "err", err)
+		logger.Error("find AaBlockSync  tx", "err", err)
 		return false
 	}
 	if len(aaBlockSyncs) < 1 {
-		log.Context(ctx).Debug("not find AaBlockSync")
+		logger.Debug("not find AaBlockSync")
 		return false
 	}
+	fiend = true
 
 	blockIds := make([]int64, len(aaBlockSyncs))
 	for i, blockSync := range aaBlockSyncs {
@@ -209,35 +211,74 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 		t.startBlock[network.ID] = blockSync.ID
 	}
 
-	ctx = log.WithContext(context.Background(), log.Context(ctx))
+	ctx = log.WithContext(context.Background(), logger)
 	go func() {
 		defer func() {
 			tx.Commit()
 			wg.Done()
 		}()
-		blockDataDecodes, transactionDecodes, receiptDecodes, blocksMap, transactionMap, err := t.getParseData(ctx, tx.Client(), blockIds...)
+		blockDataDecodes, transactionDecodes, receiptDecodes, blocksMap, transactionMap, err := t.getParseData(ctx, client, blockIds...)
 		_ = (blockDataDecodes)
 		_ = (transactionDecodes)
 		_ = (receiptDecodes)
 		_ = (blocksMap)
 		_ = (transactionMap)
 		if err != nil {
-			log.Context(ctx).Error("get parse data error", "err", err)
+			logger.Error("get parse data error", "err", err)
+			return
 		}
 
-		var blockUserOpsInfos ent.AAUserOpsInfos
+		var aaUserOpsInfos ent.AAUserOpsInfos
 		var aaTransactionInfos ent.AaTransactionInfos
 		var userOpsInfoCalldatas ent.AAUserOpsCalldataSlice
+		var aaBlockInfos ent.AaBlockInfos
+		var setBlockSyncedId []int64
 		for _, block := range blocksMap {
 			t.doParse(ctx, tx.Client(), network, block)
+
+			if block.userOpInfo == nil || block.userOpInfo.UseropCount < 1 {
+				setBlockSyncedId = append(setBlockSyncedId, block.block.ID)
+				continue
+			}
+			aaBlockInfos = append(aaBlockInfos, block.userOpInfo)
+
+			for _, transition := range block.transitions {
+				if len(transition.userops) > 0 {
+					aaUserOpsInfos = append(aaUserOpsInfos, transition.userops...)
+				}
+
+				if len(transition.userOpsCalldata) > 0 {
+					userOpsInfoCalldatas = append(userOpsInfoCalldatas, transition.userOpsCalldata...)
+				}
+
+				if transition.userOpInfo != nil {
+					aaTransactionInfos = append(aaTransactionInfos, transition.userOpInfo)
+				}
+			}
 		}
 
-		t.insertUserOpsInfo(ctx, tx.Client(), network, blockUserOpsInfos)
+		t.insertUserOpsInfo(ctx, tx.Client(), network, aaUserOpsInfos)
 		t.insertTransactions(ctx, tx.Client(), network, aaTransactionInfos)
 		t.insertuserOpsInfoCalldatas(ctx, tx.Client(), network, userOpsInfoCalldatas)
+
+		// set sync status
+		if len(setBlockSyncedId) > 0 {
+			affected, err := tx.AaBlockSync.Update().
+				Where(
+					aablocksync.IDIn(setBlockSyncedId...),
+				).
+				SetScanned(true).
+				SetUpdateTime(time.Now()).Save(ctx)
+			if err != nil {
+				logger.Warn("set block sync status error", "err", err)
+			} else {
+				logger.Info("set block scanned", "ids", setBlockSyncedId, "num", affected)
+			}
+		}
+
 	}()
 
-	return true
+	return fiend
 }
 
 func (t *_evmParser) getParseData(ctx context.Context, client *ent.Client, blockIds ...int64) (
@@ -393,11 +434,7 @@ func (t *_evmParser) getFrom(tx *types.Transaction, client *ethclient.Client) st
 }
 
 func (t *_evmParser) insertTransactions(ctx context.Context, client *ent.Client, network *ent.Network, infos ent.AaTransactionInfos) {
-	if len(infos) == 0 {
-		return
-	}
-	client, err := entity.Client(context.Background(), network.ID)
-	if err != nil {
+	if len(infos) < 1 {
 		return
 	}
 
@@ -415,7 +452,7 @@ func (t *_evmParser) insertTransactions(ctx context.Context, client *ent.Client,
 
 		transactionInfoCreates = append(transactionInfoCreates, txCreate)
 	}
-	err = client.AaTransactionInfo.
+	err := client.AaTransactionInfo.
 		CreateBulk(transactionInfoCreates...).
 		OnConflictColumns(aatransactioninfo.FieldTime, aatransactioninfo.FieldID).
 		Update(func(upsert *ent.AaTransactionInfoUpsert) {
@@ -428,15 +465,11 @@ func (t *_evmParser) insertTransactions(ctx context.Context, client *ent.Client,
 		}).
 		Exec(context.Background())
 	if err != nil {
-		t.logger.Info("", "err", err)
+		log.Context(ctx).Info("insert AaTransactionInfo error", "err", err)
 	}
 }
 func (t *_evmParser) insertuserOpsInfoCalldatas(ctx context.Context, client *ent.Client, network *ent.Network, infos ent.AAUserOpsCalldataSlice) {
 	if len(infos) == 0 {
-		return
-	}
-	client, err := entity.Client(context.Background(), network.ID)
-	if err != nil {
 		return
 	}
 
@@ -461,7 +494,7 @@ func (t *_evmParser) insertuserOpsInfoCalldatas(ctx context.Context, client *ent
 
 		transactionInfoCreates = append(transactionInfoCreates, txCreate)
 	}
-	err = client.AAUserOpsCalldata.
+	err := client.AAUserOpsCalldata.
 		CreateBulk(transactionInfoCreates...).
 		OnConflictColumns(aauseropscalldata.FieldTime, aauseropscalldata.FieldID).
 		Update(func(upsert *ent.AAUserOpsCalldataUpsert) {
@@ -483,16 +516,12 @@ func (t *_evmParser) insertuserOpsInfoCalldatas(ctx context.Context, client *ent
 		}).
 		Exec(context.Background())
 	if err != nil {
-		t.logger.Info("", "err", err)
+		log.Context(ctx).Info("insert AAUserOpsCalldata error", "err", err)
 	}
 }
 
 func (t *_evmParser) insertUserOpsInfo(ctx context.Context, client *ent.Client, network *ent.Network, infos ent.AAUserOpsInfos) {
 	if len(infos) < 1 {
-		return
-	}
-	client, err := entity.Client(context.Background(), network.ID)
-	if err != nil {
 		return
 	}
 	var userOpsInfoCreates []*ent.AAUserOpsInfoCreate
@@ -534,7 +563,7 @@ func (t *_evmParser) insertUserOpsInfo(ctx context.Context, client *ent.Client, 
 
 		userOpsInfoCreates = append(userOpsInfoCreates, userOpsCreate)
 	}
-	err = client.AAUserOpsInfo.CreateBulk(userOpsInfoCreates...).
+	err := client.AAUserOpsInfo.CreateBulk(userOpsInfoCreates...).
 		OnConflict(
 			sql.ConflictColumns(aauseropsinfo.FieldTime, aauseropsinfo.FieldTxHash, aauseropsinfo.FieldID),
 		).
@@ -572,7 +601,7 @@ func (t *_evmParser) insertUserOpsInfo(ctx context.Context, client *ent.Client, 
 				UpdateUsdAmount()
 		}).Exec(context.Background())
 	if err != nil {
-		t.logger.Info("", "err", err)
+		log.Context(ctx).Info("insert AAUserOpsInfo error", "err", err)
 	}
 }
 
