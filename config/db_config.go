@@ -42,6 +42,7 @@ func DefaultDatabaseConfig() []*DbConfig {
 			MaxIdleCount:    50,
 			MaxOpenConns:    100,
 			MaxLifetime:     int64(time.Hour),
+			Debug:           true,
 		},
 	}
 }

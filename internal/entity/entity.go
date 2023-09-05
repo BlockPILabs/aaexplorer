@@ -25,7 +25,7 @@ type client struct {
 
 var clients = &sync.Map{}
 
-func Start(cfg *config.Config) error {
+func Start(logger log.Logger, cfg *config.Config) error {
 	for i, database := range cfg.Databases {
 		dsn, err := database.BuildDsn()
 		if err != nil {
@@ -52,7 +52,22 @@ func Start(cfg *config.Config) error {
 
 		opts := []ent.Option{
 			ent.Driver(drv),
+			ent.Log(func(a ...any) {
+
+			}),
 		}
+		if database.Debug {
+			opts = append(opts, ent.Debug(), ent.Log(func(a ...any) {
+				if len(a) == 1 {
+					msg := fmt.Sprint(a[0])
+					logger.Info(msg)
+				} else if len(a) > 1 {
+					msg := fmt.Sprint(a[0])
+					logger.Info(msg, "args", a[1:])
+				}
+			}))
+		}
+
 		if database.Schema != nil {
 			opts = append(opts, ent.AlternateSchema(*database.Schema))
 		}
@@ -61,9 +76,7 @@ func Start(cfg *config.Config) error {
 		if err != nil {
 			return err
 		}
-		if database.Debug {
-			c = c.Debug()
-		}
+
 		_c := &client{
 			Client: c,
 			Config: database,

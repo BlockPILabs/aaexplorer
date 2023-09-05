@@ -11,7 +11,7 @@ var MigrateCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// db start
-		err := entity.Start(config)
+		err := entity.Start(logger.With("lib", "ent"), config)
 		if err != nil {
 			return err
 		}
