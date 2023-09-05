@@ -44,11 +44,15 @@ var ScanCmd = &cobra.Command{
 		//testSubscribe()
 		//getAbi()
 		//moralis.TestToken("0x3a55815977ab0e12E4Fcf1a66165142C41dbda26")
-		test2()
-		task.AssetSync()
+		//test2()
+		//task.AssetSync()
+		//service.ScanBlock()
+		task.InitHourStatis()
+		//task.AssetSync()
+		//service.GetWalletBalanceDetail("0x6b1b831718d0faf86cfe790fb59a8dfe077db71b", interConfig.PolygonNetwork)
 		aimos.TrapSignal(logger, func() {})
 
-		//task.InitTask()
+		task.InitTask()
 
 		// Run forever.
 		select {}

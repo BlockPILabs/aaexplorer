@@ -17,6 +17,8 @@ type BundlerStatisDay struct {
 	UserOpsNum   int64           `json:"user_ops_num"`
 	BundlesNum   int64           `json:"bundles_num"`
 	GasCollected decimal.Decimal `json:"gas_collected"`
+	FeeEarned    decimal.Decimal `json:"fee_earned"`
+	TotalNum     int64           `json:"total_num"`
 	StatisTime   time.Time       `json:"statis_time"`
 	CreateTime   time.Time       `json:"create_time"`
 	ent.Schema
@@ -41,6 +43,10 @@ func (BundlerStatisDay) Fields() []ent.Field {
 			StructTag(`json:"bundlesNum"`),
 		field.Int64("gas_collected").
 			StructTag(`json:"gasCollected"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
+		field.Int64("fee_earned").
+			StructTag(`json:"feeEarned"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}).Optional().Nillable(),
+		field.Int64("total_num").
+			StructTag(`json:"totalNum"`).Optional(),
 		field.Time("statis_time").
 			StructTag(`json:"statisTime"`).
 			Immutable(),

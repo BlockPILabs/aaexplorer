@@ -11,14 +11,18 @@ import (
 )
 
 type DailyStatisticDay struct {
-	Id            int64
-	Network       string
-	StatisticTime time.Time
-	TxNum         int64
-	UserOpsNum    int64
-	GasFee        decimal.Decimal
-	ActiveWallet  int64
-	CreateTime    time.Time
+	Id                  int64
+	Network             string
+	StatisticTime       time.Time
+	TxNum               int64
+	UserOpsNum          int64
+	GasFee              decimal.Decimal
+	ActiveWallet        int64
+	PaymasterGasPaid    decimal.Decimal
+	PaymasterGasPaidUsd decimal.Decimal
+	BundlerGasProfit    decimal.Decimal
+	BundlerGasProfitUsd decimal.Decimal
+	CreateTime          time.Time
 	ent.Schema
 }
 
@@ -42,6 +46,18 @@ func (DailyStatisticDay) Fields() []ent.Field {
 			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
 		field.Int64("active_wallet").
 			StructTag(`json:"activeWallet"`),
+		field.Int64("paymaster_gas_paid").
+			StructTag(`json:"paymasterGasPaid"`).GoType(decimal.Zero).
+			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
+		field.Int64("paymaster_gas_paid_usd").
+			StructTag(`json:"paymasterGasPaidUsd"`).GoType(decimal.Zero).
+			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
+		field.Int64("bundler_gas_profit").
+			StructTag(`json:"bundlerGasProfit"`).GoType(decimal.Zero).
+			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
+		field.Int64("bundler_gas_profit_usd").
+			StructTag(`json:"bundlerGasProfitUsd"`).GoType(decimal.Zero).
+			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
 		field.Time("create_time").
 			Default(time.Now).
 			StructTag(`json:"createTime"`).

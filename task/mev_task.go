@@ -6,17 +6,19 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropsinfo"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactionreceipt"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactionreceiptdecode"
+	"github.com/shopspring/decimal"
+	"log"
 )
 
-func MEVTask() {
+func MEVTask(blockNumber int64, network string) {
 
 	client, err := entity.Client(context.Background())
 	if err != nil {
 		return
+
 	}
-	var blockMumber = 11234455
-	failedReceipts, err := client.TransactionReceipt.Query().Where(transactionreceipt.StatusEQ("0X0"), transactionreceipt.BlockNumEQ(int64(blockMumber))).All(context.Background())
+	failedReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.StatusEQ("0x0"), transactionreceiptdecode.BlockNumberEQ(decimal.NewFromInt(blockNumber))).All(context.Background())
 	if err != nil {
 		return
 	}
@@ -25,7 +27,7 @@ func MEVTask() {
 	}
 	var failedHashes []string
 	for _, receipt := range failedReceipts {
-		failedHashes = append(failedHashes, receipt.TransactionHash)
+		failedHashes = append(failedHashes, receipt.ID)
 	}
 	failedOps, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.TxHashIn(failedHashes[:]...)).All(context.Background())
 	if err != nil {
@@ -60,8 +62,8 @@ func MEVTask() {
 			if txHash == same.TxHash {
 				continue
 			}
-			successReceipts, err := client.TransactionReceipt.Query().
-				Where(transactionreceipt.TransactionHashEQ(same.TxHash), transactionreceipt.StatusEQ("0x1")).All(context.Background())
+			successReceipts, err := client.TransactionReceiptDecode.Query().
+				Where(transactionreceiptdecode.ID(same.TxHash), transactionreceiptdecode.StatusEQ("0x1")).All(context.Background())
 			if err != nil {
 				continue
 			}
@@ -69,14 +71,14 @@ func MEVTask() {
 				continue
 			}
 
-			successOps, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.TxHashEQ(successReceipts[0].TransactionHash)).All(context.Background())
+			successOps, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.TxHashEQ(successReceipts[0].ID)).All(context.Background())
 			if err != nil {
 				continue
 			}
 			if len(successOps) == 0 {
 				continue
 			}
-			res := compareOps(successOps, failedMap[same.TxHash])
+			res := compareOps(successOps, failedMap[txHash])
 			if res {
 				mevResMap[successOps[0].TxHash] = txHash
 			}
@@ -88,9 +90,20 @@ func MEVTask() {
 	}
 	fmt.Printf("mev check exist, %s", mapToString(mevResMap))
 
-	//for key, value := range mevResMap {
-	//	client.MevInfo.Create().SetNetwork().set
-	//}
+	for key, value := range mevResMap {
+		_, err := client.MevInfo.Create().
+			SetNetwork(network).
+			SetTxHash(key).
+			SetRelatedTxHash(value).
+			SetBlockNumber(blockNumber).
+			SetTxTime(1).
+			SetTxFrom("").
+			SetTxTo("").
+			Save(context.Background())
+		if err != nil {
+			log.Println(err)
+		}
+	}
 
 }
 

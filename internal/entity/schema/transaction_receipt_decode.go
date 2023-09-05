@@ -19,16 +19,17 @@ func (TransactionReceiptDecode) Fields() []ent.Field {
 			StructTag(`json:"time"`),
 		field.Time("create_time").
 			StructTag(`json:"createTime"`),
-		field.String("transaction_hash").
+		field.String("id").
+			StorageKey("transaction_hash").
 			StructTag(`json:"transactionHash"`),
 		field.Int64("transaction_index").
 			StructTag(`json:"transactionIndex"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 0)"}),
 		field.String("block_hash").
 			StructTag(`json:"blockHash"`),
 		field.Int64("block_number").
-			StructTag(`json:"blockNumber"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 0)"}),
+			StructTag(`json:"blockNumber"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 0)"}).Optional().Nillable(),
 		field.Int64("cumulative_gas_used").
-			StructTag(`json:"cumulativeGasUsed"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
+			StructTag(`json:"cumulativeGasUsed"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}).Optional().Nillable(),
 		field.Int64("gas_used").
 			StructTag(`json:"gasUsed"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
 		field.String("contract_address").

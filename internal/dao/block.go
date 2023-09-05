@@ -58,9 +58,9 @@ func (dao *blockDao) Pagination(ctx context.Context, tx *ent.Client, network str
 }
 
 func (*baseDao) GetByBlockNumber(ctx context.Context, tx *ent.Client, blockNumber decimal.Decimal) (block *ent.BlockDataDecode, err error) {
-	block, err = tx.BlockDataDecode.Query().Where(
-		blockdatadecode.ID(blockNumber),
-	).First(ctx)
+	//block, err = tx.BlockDataDecode.Query().Where(
+	//	blockdatadecode.ID(blockNumber),
+	//).First(ctx)
 	return
 }
 

@@ -53,9 +53,10 @@ func (TransactionDecode) Fields() []ent.Field {
 		//type                     text,
 		field.String("type").StructTag(`json:"type"`),
 		//max_fee_per_gas          numeric,
-		field.Int64("max_fee_per_gas").StructTag(`json:"maxFeePerGas"`).GoType(decimal.Decimal{}),
+		field.Int64("max_fee_per_gas").
+			StructTag(`json:"maxFeePerGas"`).GoType(&decimal.Decimal{}).Optional().Nillable(),
 		//max_priority_fee_per_gas numeric,
-		field.Int64("max_priority_fee_per_gas").StructTag(`json:"maxPriorityFeePerGas"`).GoType(decimal.Decimal{}),
+		field.Int64("max_priority_fee_per_gas").StructTag(`json:"maxPriorityFeePerGas"`).GoType(&decimal.Decimal{}).Optional().Nillable(),
 		//access_list              jsonb
 		field.Other("access_list", &pgtype.JSONB{}).StructTag(`json:"accessList"`).SchemaType(map[string]string{
 			dialect.Postgres: "jsonb",

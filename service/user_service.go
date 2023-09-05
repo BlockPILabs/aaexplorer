@@ -45,7 +45,7 @@ func GetWalletBalanceDetail(accountAddress string, network string) []*WalletBala
 		}
 		var detail *WalletBalance
 		if tokenPrice == nil || len(tokenPrice) == 0 {
-			onePrice := moralis.GetTokenPrice(accountAddress, network)
+			onePrice := moralis.GetTokenPrice(asset.ContractAddress, network)
 			detail = &WalletBalance{
 				Symbol:          asset.Symbol,
 				ContractAddress: asset.ContractAddress,

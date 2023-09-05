@@ -46,7 +46,7 @@ func (MevInfo) Fields() []ent.Field {
 			StructTag(`json:"network"`),
 		field.String("tx_from_tag").
 			MaxLen(255).
-			StructTag(`json:"txFromTag"`),
+			StructTag(`json:"txFromTag"`).Optional().Nillable(),
 		field.String("tx_from").
 			MaxLen(255).
 			StructTag(`json:"txFrom"`),
@@ -55,13 +55,13 @@ func (MevInfo) Fields() []ent.Field {
 			StructTag(`json:"txTo"`),
 		field.Int64("gas_fee").
 			StructTag(`json:"gasFee"`).GoType(decimal.Zero).
-			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
+			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}).Optional().Nillable(),
 		field.Int64("user_ops_gas_fee").
 			StructTag(`json:"userOpsGasFee"`).GoType(decimal.Zero).
-			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
+			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}).Optional().Nillable(),
 		field.Int64("profit").
 			StructTag(`json:"profit"`).GoType(decimal.Zero).
-			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
+			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}).Optional().Nillable(),
 		field.Int64("tx_time").
 			StructTag(`json:"txTime"`),
 		field.Time("create_time").

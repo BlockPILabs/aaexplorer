@@ -11,13 +11,15 @@ import (
 )
 
 type PaymasterStatisDay struct {
-	ID           int64           `json:"id"`
-	Paymaster    string          `json:"paymaster"`
-	Network      string          `json:"network"`
-	UserOpsNum   int64           `json:"user_ops_num"`
-	GasSponsored decimal.Decimal `json:"gas_sponsored"`
-	StatisTime   time.Time       `json:"statis_time"`
-	CreateTime   time.Time       `json:"create_time"`
+	ID              int64           `json:"id"`
+	Paymaster       string          `json:"paymaster"`
+	Network         string          `json:"network"`
+	UserOpsNum      int64           `json:"user_ops_num"`
+	Reserve         decimal.Decimal `json:"reserve"`
+	GasSponsored    decimal.Decimal `json:"gas_sponsored"`
+	GasSponsoredUsd decimal.Decimal `json:"gas_sponsored_usd"`
+	StatisTime      time.Time       `json:"statis_time"`
+	CreateTime      time.Time       `json:"create_time"`
 	ent.Schema
 }
 
@@ -37,6 +39,12 @@ func (PaymasterStatisDay) Fields() []ent.Field {
 			StructTag(`json:"userOpsNum"`),
 		field.Int64("gas_sponsored").
 			StructTag(`json:"gasSponsored"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
+		field.Int64("reserve").
+			StructTag(`json:"reserve"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}).Optional(),
+		field.Int64("reserve_usd").
+			StructTag(`json:"reserveUsd"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}).Optional(),
+		field.Int64("gas_sponsored_usd").
+			StructTag(`json:"gasSponsoredUsd"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}).Optional(),
 		field.Time("statis_time").
 			StructTag(`json:"statisTime"`).
 			Immutable(),

@@ -35,7 +35,7 @@ func DefaultDatabaseConfig() []*DbConfig {
 			Host:            "127.0.0.1",
 			Port:            5432,
 			User:            "postgres",
-			Pass:            "123456",
+			Pass:            "root",
 			Name:            "postgres",
 			Schema:          &ent.SchemaConfig{},
 			ApplicationName: version.Name,

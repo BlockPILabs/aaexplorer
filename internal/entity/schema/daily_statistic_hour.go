@@ -42,6 +42,18 @@ func (DailyStatisticHour) Fields() []ent.Field {
 			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
 		field.Int64("active_wallet").
 			StructTag(`json:"activeWallet"`),
+		field.Int64("paymaster_gas_paid").
+			StructTag(`json:"paymasterGasPaid"`).GoType(decimal.Zero).
+			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
+		field.Int64("paymaster_gas_paid_usd").
+			StructTag(`json:"paymasterGasPaidUsd"`).GoType(decimal.Zero).
+			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
+		field.Int64("bundler_gas_profit").
+			StructTag(`json:"bundlerGasProfit"`).GoType(decimal.Zero).
+			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
+		field.Int64("bundler_gas_profit_usd").
+			StructTag(`json:"bundlerGasProfitUsd"`).GoType(decimal.Zero).
+			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
 		field.Time("create_time").
 			Default(time.Now).
 			StructTag(`json:"createTime"`).

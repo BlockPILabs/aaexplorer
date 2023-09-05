@@ -26,6 +26,10 @@ const (
 	AddressTypeAccount = 1
 	AddressTypeToken   = 2
 	ZeroAddress        = "0x0000000000000000000000000000000000000000"
+
+	RangeH24 = "h24"
+	RangeD7  = "d7"
+	RangeD30 = "d30"
 )
 
 const (

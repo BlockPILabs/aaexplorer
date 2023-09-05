@@ -27,9 +27,9 @@ const SWAP2 = "0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d82
 const Transfer = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
 type ReceiptLog struct {
-	Data    string
-	Topics  []string
-	Address string
+	Data    string   `json:"data"`
+	Topics  []string `json:"topics"`
+	Address string   `json:"address"`
 }
 
 func ScanBlock() {
@@ -51,15 +51,18 @@ func ScanBlock() {
 		fmt.Println(network)
 		//1.get max block num by network
 		//2.
-		blockData, err := cli.BlockDataDecode.Query().Order(ent.Desc(blockdatadecode.FieldNumber)).Limit(1).All(context.Background())
+		blockData, err := cli.BlockDataDecode.Query().Order(ent.Desc(blockdatadecode.FieldID)).Limit(1).All(context.Background())
 		if err != nil {
+			log.Println(err)
 			continue
 		}
 		if len(blockData) == 0 {
 			continue
 		}
-		for i := last + 1; i <= blockData[0].Number; i++ {
+		maxNum, err := decimal.NewFromString(blockData[0].ID.String())
+		for i := last + 1; i <= maxNum.BigInt().Int64(); i++ {
 			//do biz
+			//task.MEVTask(i, network)
 			transactions, err := cli.TransactionDecode.Query().Where(transactiondecode.BlockNumberEQ(decimal.NewFromInt(i))).All(context.Background())
 			if err != nil {
 				continue
@@ -84,8 +87,8 @@ func parseReceipt(network string, receipts []*ent.TransactionReceiptDecode, cli 
 			continue
 		}
 		logBytes := []byte(logStr)
-		var receiptLogs []*ReceiptLog
-		err := json.Unmarshal(logBytes, receiptLogs)
+		var receiptLogs []ReceiptLog
+		err := json.Unmarshal(logBytes, &receiptLogs)
 		if err != nil {
 			log.Println(err)
 			continue
@@ -157,15 +160,19 @@ func saveTrace(network string, address string, addressType int, receipt *ent.Tra
 	trace := cli.AssetChangeTrace.Create().
 		SetNetwork(network).
 		SetSyncFlag(0).
-		SetTxHash(receipt.TransactionHash).
+		SetTxHash(receipt.ID).
 		SetBlockNumber(receipt.BlockNumber.CoefficientInt64()).
 		SetLastChangeTime(time.Now()).
 		SetAddress(address).
 		SetAddressType(addressType)
-	trace.Save(context.Background())
+	_, err := trace.Save(context.Background())
+	if err != nil {
+		fmt.Println(err)
+	}
+
 }
 
-func checkChange(logs []*ReceiptLog) bool {
+func checkChange(logs []ReceiptLog) bool {
 
 	if len(logs) == 0 {
 		return false

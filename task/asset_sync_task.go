@@ -33,9 +33,7 @@ func AssetSync() {
 	if err != nil {
 		return
 	}
-	changeTraces, err := client.AssetChangeTrace.Query().
-		Where(assetchangetrace.SyncFlagEQ(0)).
-		All(context.Background())
+	changeTraces, err := client.AssetChangeTrace.Query().Where(assetchangetrace.SyncFlagEQ(0)).All(context.Background())
 	if len(changeTraces) == 0 {
 		return
 	}
@@ -58,11 +56,7 @@ func AssetSync() {
 	syncAccountBalance(client, accounts)
 	syncTokenPrice(client, tokens)
 	syncWTokenPrice(client)
-	client.AssetChangeTrace.Update().
-		Where(assetchangetrace.IDIn(changes[:]...)).
-		SetSyncFlag(1).
-		SetLastChangeTime(time.Now()).
-		Exec(context.Background())
+	client.AssetChangeTrace.Update().Where(assetchangetrace.IDIn(changes[:]...)).SetSyncFlag(1).SetLastChangeTime(time.Now()).Exec(context.Background())
 	//syncAssetValue(client, accountAddrs, tokenAddrs)
 }
 
@@ -210,6 +204,18 @@ func getNativeName(network string) string {
 		return config.BscNative
 	} else if network == config.PolygonNetwork {
 		return config.PolygonNative
+	}
+
+	return ""
+}
+
+func GetWToken(network string) string {
+	if network == config.EthNetwork {
+		return config.WETH
+	} else if network == config.BscNetwork {
+		return config.WBNB
+	} else if network == config.PolygonNetwork {
+		return config.WMATIC
 	}
 
 	return ""

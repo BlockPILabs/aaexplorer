@@ -51,7 +51,7 @@ func (*blockService) GetBlocks(ctx context.Context, req vo.GetBlocksRequest) (*v
 	for i, info := range list {
 		res.Records[i] = &vo.BlocksVo{
 			//Time:             info.Time,
-			ID:         info.ID,
+			//ID:         info.ID,
 			CreateTime: info.CreateTime,
 			//Hash:             info.Hash,
 			//Size:             info.Size,
@@ -98,8 +98,8 @@ func (*blockService) GetBlock(ctx context.Context, req vo.GetBlockRequest) (*vo.
 		return nil, err
 	}
 	res = vo.BlockVo{
-		Time:             info.Time,
-		ID:               info.ID,
+		Time: info.Time,
+		//ID:               info.ID,
 		CreateTime:       info.CreateTime,
 		Hash:             info.Hash,
 		Size:             info.Size,

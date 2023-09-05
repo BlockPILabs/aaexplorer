@@ -10,7 +10,10 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/factorystatishour"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/paymasterinfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/paymasterstatishour"
+	"github.com/BlockPILabs/aa-scan/service"
+	"github.com/BlockPILabs/aa-scan/third/moralis"
 	"github.com/procyon-projects/chrono"
+	"github.com/shopspring/decimal"
 	"log"
 	"time"
 )
@@ -31,10 +34,10 @@ func InitTask() {
 
 }
 
-func addOpsInfo(key string, opsInfo *ent.UserOpsInfo, bundlerMap map[string][]*ent.UserOpsInfo) {
+func addOpsInfo(key string, opsInfo *ent.AAUserOpsInfo, bundlerMap map[string][]*ent.AAUserOpsInfo) {
 	bundlerOps, bundlerOk := bundlerMap[key]
 	if !bundlerOk {
-		bundlerOps = []*ent.UserOpsInfo{}
+		bundlerOps = []*ent.AAUserOpsInfo{}
 	}
 
 	bundlerOps = append(bundlerOps, opsInfo)
@@ -56,58 +59,71 @@ func topFactories() {
 }
 
 func doTopFactoryHour() {
-	client, err := entity.Client(context.Background())
+	cli, err := entity.Client(context.Background())
 	if err != nil {
 		return
 	}
-	now := time.Now()
-	startTime := time.Date(now.Year(), now.Month(), now.Day()-7, now.Hour()-23, 0, 0, 0, now.Location())
-	endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 0, 0, 0, now.Location())
-	factoryStatisHours, err := client.FactoryStatisHour.
-		Query().
-		Where(
-			factorystatishour.StatisTimeGTE(startTime),
-			factorystatishour.StatisTimeLT(endTime),
-		).
-		All(context.Background())
-
-	if err != nil {
+	records, err := cli.Network.Query().All(context.Background())
+	if len(records) == 0 {
 		return
 	}
-	if len(factoryStatisHours) == 0 {
-		return
-	}
-
-	factoryInfoMap := make(map[string]*ent.FactoryInfo)
-	for _, factory := range factoryStatisHours {
-		factoryAddr := factory.Factory
-		factoryInfo, bundlerInfoOk := factoryInfoMap[factoryAddr]
-		if bundlerInfoOk {
-
-			factoryInfo.AccountDeployNum = factoryInfo.AccountNum + int(factory.AccountNum)
-			factoryInfo.AccountNum = factoryInfo.AccountDeployNum + int(factory.AccountDeployNum)
-			factoryInfo.AccountNumD1 = factoryInfo.AccountNumD1 + int(factory.AccountNum)
-			factoryInfo.AccountDeployNumD1 = factoryInfo.AccountDeployNumD1 + int(factory.AccountDeployNum)
-		} else {
-			factoryInfo = &ent.FactoryInfo{
-				AccountDeployNum:   int(factory.AccountDeployNum),
-				AccountNum:         int(factory.AccountNum),
-				AccountNumD1:       int(factory.AccountNum),
-				AccountDeployNumD1: int(factory.AccountDeployNum),
-			}
-		}
-		factoryInfo.Factory = factory.Factory
-		factoryInfo.Network = factory.Network
-		factoryInfoMap[factoryAddr] = factoryInfo
-
-	}
-
-	for factory, factoryInfo := range factoryInfoMap {
-		if factory == "" {
+	for _, record := range records {
+		network := record.Network
+		client, err := entity.Client(context.Background(), network)
+		if err != nil {
 			continue
 		}
-		saveOrUpdateFactory(client, factory, factoryInfo)
+		now := time.Now()
+		startTime := time.Date(now.Year(), now.Month(), now.Day()-7, now.Hour()-23, 0, 0, 0, now.Location())
+		endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 0, 0, 0, now.Location())
+		factoryStatisHours, err := client.FactoryStatisHour.
+			Query().
+			Where(
+				factorystatishour.StatisTimeGTE(startTime),
+				factorystatishour.StatisTimeLT(endTime),
+			).
+			All(context.Background())
+
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		if len(factoryStatisHours) == 0 {
+			continue
+		}
+
+		factoryInfoMap := make(map[string]*ent.FactoryInfo)
+		for _, factory := range factoryStatisHours {
+			factoryAddr := factory.Factory
+			factoryInfo, bundlerInfoOk := factoryInfoMap[factoryAddr]
+			if bundlerInfoOk {
+
+				factoryInfo.AccountDeployNum = factoryInfo.AccountNum + int(factory.AccountNum)
+				factoryInfo.AccountNum = factoryInfo.AccountDeployNum + int(factory.AccountDeployNum)
+				factoryInfo.AccountNumD1 = factoryInfo.AccountNumD1 + int(factory.AccountNum)
+				factoryInfo.AccountDeployNumD1 = factoryInfo.AccountDeployNumD1 + int(factory.AccountDeployNum)
+			} else {
+				factoryInfo = &ent.FactoryInfo{
+					AccountDeployNum:   int(factory.AccountDeployNum),
+					AccountNum:         int(factory.AccountNum),
+					AccountNumD1:       int(factory.AccountNum),
+					AccountDeployNumD1: int(factory.AccountDeployNum),
+				}
+			}
+			factoryInfo.Factory = factory.Factory
+			factoryInfo.Network = factory.Network
+			factoryInfoMap[factoryAddr] = factoryInfo
+
+		}
+
+		for factory, factoryInfo := range factoryInfoMap {
+			if len(factory) == 0 {
+				continue
+			}
+			saveOrUpdateFactory(client, factory, factoryInfo)
+		}
 	}
+
 }
 
 func topPaymaster() {
@@ -125,56 +141,72 @@ func topPaymaster() {
 }
 
 func doTopPaymasterHour() {
-	client, err := entity.Client(context.Background())
+	cli, err := entity.Client(context.Background())
 	if err != nil {
 		return
 	}
-	now := time.Now()
-	startTime := time.Date(now.Year(), now.Month(), now.Day()-7, now.Hour()-23, 0, 0, 0, now.Location())
-	endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 0, 0, 0, now.Location())
-	paymasterStatisHours, err := client.PaymasterStatisHour.
-		Query().
-		Where(
-			paymasterstatishour.StatisTimeGTE(startTime),
-			paymasterstatishour.StatisTimeLT(endTime),
-		).
-		All(context.Background())
-
-	if err != nil {
+	records, err := cli.Network.Query().All(context.Background())
+	if len(records) == 0 {
 		return
 	}
-	if len(paymasterStatisHours) == 0 {
-		return
-	}
-
-	paymasterInfoMap := make(map[string]*ent.PaymasterInfo)
-	for _, paymasterStatisHour := range paymasterStatisHours {
-		paymaster := paymasterStatisHour.Paymaster
-		paymasterInfo, paymasterInfoOk := paymasterInfoMap[paymaster]
-		if paymasterInfoOk {
-			paymasterInfo.UserOpsNum = paymasterInfo.UserOpsNum + paymasterStatisHour.UserOpsNum
-			paymasterInfo.GasSponsored = paymasterInfo.GasSponsored.Add(paymasterStatisHour.GasSponsored)
-			paymasterInfo.UserOpsNumD1 = paymasterInfo.UserOpsNumD1 + paymasterStatisHour.UserOpsNum
-			paymasterInfo.GasSponsoredD1 = paymasterInfo.GasSponsoredD1.Add(paymasterStatisHour.GasSponsored)
-		} else {
-			paymasterInfo = &ent.PaymasterInfo{
-				UserOpsNum:     paymasterStatisHour.UserOpsNum,
-				GasSponsored:   paymasterStatisHour.GasSponsored,
-				UserOpsNumD1:   paymasterStatisHour.UserOpsNum,
-				GasSponsoredD1: paymasterStatisHour.GasSponsored,
-			}
-		}
-		paymasterInfo.Paymaster = paymasterStatisHour.Paymaster
-		paymasterInfo.Network = paymasterStatisHour.Network
-		paymasterInfoMap[paymaster] = paymasterInfo
-
-	}
-
-	for paymaster, paymasterInfo := range paymasterInfoMap {
-		if paymaster == "" {
+	for _, record := range records {
+		network := record.Network
+		client, err := entity.Client(context.Background(), network)
+		if err != nil {
 			continue
 		}
-		saveOrUpdatePaymaster(client, paymaster, paymasterInfo)
+		now := time.Now()
+		startTime := time.Date(now.Year(), now.Month(), now.Day()-7, now.Hour()-23, 0, 0, 0, now.Location())
+		endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 0, 0, 0, now.Location())
+		paymasterStatisHours, err := client.PaymasterStatisHour.
+			Query().
+			Where(
+				paymasterstatishour.StatisTimeGTE(startTime),
+				paymasterstatishour.StatisTimeLT(endTime),
+			).
+			All(context.Background())
+
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		if len(paymasterStatisHours) == 0 {
+			continue
+		}
+
+		paymasterInfoMap := make(map[string]*ent.PaymasterInfo)
+		for _, paymasterStatisHour := range paymasterStatisHours {
+			paymaster := paymasterStatisHour.Paymaster
+			paymasterInfo, paymasterInfoOk := paymasterInfoMap[paymaster]
+			if paymasterInfoOk {
+				paymasterInfo.UserOpsNum = paymasterInfo.UserOpsNum + paymasterStatisHour.UserOpsNum
+				paymasterInfo.GasSponsored = paymasterInfo.GasSponsored.Add(paymasterStatisHour.GasSponsored)
+				paymasterInfo.UserOpsNumD1 = paymasterInfo.UserOpsNumD1 + paymasterStatisHour.UserOpsNum
+				paymasterInfo.GasSponsoredD1 = paymasterInfo.GasSponsoredD1.Add(paymasterStatisHour.GasSponsored)
+			} else {
+				paymasterInfo = &ent.PaymasterInfo{
+					UserOpsNum:     paymasterStatisHour.UserOpsNum,
+					GasSponsored:   paymasterStatisHour.GasSponsored,
+					UserOpsNumD1:   paymasterStatisHour.UserOpsNum,
+					GasSponsoredD1: paymasterStatisHour.GasSponsored,
+				}
+			}
+			paymasterInfo.Paymaster = paymasterStatisHour.Paymaster
+			paymasterInfo.Network = paymasterStatisHour.Network
+			paymasterInfoMap[paymaster] = paymasterInfo
+
+		}
+
+		price := service.GetNativePrice(network)
+		for paymaster, paymasterInfo := range paymasterInfoMap {
+			if len(paymaster) == 0 {
+				continue
+			}
+			nativeBalance := moralis.GetNativeTokenBalance(paymaster, network)
+			paymasterInfo.Reserve = nativeBalance
+			paymasterInfo.ReserveUsd = price.Mul(nativeBalance)
+			saveOrUpdatePaymaster(client, paymaster, paymasterInfo)
+		}
 	}
 
 }
@@ -194,61 +226,123 @@ func topBundlers() {
 }
 
 func doTopBundlersHour() {
-	client, err := entity.Client(context.Background())
+	cli, err := entity.Client(context.Background())
 	if err != nil {
 		return
 	}
-	now := time.Now()
-	startTime := time.Date(now.Year(), now.Month(), now.Day()-7, now.Hour()-23, 0, 0, 0, now.Location())
-	endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 0, 0, 0, now.Location())
-	bundlerStatisHours, err := client.BundlerStatisHour.
-		Query().
-		Where(
-			bundlerstatishour.StatisTimeGTE(startTime),
-			bundlerstatishour.StatisTimeLT(endTime),
-		).
-		All(context.Background())
-
-	if err != nil {
+	records, err := cli.Network.Query().All(context.Background())
+	if len(records) == 0 {
 		return
 	}
-	if len(bundlerStatisHours) == 0 {
-		return
-	}
-
-	bundlerInfoMap := make(map[string]*ent.BundlerInfo)
-	for _, bundlerStatisHour := range bundlerStatisHours {
-		bundler := bundlerStatisHour.Bundler
-		bundlerInfo, bundlerInfoOk := bundlerInfoMap[bundler]
-		if bundlerInfoOk {
-			bundlerInfo.UserOpsNum = bundlerInfo.UserOpsNum + bundlerStatisHour.UserOpsNum
-			bundlerInfo.BundlesNum = bundlerInfo.BundlesNum + bundlerStatisHour.BundlesNum
-			bundlerInfo.GasCollected = bundlerInfo.GasCollected.Add(bundlerStatisHour.GasCollected)
-			bundlerInfo.UserOpsNumD1 = bundlerInfo.UserOpsNumD1 + bundlerStatisHour.UserOpsNum
-			bundlerInfo.BundlesNumD1 = bundlerInfo.BundlesNumD1 + bundlerStatisHour.BundlesNum
-			bundlerInfo.GasCollectedD1 = bundlerInfo.GasCollectedD1.Add(bundlerStatisHour.GasCollected)
-		} else {
-			bundlerInfo = &ent.BundlerInfo{
-				UserOpsNum:     bundlerStatisHour.UserOpsNum,
-				BundlesNum:     bundlerStatisHour.BundlesNum,
-				GasCollected:   bundlerStatisHour.GasCollected,
-				UserOpsNumD1:   bundlerStatisHour.UserOpsNum,
-				BundlesNumD1:   bundlerStatisHour.BundlesNum,
-				GasCollectedD1: bundlerStatisHour.GasCollected,
-			}
-		}
-		bundlerInfo.Bundler = bundlerStatisHour.Bundler
-		bundlerInfo.Network = bundlerStatisHour.Network
-		bundlerInfoMap[bundler] = bundlerInfo
-
-	}
-
-	for bundler, bundlerInfo := range bundlerInfoMap {
-		if bundler == "" {
+	for _, record := range records {
+		network := record.Network
+		client, err := entity.Client(context.Background(), network)
+		if err != nil {
 			continue
 		}
-		saveOrUpdateBundler(client, bundler, bundlerInfo)
+		now := time.Now()
+		startTime := time.Date(now.Year(), now.Month(), now.Day()-7, now.Hour()-23, 0, 0, 0, now.Location())
+		endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 0, 0, 0, now.Location())
+		bundlerStatisHours, err := client.BundlerStatisHour.
+			Query().
+			Where(
+				bundlerstatishour.StatisTimeGTE(startTime),
+				bundlerstatishour.StatisTimeLT(endTime),
+			).
+			All(context.Background())
+
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		if len(bundlerStatisHours) == 0 {
+			continue
+		}
+
+		var totalBundleNum = int64(0)
+		var bundleNumMap = make(map[string]int64)
+		var totalNumMap = make(map[string]int64)
+		for _, bundlerStatisHour := range bundlerStatisHours {
+			totalBundleNum += bundlerStatisHour.BundlesNum
+			bundleNum, ok := bundleNumMap[bundlerStatisHour.Bundler]
+			if !ok {
+				bundleNum = 0
+			}
+			bundleNumMap[bundlerStatisHour.Bundler] = int64(bundleNum) + bundlerStatisHour.BundlesNum
+			totalNum, totalOk := totalNumMap[bundlerStatisHour.Bundler]
+			if !totalOk {
+				totalNum = 0
+			}
+			totalNumMap[bundlerStatisHour.Bundler] = int64(totalNum) + bundlerStatisHour.TotalNum
+		}
+		bundleRateMap, sucRateMap := getRate(totalBundleNum, bundleNumMap, totalNumMap)
+
+		bundlerInfoMap := make(map[string]*ent.BundlerInfo)
+		for _, bundlerStatisHour := range bundlerStatisHours {
+			bundler := bundlerStatisHour.Bundler
+			bundlerInfo, bundlerInfoOk := bundlerInfoMap[bundler]
+
+			if bundlerInfoOk {
+				bundlerInfo.UserOpsNum = bundlerInfo.UserOpsNum + bundlerStatisHour.UserOpsNum
+				bundlerInfo.BundlesNum = bundlerInfo.BundlesNum + bundlerStatisHour.BundlesNum
+				bundlerInfo.GasCollected = bundlerInfo.GasCollected.Add(bundlerStatisHour.GasCollected)
+				bundlerInfo.UserOpsNumD1 = bundlerInfo.UserOpsNumD1 + bundlerStatisHour.UserOpsNum
+				bundlerInfo.BundlesNumD1 = bundlerInfo.BundlesNumD1 + bundlerStatisHour.BundlesNum
+				bundlerInfo.GasCollectedD1 = bundlerInfo.GasCollectedD1.Add(bundlerStatisHour.GasCollected)
+			} else {
+				bundlerInfo = &ent.BundlerInfo{
+					UserOpsNum:     bundlerStatisHour.UserOpsNum,
+					BundlesNum:     bundlerStatisHour.BundlesNum,
+					GasCollected:   bundlerStatisHour.GasCollected,
+					UserOpsNumD1:   bundlerStatisHour.UserOpsNum,
+					BundlesNumD1:   bundlerStatisHour.BundlesNum,
+					GasCollectedD1: bundlerStatisHour.GasCollected,
+				}
+			}
+
+			if bundleRateMap != nil {
+				bundlerInfo.BundleRateD1 = bundleRateMap[bundler]
+			}
+
+			if sucRateMap != nil {
+				bundlerInfo.SuccessRateD1 = sucRateMap[bundler]
+			}
+
+			bundlerInfo.Bundler = bundlerStatisHour.Bundler
+			bundlerInfo.Network = bundlerStatisHour.Network
+			bundlerInfoMap[bundler] = bundlerInfo
+
+		}
+
+		for bundler, bundlerInfo := range bundlerInfoMap {
+			if len(bundler) == 0 {
+				continue
+			}
+			saveOrUpdateBundler(client, bundler, bundlerInfo)
+		}
 	}
+
+}
+
+func getRate(num int64, bundleNumMap map[string]int64, totalNumMap map[string]int64) (map[string]decimal.Decimal, map[string]decimal.Decimal) {
+	if len(bundleNumMap) == 0 || len(totalNumMap) == 0 {
+		return nil, nil
+	}
+	var bundleRateMap = make(map[string]decimal.Decimal)
+	var sucRateMap = make(map[string]decimal.Decimal)
+	for bundler, singleNum := range bundleNumMap {
+		totalNum := totalNumMap[bundler]
+		if singleNum == 0 || totalNum == 0 {
+			bundleRateMap[bundler] = decimal.Zero
+			sucRateMap[bundler] = decimal.Zero
+			continue
+		}
+		sucRate := decimal.NewFromInt(singleNum).DivRound(decimal.NewFromInt(totalNum), 4)
+		bundleRate := decimal.NewFromInt(singleNum).DivRound(decimal.NewFromInt(num), 4)
+		bundleRateMap[bundler] = bundleRate
+		sucRateMap[bundler] = sucRate
+	}
+	return bundleRateMap, sucRateMap
 }
 
 func saveOrUpdateBundler(client *ent.Client, bundler string, info *ent.BundlerInfo) {

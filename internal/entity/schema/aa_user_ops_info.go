@@ -48,7 +48,8 @@ func (AAUserOpsInfo) Fields() []ent.Field {
 	return []ent.Field{
 		field.Time("time").
 			StructTag(`json:"time"`),
-		field.String("user_operation_hash").
+		field.String("id").
+			StorageKey("user_operation_hash").
 			MaxLen(255).
 			StructTag(`json:"userOperationHash"`),
 		field.String("tx_hash").
@@ -67,7 +68,7 @@ func (AAUserOpsInfo) Fields() []ent.Field {
 			StructTag(`json:"target"`),
 		field.Int64("tx_value").
 			StructTag(`json:"txValue"`).GoType(decimal.Zero).
-			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
+			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}).Optional().Nillable(),
 		field.Int64("fee").
 			StructTag(`json:"fee"`).GoType(decimal.Zero).
 			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
