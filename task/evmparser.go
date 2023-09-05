@@ -79,7 +79,22 @@ type parserBlock struct {
 	block       *ent.BlockDataDecode
 	transitions []*parserTransaction
 	userOpInfo  *ent.AaBlockInfo
+	aaAccounts  *sync.Map
 }
+
+func (b *parserBlock) AaAccountData(address string) *ent.AaAccountData {
+	a, _ := b.aaAccounts.LoadOrStore(address, &ent.AaAccountData{ID: address})
+	return a.(*ent.AaAccountData)
+}
+func (b *parserBlock) AaAccountDataSlice() ent.AaAccountDataSlice {
+	s := ent.AaAccountDataSlice{}
+	b.aaAccounts.Range(func(key, value any) bool {
+		s = append(s, value.(*ent.AaAccountData))
+		return true
+	})
+	return s
+}
+
 type parserTransaction struct {
 	transaction     *ent.TransactionDecode
 	receipt         *ent.TransactionReceiptDecode
@@ -233,6 +248,7 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 		var userOpsInfoCalldatas ent.AAUserOpsCalldataSlice
 		var aaBlockInfos ent.AaBlockInfos
 		var setBlockSyncedId []int64
+		var aaAccountDataMap = map[string]*ent.AaAccountData{}
 		for _, block := range blocksMap {
 			t.doParse(ctx, tx.Client(), network, block)
 
@@ -255,11 +271,27 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 					aaTransactionInfos = append(aaTransactionInfos, transition.userOpInfo)
 				}
 			}
+
+			accountDataSlice := block.AaAccountDataSlice()
+			for i, data := range accountDataSlice {
+				if accountData, ok := aaAccountDataMap[data.ID]; ok {
+					if len(data.AaType) > 0 && len(accountData.AaType) < 1 {
+						accountData.AaType = data.AaType
+					}
+					if len(data.Factory) > 0 && len(accountData.Factory) < 1 {
+						accountData.Factory = data.Factory
+						accountData.FactoryTime = data.FactoryTime
+					}
+				} else {
+					aaAccountDataMap[data.ID] = accountDataSlice[i]
+				}
+			}
 		}
 
 		t.insertUserOpsInfo(ctx, tx.Client(), network, aaUserOpsInfos)
 		t.insertTransactions(ctx, tx.Client(), network, aaTransactionInfos)
 		t.insertuserOpsInfoCalldatas(ctx, tx.Client(), network, userOpsInfoCalldatas)
+		t.insertAccounts(ctx, tx.Client(), network, aaAccountDataMap)
 
 		// set sync status
 		if len(setBlockSyncedId) > 0 {
@@ -338,7 +370,10 @@ func (t *_evmParser) getParseData(ctx context.Context, client *ent.Client, block
 	transactionMap = map[string]*parserTransaction{}
 	for _, blockDataDecode := range blockDataDecodes {
 		blocksMap[blockDataDecode.ID] = &parserBlock{
-			block: blockDataDecode,
+			block:       blockDataDecode,
+			transitions: []*parserTransaction{},
+			userOpInfo:  &ent.AaBlockInfo{},
+			aaAccounts:  &sync.Map{},
 		}
 	}
 	for _, transactionDecode := range transactionDecodes {
@@ -605,6 +640,18 @@ func (t *_evmParser) insertUserOpsInfo(ctx context.Context, client *ent.Client, 
 	}
 }
 
+func (t *_evmParser) insertAccounts(ctx context.Context, client *ent.Client, network *ent.Network, dataMap map[string]*ent.AaAccountData) {
+	//keys := maps.Keys(dataMap)
+	//
+	//accounts := client.Account.
+	//	Query().
+	//	Where(
+	//		account.IDIn(keys...),
+	//	).AllX(ctx)
+	//accountsMap := make()
+
+}
+
 func (t *_evmParser) parseUserOps(ctx context.Context, network *ent.Network, block *parserBlock, parserTx *parserTransaction) error {
 
 	data, err := hexutil.Decode(parserTx.transaction.Input)
@@ -645,6 +692,12 @@ func (t *_evmParser) parseUserOps(ctx context.Context, network *ent.Network, blo
 		BundlerProfit: decimal.Decimal{},
 		CreateTime:    time.Now(),
 	}
+
+	bundler := block.AaAccountData(parserTx.transaction.FromAddr)
+	bundler.AaType = config.AaAccountTypeBundler
+
+	entryPoint := block.AaAccountData(parserTx.transaction.ToAddr)
+	entryPoint.AaType = config.AaAccountTypeEntryPoint
 
 	for _, op := range ops {
 		callDetails := t.parseCallData(ctx, hexutil.Encode(op.CallData))
@@ -700,6 +753,19 @@ func (t *_evmParser) parseUserOps(ctx context.Context, network *ent.Network, blo
 			UpdateTime:           now,
 			UsdAmount:            decimal.Decimal{},
 		}
+		sender := block.AaAccountData(userOpsInfo.Sender)
+		sender.AaType = config.AaAccountTypeAA
+		if len(userOpsInfo.Paymaster) > 0 {
+			paymaster := block.AaAccountData(userOpsInfo.Paymaster)
+			paymaster.AaType = config.AaAccountTypePaymaster
+		}
+
+		if len(userOpsInfo.Factory) > 0 {
+			factory := block.AaAccountData(userOpsInfo.Factory)
+			factory.AaType = config.AaAccountTypeFactory
+			sender.Factory = userOpsInfo.Factory
+			sender.FactoryTime = userOpsInfo.Time
+		}
 
 		factoryAddr, paymaster := t.getAddr(ctx, userOpsInfo.InitCode, userOpsInfo.PaymasterAndData)
 
@@ -752,6 +818,8 @@ func (t *_evmParser) parseUserOps(ctx context.Context, network *ent.Network, blo
 				AaIndex:     int64(i + 1),
 			}
 			parserTx.userOpsCalldata = append(parserTx.userOpsCalldata, aaUserOpsCalldata)
+
+			block.AaAccountData(aaUserOpsCalldata.Target)
 		}
 
 		parserTx.userops = append(parserTx.userops, userOpsInfo)
