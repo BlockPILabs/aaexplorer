@@ -5,15 +5,18 @@ import (
 	"context"
 	"encoding/json"
 	"entgo.io/ent/dialect/sql"
+	"errors"
 	"fmt"
 	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aablocksync"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aatransactioninfo"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropscalldata"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropsinfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/blockdatadecode"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactiondecode"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactionreceiptdecode"
-	"github.com/BlockPILabs/aa-scan/internal/entity/schema"
 	"github.com/BlockPILabs/aa-scan/internal/log"
 	"github.com/BlockPILabs/aa-scan/internal/service"
 	"github.com/BlockPILabs/aa-scan/internal/utils"
@@ -22,6 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jackc/pgtype"
 	"github.com/procyon-projects/chrono"
@@ -79,10 +83,10 @@ type parserBlock struct {
 type parserTransaction struct {
 	transaction     *ent.TransactionDecode
 	receipt         *ent.TransactionReceiptDecode
-	userOpInfo      *ent.AaBlockInfo
-	userops         []*ent.AAUserOpsInfo
+	userOpInfo      *ent.AaTransactionInfo
+	userops         ent.AAUserOpsInfos
 	logs            []*aa.Log
-	userOpsCalldata []*ent.AAUserOpsCalldata
+	userOpsCalldata ent.AAUserOpsCalldataSlice
 }
 
 func InitEvmParse(config *config.Config, logger log.Logger) error {
@@ -148,55 +152,6 @@ func (t *_evmParser) ScanBlock(ctx context.Context) {
 		wg.Wait()
 	}
 
-	/*
-		startMillis := getCurrentTimestampMillis()
-		client, err := ethclient.Dial("https://patient-crimson-slug.matic.discover.quiknode.pro/4cb47dc694ccf2998581548feed08af5477aa84b/")
-		if err != nil {
-			log.Printf("RPC client err, %s\n", err)
-			return
-		}
-		record, err := schema.GetBlockScanRecordsByNetwork(config.Polygon)
-		if err != nil {
-			return
-		}
-		var nextBlockNumber int64
-		if record == nil {
-			latestBlockNumber, err := client.BlockNumber(context.Background())
-			if err != nil {
-				log.Printf("evmparser--ScanBlock--err, %s\n", err)
-				return
-			}
-			nextBlockNumber = int64(latestBlockNumber)
-		} else {
-			nextBlockNumber = record.LastBlockNumber + 1
-		}
-		nextBlockNumber = 44787202
-		block, err := client.BlockByNumber(context.Background(), big.NewInt(nextBlockNumber))
-		if err != nil {
-			return
-		}
-		doParse(block, client)
-
-		if record == nil {
-			scanRecord := &schema.BlockScanRecord{
-				Network:         config.Polygon,
-				LastBlockNumber: nextBlockNumber,
-				LastScanTime:    time.Now(),
-				UpdateTime:      time.Now(),
-			}
-			schema.InsertBlockScanRecord(scanRecord)
-		} else {
-			record.LastBlockNumber = nextBlockNumber
-			record.LastScanTime = time.Now()
-			record.UpdateTime = time.Now()
-			schema.UpdateBlockScanRecordByID(record.ID, record)
-		}
-
-		endMillis := getCurrentTimestampMillis()
-		log.Printf("Block parse end, [%d], [%d]\n", nextBlockNumber, endMillis-startMillis)
-
-	*/
-
 }
 func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Network, wg *sync.WaitGroup) (fiend bool) {
 	defer func() {
@@ -260,7 +215,7 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 			tx.Commit()
 			wg.Done()
 		}()
-		blockDataDecodes, transactionDecodes, receiptDecodes, blocksMap, transactionMap, err := t.getParseData(ctx, client, blockIds...)
+		blockDataDecodes, transactionDecodes, receiptDecodes, blocksMap, transactionMap, err := t.getParseData(ctx, tx.Client(), blockIds...)
 		_ = (blockDataDecodes)
 		_ = (transactionDecodes)
 		_ = (receiptDecodes)
@@ -269,10 +224,17 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 		if err != nil {
 			log.Context(ctx).Error("get parse data error", "err", err)
 		}
+
+		var blockUserOpsInfos ent.AAUserOpsInfos
+		var aaTransactionInfos ent.AaTransactionInfos
+		var userOpsInfoCalldatas ent.AAUserOpsCalldataSlice
 		for _, block := range blocksMap {
-			t.doParse(network, block)
+			t.doParse(ctx, tx.Client(), network, block)
 		}
 
+		t.insertUserOpsInfo(ctx, tx.Client(), network, blockUserOpsInfos)
+		t.insertTransactions(ctx, tx.Client(), network, aaTransactionInfos)
+		t.insertuserOpsInfoCalldatas(ctx, tx.Client(), network, userOpsInfoCalldatas)
 	}()
 
 	return true
@@ -384,13 +346,19 @@ func (t *_evmParser) getCurrentTimestampMillis() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
-func (t *_evmParser) doParse(network *ent.Network, block *parserBlock) {
+func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *ent.Network, block *parserBlock) {
 
 	parserTransactions := block.transitions
 
-	var blockUserOpsInfos []schema.UserOpsInfo
-	var blockTransactionInfos []schema.TransactionInfo
-
+	block.userOpInfo = &ent.AaBlockInfo{
+		ID:             block.block.ID,
+		Time:           block.block.Time,
+		Hash:           block.block.Hash,
+		UseropCount:    0,
+		UseropMevCount: 0,
+		BundlerProfit:  decimal.Decimal{},
+		CreateTime:     time.Now(),
+	}
 	for _, parserTx := range parserTransactions {
 		tx := parserTx.transaction
 		input := tx.Input
@@ -402,22 +370,12 @@ func (t *_evmParser) doParse(network *ent.Network, block *parserBlock) {
 		if sign != HandleOpsSign {
 			continue
 		}
+		t.parseUserOps(ctx, network, block, parserTx)
 
-		userOpsInfos, transactionInfo := t.parseUserOps(network, block, parserTx)
-
-		if userOpsInfos != nil {
-			for _, userOps := range *userOpsInfos {
-				blockUserOpsInfos = append(blockUserOpsInfos, userOps)
-			}
-		}
-
-		if transactionInfo != nil {
-			blockTransactionInfos = append(blockTransactionInfos, *transactionInfo)
-		}
-
+		block.userOpInfo.BundlerProfit = block.userOpInfo.BundlerProfit.Add(parserTx.userOpInfo.BundlerProfit)
+		block.userOpInfo.UseropCount += len(parserTx.userops)
 	}
-	t.insertUserOpsInfo(blockUserOpsInfos)
-	t.insertTransactions(blockTransactionInfos)
+
 }
 
 func (t *_evmParser) getFrom(tx *types.Transaction, client *ethclient.Client) string {
@@ -434,120 +392,233 @@ func (t *_evmParser) getFrom(tx *types.Transaction, client *ethclient.Client) st
 	return strings.ToLower(from.String())
 }
 
-func (t *_evmParser) insertTransactions(infos []schema.TransactionInfo) {
+func (t *_evmParser) insertTransactions(ctx context.Context, client *ent.Client, network *ent.Network, infos ent.AaTransactionInfos) {
 	if len(infos) == 0 {
 		return
 	}
-	client, err := entity.Client(context.Background())
+	client, err := entity.Client(context.Background(), network.ID)
 	if err != nil {
 		return
 	}
 
-	var transactionInfoCreates []*ent.TransactionInfoCreate
+	var transactionInfoCreates []*ent.AaTransactionInfoCreate
 	for _, tx := range infos {
-		txCreate := client.TransactionInfo.Create().
-			SetFee(tx.Fee).
-			SetBundler(tx.Bundler).
-			SetNetwork(tx.Network).
-			SetStatus(tx.Status).
-			SetTxTime(tx.TxTime).
-			SetTxHash(tx.TxHash).
-			SetTxTimeFormat(tx.TxTimeFormat).
-			SetEntryPoint(tx.EntryPoint).
+		txCreate := client.AaTransactionInfo.Create().
+			SetTime(tx.Time).
+			SetBlockHash(tx.BlockHash).
 			SetBlockNumber(tx.BlockNumber).
-			SetUserOpsNum(tx.UserOpsNum).
-			SetBeneficiary(tx.Beneficiary).
-			SetGasLimit(tx.GasLimit).
-			SetGasPrice(tx.GasPrice).
-			SetTxValue(tx.TxValue)
+			SetUseropCount(tx.UseropCount).
+			SetIsMev(tx.IsMev).
+			SetBundlerProfit(tx.BundlerProfit).
+			SetCreateTime(tx.CreateTime).
+			SetID(tx.ID)
 
 		transactionInfoCreates = append(transactionInfoCreates, txCreate)
 	}
-	_, err = client.TransactionInfo.CreateBulk(transactionInfoCreates...).Save(context.Background())
+	err = client.AaTransactionInfo.
+		CreateBulk(transactionInfoCreates...).
+		OnConflictColumns(aatransactioninfo.FieldTime, aatransactioninfo.FieldID).
+		Update(func(upsert *ent.AaTransactionInfoUpsert) {
+			upsert.UpdateTime().
+				UpdateBlockHash().
+				UpdateBlockNumber().
+				UpdateUseropCount().
+				UpdateIsMev().
+				UpdateBundlerProfit()
+		}).
+		Exec(context.Background())
 	if err != nil {
 		t.logger.Info("", "err", err)
 	}
 }
-
-func (t *_evmParser) insertUserOpsInfo(infos []schema.UserOpsInfo) {
-	client, err := entity.Client(context.Background())
+func (t *_evmParser) insertuserOpsInfoCalldatas(ctx context.Context, client *ent.Client, network *ent.Network, infos ent.AAUserOpsCalldataSlice) {
+	if len(infos) == 0 {
+		return
+	}
+	client, err := entity.Client(context.Background(), network.ID)
 	if err != nil {
 		return
 	}
-	var userOpsInfoCreates []*ent.UserOpsInfoCreate
-	for _, ops := range infos {
-		userOpsCreate := client.UserOpsInfo.Create().
-			SetUserOperationHash(ops.UserOperationHash).
-			SetFactory(ops.Factory).
-			SetPaymaster(ops.Paymaster).
-			SetNetwork(ops.Network).
-			SetBundler(ops.Bundler).
-			SetActualGasCost(ops.ActualGasCost).
-			SetActualGasUsed(ops.ActualGasUsed).
-			SetBlockNumber(ops.BlockNumber).
-			SetCalldata(ops.Calldata).
-			SetCallGasLimit(ops.CallGasLimit).
-			SetEntryPoint(ops.EntryPoint).
-			SetFee(ops.Fee).
-			SetInitCode(ops.InitCode).
-			SetMaxFeePerGas(ops.MaxFeePerGas).
-			SetMaxPriorityFeePerGas(ops.MaxPriorityFeePerGas).
-			SetNonce(ops.Nonce).
-			SetPaymasterAndData(ops.PaymasterAndData).
-			SetPreVerificationGas(ops.PreVerificationGas).
-			SetVerificationGasLimit(ops.VerificationGasLimit).
-			SetTxValue(ops.TxValue).
-			SetTxTimeFormat(ops.TxTimeFormat).
-			SetTxTime(ops.TxTime).
-			SetTxHash(ops.TxHash).
-			SetTarget(ops.Target).
-			SetStatus(ops.Status).
-			SetSource(ops.Source).
-			SetSignature(ops.Signature).
-			SetSender(ops.Sender)
-		userOpsInfoCreates = append(userOpsInfoCreates, userOpsCreate)
+
+	var transactionInfoCreates []*ent.AAUserOpsCalldataCreate
+	for _, tx := range infos {
+		txCreate := client.AAUserOpsCalldata.Create().
+			SetTime(tx.Time).
+			SetUserOpsHash(tx.UserOpsHash).
+			SetTxHash(tx.TxHash).
+			SetBlockNumber(tx.BlockNumber).
+			SetNetwork(tx.Network).
+			SetSender(tx.Sender).
+			SetTarget(tx.Target).
+			SetTxValue(tx.TxValue).
+			SetSource(tx.Source).
+			SetCalldata(tx.Calldata).
+			SetTxTime(tx.TxTime).
+			SetCreateTime(tx.CreateTime).
+			SetUpdateTime(tx.UpdateTime).
+			SetAaIndex(tx.AaIndex).
+			SetID(tx.ID)
+
+		transactionInfoCreates = append(transactionInfoCreates, txCreate)
 	}
-	_, err = client.UserOpsInfo.CreateBulk(userOpsInfoCreates...).Save(context.Background())
+	err = client.AAUserOpsCalldata.
+		CreateBulk(transactionInfoCreates...).
+		OnConflictColumns(aauseropscalldata.FieldTime, aauseropscalldata.FieldID).
+		Update(func(upsert *ent.AAUserOpsCalldataUpsert) {
+
+			upsert.UpdateTime().
+				UpdateUserOpsHash().
+				UpdateTxHash().
+				UpdateBlockNumber().
+				UpdateNetwork().
+				UpdateSender().
+				UpdateTarget().
+				UpdateTxValue().
+				UpdateSource().
+				UpdateCalldata().
+				UpdateTxTime().
+				UpdateUpdateTime().
+				UpdateAaIndex()
+
+		}).
+		Exec(context.Background())
 	if err != nil {
 		t.logger.Info("", "err", err)
 	}
 }
 
-func (t *_evmParser) parseUserOps(network *ent.Network, block *parserBlock, parserTx *parserTransaction) (*[]schema.UserOpsInfo, *schema.TransactionInfo) {
+func (t *_evmParser) insertUserOpsInfo(ctx context.Context, client *ent.Client, network *ent.Network, infos ent.AAUserOpsInfos) {
+	if len(infos) < 1 {
+		return
+	}
+	client, err := entity.Client(context.Background(), network.ID)
+	if err != nil {
+		return
+	}
+	var userOpsInfoCreates []*ent.AAUserOpsInfoCreate
+	for _, ops := range infos {
+		userOpsCreate := client.AAUserOpsInfo.Create().
+			SetTime(ops.Time).
+			SetTxHash(ops.TxHash).
+			SetBlockNumber(ops.BlockNumber).
+			SetNetwork(ops.Network).
+			SetSender(ops.Sender).
+			SetTarget(ops.Target).
+			SetTargets(ops.Targets).
+			SetTxValue(ops.TxValue).
+			SetFee(ops.Fee).
+			SetBundler(ops.Bundler).
+			SetEntryPoint(ops.EntryPoint).
+			SetFactory(ops.Factory).
+			SetPaymaster(ops.Paymaster).
+			SetPaymasterAndData(ops.PaymasterAndData).
+			SetSignature(ops.Signature).
+			SetCalldata(ops.Calldata).
+			SetCalldataContract(ops.CalldataContract).
+			SetNonce(ops.Nonce).
+			SetCallGasLimit(ops.CallGasLimit).
+			SetPreVerificationGas(ops.PreVerificationGas).
+			SetVerificationGasLimit(ops.VerificationGasLimit).
+			SetMaxFeePerGas(ops.MaxFeePerGas).
+			SetMaxPriorityFeePerGas(ops.MaxPriorityFeePerGas).
+			SetTxTime(ops.TxTime).
+			SetInitCode(ops.InitCode).
+			SetStatus(ops.Status).
+			SetSource(ops.Source).
+			SetActualGasCost(ops.ActualGasCost).
+			SetActualGasUsed(ops.ActualGasUsed).
+			SetCreateTime(ops.CreateTime).
+			SetUpdateTime(ops.UpdateTime).
+			SetUsdAmount(ops.UsdAmount).
+			SetID(ops.ID)
+
+		userOpsInfoCreates = append(userOpsInfoCreates, userOpsCreate)
+	}
+	err = client.AAUserOpsInfo.CreateBulk(userOpsInfoCreates...).
+		OnConflict(
+			sql.ConflictColumns(aauseropsinfo.FieldTime, aauseropsinfo.FieldTxHash, aauseropsinfo.FieldID),
+		).
+		Update(func(upsert *ent.AAUserOpsInfoUpsert) {
+			upsert.UpdateTime().
+				UpdateTxHash().
+				UpdateBlockNumber().
+				UpdateNetwork().
+				UpdateSender().
+				UpdateTarget().
+				UpdateTargets().
+				UpdateTxValue().
+				UpdateFee().
+				UpdateBundler().
+				UpdateEntryPoint().
+				UpdateFactory().
+				UpdatePaymaster().
+				UpdatePaymasterAndData().
+				UpdateSignature().
+				UpdateCalldata().
+				UpdateCalldataContract().
+				UpdateNonce().
+				UpdateCallGasLimit().
+				UpdatePreVerificationGas().
+				UpdateVerificationGasLimit().
+				UpdateMaxFeePerGas().
+				UpdateMaxPriorityFeePerGas().
+				UpdateTxTime().
+				UpdateInitCode().
+				UpdateStatus().
+				UpdateSource().
+				UpdateActualGasCost().
+				UpdateActualGasUsed().
+				UpdateUpdateTime().
+				UpdateUsdAmount()
+		}).Exec(context.Background())
+	if err != nil {
+		t.logger.Info("", "err", err)
+	}
+}
+
+func (t *_evmParser) parseUserOps(ctx context.Context, network *ent.Network, block *parserBlock, parserTx *parserTransaction) error {
 
 	data, err := hexutil.Decode(parserTx.transaction.Input)
 	if err != nil {
-		return nil, nil
+		return err
 	}
 
 	unpack, err := t.handleOpsMethod.Inputs.UnpackValues(data[4:])
 	if err != nil {
-		return nil, nil
+		return err
 	}
 	if len(unpack) < 2 {
-		return nil, nil
+		return errors.New("abi unpack error")
 	}
 
-	beneficiary := parserTx.transaction.FromAddr
-	if beneficiaryAddr, ok := unpack[1].(common.Address); ok {
-		beneficiary = beneficiaryAddr.Hex()
-	}
+	//beneficiary := parserTx.transaction.FromAddr
+	//if beneficiaryAddr, ok := unpack[1].(common.Address); ok {
+	//	beneficiary = strings.ToLower(beneficiaryAddr.Hex())
+	//}
 
 	opsBytes, _ := json.Marshal(unpack[0])
 	var ops []*aa.UserOperation
 	_ = json.Unmarshal(opsBytes, &ops)
 	err = json.Unmarshal([]byte(parserTx.receipt.Logs), &parserTx.logs)
 	if err != nil {
-		return nil, nil
+		return err
 	}
 
-	events, opsValMap := t.parseLogs(parserTx.logs)
-	fmt.Println(events)
-	fmt.Println(opsValMap)
+	events, opsValMap := t.parseLogs(ctx, parserTx.logs)
 
-	var userOpsInfos []ent.AAUserOpsInfo
+	parserTx.userOpInfo = &ent.AaTransactionInfo{
+		ID:            parserTx.transaction.ID,
+		Time:          parserTx.transaction.Time,
+		BlockHash:     parserTx.transaction.BlockHash,
+		BlockNumber:   parserTx.transaction.BlockNumber,
+		UseropCount:   0,
+		IsMev:         false,
+		BundlerProfit: decimal.Decimal{},
+		CreateTime:    time.Now(),
+	}
+
 	for _, op := range ops {
-		callDetails := t.parseCallData(hexutil.Encode(op.CallData))
+		callDetails := t.parseCallData(ctx, hexutil.Encode(op.CallData))
 		var target = ""
 		var targetsMap = map[string]string{}
 		var targets = []string{}
@@ -564,19 +635,20 @@ func (t *_evmParser) parseUserOps(network *ent.Network, block *parserBlock, pars
 		pgTarges.Set(targets)
 
 		userOpHash := op.GetUserOpHash(common.HexToAddress(parserTx.transaction.ToAddr), big.NewInt(network.ChainID))
-		userOpsInfo := ent.AAUserOpsInfo{
+		now := time.Now()
+		userOpsInfo := &ent.AAUserOpsInfo{
 			ID:                   userOpHash.Hex(),
 			Time:                 parserTx.transaction.Time,
 			TxHash:               parserTx.transaction.ID,
 			BlockNumber:          parserTx.transaction.BlockNumber,
 			Network:              network.ID,
-			Sender:               op.Sender.Hex(),
+			Sender:               strings.ToLower(op.Sender.Hex()),
 			Target:               target,
 			Targets:              &pgTarges,
 			TxValue:              parserTx.transaction.Value,
 			Fee:                  parserTx.transaction.Gas,
-			Bundler:              parserTx.transaction.FromAddr,
-			EntryPoint:           parserTx.transaction.ToAddr,
+			Bundler:              strings.ToLower(parserTx.transaction.FromAddr),
+			EntryPoint:           strings.ToLower(parserTx.transaction.ToAddr),
 			Factory:              "",
 			Paymaster:            "",
 			PaymasterAndData:     hexutil.Encode(op.PaymasterAndData),
@@ -589,155 +661,80 @@ func (t *_evmParser) parseUserOps(network *ent.Network, block *parserBlock, pars
 			VerificationGasLimit: op.VerificationGasLimit.Int64(),
 			MaxFeePerGas:         op.MaxFeePerGas.Int64(),
 			MaxPriorityFeePerGas: op.MaxPriorityFeePerGas.Int64(),
-			TxTime:               parserTx.transaction.Time,
+			TxTime:               parserTx.transaction.Time.Unix(),
 			InitCode:             hexutil.Encode(op.InitCode),
 			Status:               0,
 			Source:               "",
 			ActualGasCost:        0,
 			ActualGasUsed:        0,
-			CreateTime:           time.Now(),
+			CreateTime:           now,
+			UpdateTime:           now,
 			UsdAmount:            decimal.Decimal{},
 		}
 
-		userOpsInfos = append(userOpsInfos, userOpsInfo)
-		fmt.Println(userOpsInfos)
+		factoryAddr, paymaster := t.getAddr(ctx, userOpsInfo.InitCode, userOpsInfo.PaymasterAndData)
+
+		userOpsInfo.Factory = strings.ToLower(factoryAddr)
+		userOpsInfo.Paymaster = strings.ToLower(paymaster)
+
+		opsVal, ok := events[userOpsInfo.Sender+strconv.Itoa(int(userOpsInfo.Nonce))]
+		if ok {
+			userOpsInfo.ActualGasUsed = opsVal.ActualGasUsed
+			userOpsInfo.ID = opsVal.OpsHash
+			userOpsInfo.ActualGasCost = opsVal.ActualGasCost
+			userOpsInfo.Status = int32(opsVal.Success)
+			userOpsInfo.Fee = utils.DivRav(opsVal.ActualGasCost)
+		}
+		opsTxValue, opsTxValueOk := opsValMap[userOpsInfo.Sender]
+		if opsTxValueOk {
+			userOpsInfo.TxValue = opsTxValue
+		}
+
+		for i, callDetail := range callDetails {
+			id := crypto.
+				Keccak256Hash(
+					[]byte(fmt.Sprintf(
+						"%s-%s-%s-%s-%s-%d-%d",
+						userOpsInfo.TxHash,
+						userOpsInfo.ID,
+						userOpsInfo.Sender,
+						callDetail.target,
+						callDetail.data,
+						callDetail.value.IntPart(),
+						i+1,
+					)),
+				).
+				Hex()
+			aaUserOpsCalldata := &ent.AAUserOpsCalldata{
+				ID:          id,
+				Time:        userOpsInfo.Time,
+				UserOpsHash: userOpsInfo.ID,
+				TxHash:      userOpsInfo.TxHash,
+				BlockNumber: userOpsInfo.BlockNumber,
+				Network:     userOpsInfo.Network,
+				Sender:      userOpsInfo.Sender,
+				Target:      callDetail.target,
+				TxValue:     callDetail.value,
+				Source:      "",
+				Calldata:    callDetail.data,
+				TxTime:      userOpsInfo.TxTime,
+				CreateTime:  now,
+				UpdateTime:  now,
+				AaIndex:     int64(i + 1),
+			}
+			parserTx.userOpsCalldata = append(parserTx.userOpsCalldata, aaUserOpsCalldata)
+		}
+
+		parserTx.userops = append(parserTx.userops, userOpsInfo)
+		parserTx.userOpInfo.UseropCount++
+		parserTx.userOpInfo.BundlerProfit = parserTx.userOpInfo.BundlerProfit.Add(decimal.NewFromInt(userOpsInfo.ActualGasCost))
+
 	}
-
-	fmt.Println(beneficiary)
-	//
-	//fmt.Println(ret[0])
-	//
-	//ops, ok := (ret[0]).([]*aa.UserOperation)
-	//if !ok {
-	//	return nil, nil
-	//}
-	//
-	//for _, op := range ops {
-	//	fmt.Println(op)
-	//}
-	//
-	//fmt.Println(ops)
-	/*
-		start := utils.TruncateString(input, 64)
-		startIdx := utils.HexToDecimal(start)
-		beneficary := utils.HexToAddress(utils.Substring(input, 64*1, 64*2))
-		startInt, err := strconv.Atoi(startIdx.String())
-		if err != nil {
-			return nil, nil
-		}
-		arrNum := utils.HexToDecimalInt(utils.Substring(input, startInt*2, startInt*2+64))
-		if arrNum == nil {
-			return nil, nil
-		}
-		var userOpsInfos []schema.UserOpsInfo
-		fee := decimal.NewFromInt(int64(receipt.GasUsed)).Mul(utils.DivRav(receipt.EffectiveGasPrice.Int64()))
-		logs := receipt.Logs
-
-		events, opsValMap := t.parseLogs(logs)
-
-		arrNumInt := *arrNum
-		for i := 1; i <= arrNumInt; i++ {
-			offset := utils.HexToDecimalInt(utils.Substring(input, 64*(2+i), 64*(i+3)))
-			if offset == nil {
-				continue
-			}
-			offsetInt := *offset
-			realData := utils.SubstringFromIndex(input, 64*3+offsetInt*2)
-			sender := utils.HexToAddress(utils.Substring(realData, 0, 64*1))
-			nonce := utils.HexToDecimalInt(utils.Substring(realData, 64*1, 64*2))
-			initCodeOffset := *utils.HexToDecimalInt(utils.Substring(realData, 64*2, 64*3))
-			callDataOffset := *utils.HexToDecimalInt(utils.Substring(realData, 64*3, 64*4))
-			callGasLimit := utils.HexToDecimal(utils.Substring(realData, 64*4, 64*5))
-			verificationGasLimit := utils.HexToDecimal(utils.Substring(realData, 64*5, 64*6))
-			preVerificationGas := utils.HexToDecimal(utils.Substring(realData, 64*6, 64*7))
-			maxFeePerGas := utils.HexToDecimal(utils.Substring(realData, 64*7, 64*8))
-			maxPriorityFeePerGas := utils.HexToDecimal(utils.Substring(realData, 64*8, 64*9))
-			paymasterAndDataOffset := *utils.HexToDecimalInt(utils.Substring(realData, 64*9, 64*10))
-			signatureOffset := *utils.HexToDecimalInt(utils.Substring(realData, 64*10, 64*11))
-			initCodeLen := *utils.HexToDecimalInt(utils.Substring(realData, initCodeOffset*2, initCodeOffset*2+64))
-			callDataLen := *utils.HexToDecimalInt(utils.Substring(realData, callDataOffset*2, callDataOffset*2+64))
-			paymasterAndDataLen := *utils.HexToDecimalInt(utils.Substring(realData, paymasterAndDataOffset*2, paymasterAndDataOffset*2+64))
-			signatureLen := *utils.HexToDecimalInt(utils.Substring(realData, signatureOffset*2, signatureOffset*2+64))
-			initCode := utils.Substring(realData, initCodeOffset*2+64, initCodeOffset*2+64+initCodeLen*2)
-			callData := utils.Substring(realData, callDataOffset*2+64, callDataOffset*2+64+callDataLen*2)
-			paymasterAndData := utils.Substring(realData, paymasterAndDataOffset*2+64, paymasterAndDataOffset*2+64+paymasterAndDataLen*2)
-			signature := utils.Substring(realData, signatureOffset*2+64, signatureOffset*2+64+signatureLen*2)
-
-			factoryAddr, paymaster := t.getAddr(initCode, paymasterAndData)
-
-			callDetails := t.parseCallData(callData)
-			var target = ""
-			if callDetails != nil && len(callDetails) > 0 {
-				target = callDetails[0].target
-			}
-
-			userOpsInfo := schema.UserOpsInfo{
-				TxHash:               tx.Hash().String(),
-				BlockNumber:          receipt.BlockNumber.Int64(),
-				Network:              config.Polygon,
-				Sender:               sender,
-				Target:               target,
-				Bundler:              from,
-				EntryPoint:           strings.ToLower(tx.To().String()),
-				Factory:              factoryAddr,
-				Paymaster:            paymaster,
-				PaymasterAndData:     "0x" + paymasterAndData,
-				Calldata:             "0x" + callData,
-				Nonce:                int64(*nonce),
-				CallGasLimit:         callGasLimit.Int64(),
-				PreVerificationGas:   preVerificationGas.Int64(),
-				VerificationGasLimit: verificationGasLimit.Int64(),
-				MaxFeePerGas:         maxFeePerGas.Int64(),
-				MaxPriorityFeePerGas: maxPriorityFeePerGas.Int64(),
-				TxTime:               int64(txTime),
-				TxTimeFormat:         utils.FormatTimestamp(int64(txTime)),
-				InitCode:             "0x" + initCode,
-				Source:               "",
-				Signature:            "0x" + signature,
-			}
-			opsVal, ok := events[sender+strconv.Itoa(int(*nonce))]
-			if ok {
-				userOpsInfo.ActualGasUsed = opsVal.ActualGasUsed
-				userOpsInfo.UserOperationHash = opsVal.OpsHash
-				userOpsInfo.ActualGasCost = opsVal.ActualGasCost
-				userOpsInfo.Status = opsVal.Success
-				userOpsInfo.Fee = utils.DivRav(opsVal.ActualGasCost)
-			}
-			opsTxValue, opsTxValueOk := opsValMap[sender]
-			if opsTxValueOk {
-				userOpsInfo.TxValue = opsTxValue
-			}
-
-			//userOpsCalldatas := getUserOpsCalldatas(callDetails, tx, receipt, txTime, userOpsInfo.UserOperationHash, sender)
-
-			userOpsInfos = append(userOpsInfos, userOpsInfo)
-		}
-
-		transactionInfo := schema.TransactionInfo{
-			TxHash:       tx.Hash().String(),
-			BlockNumber:  receipt.BlockNumber.Int64(),
-			Network:      config.Polygon,
-			Bundler:      from,
-			EntryPoint:   strings.ToLower(tx.To().String()),
-			UserOpsNum:   int64(arrNumInt),
-			Fee:          fee,
-			TxValue:      utils.DivRav(tx.Value().Int64()),
-			GasPrice:     tx.GasPrice().String(),
-			GasLimit:     int64(receipt.GasUsed),
-			Status:       int(receipt.Status),
-			TxTime:       int64(txTime),
-			TxTimeFormat: utils.FormatTimestamp(int64(txTime)),
-			Beneficiary:  beneficary,
-			CreateTime:   time.Now(),
-		}
-
-		return &userOpsInfos, &transactionInfo
-	*/
-
-	return nil, nil
+	parserTx.userOpInfo.BundlerProfit = parserTx.userOpInfo.BundlerProfit.Sub(parserTx.transaction.Gas)
+	return nil
 }
 
-func (t *_evmParser) getUserOpsCalldatas(details []*CallDetail, tx *types.Transaction, receipt *types.Receipt, txTime uint64, userOpsHash, sender string) []*ent.UserOpsCalldataCreate {
+func (t *_evmParser) getUserOpsCalldatas(ctx context.Context, details []*CallDetail, tx *types.Transaction, receipt *types.Receipt, txTime uint64, userOpsHash, sender string) []*ent.UserOpsCalldataCreate {
 	if len(details) == 0 {
 		return nil
 	}
@@ -763,7 +760,7 @@ func (t *_evmParser) getUserOpsCalldatas(details []*CallDetail, tx *types.Transa
 	return userOpsCalldatas
 }
 
-func (t *_evmParser) parseLogs(logs []*aa.Log) (map[string]UserOperationEvent, map[string]decimal.Decimal) {
+func (t *_evmParser) parseLogs(ctx context.Context, logs []*aa.Log) (map[string]UserOperationEvent, map[string]decimal.Decimal) {
 
 	events := make(map[string]UserOperationEvent)
 	opsTxValMap := make(map[string]decimal.Decimal)
@@ -799,14 +796,14 @@ func (t *_evmParser) parseLogs(logs []*aa.Log) (map[string]UserOperationEvent, m
 	return events, opsTxValMap
 }
 
-func (t *_evmParser) getAddr(initCode string, paymasterAndData string) (string, string) {
+func (t *_evmParser) getAddr(ctx context.Context, initCode string, paymasterAndData string) (string, string) {
 	var factoryAddr string
 	var paymaster string
 
 	if len(initCode) > 0 {
-		factory := utils.TruncateString(initCode, 40)
-		if utils.IsAddress(factory) {
-			factoryAddr = "0x" + utils.TruncateString(initCode, 40)
+		factory := utils.TruncateString(initCode, 42)
+		if common.IsHexAddress(factory) {
+			factoryAddr = utils.TruncateString(initCode, 42)
 		} else {
 			factoryAddr = ""
 		}
@@ -814,9 +811,9 @@ func (t *_evmParser) getAddr(initCode string, paymasterAndData string) (string, 
 	}
 
 	if len(paymasterAndData) > 0 {
-		paymaster = utils.TruncateString(paymasterAndData, 40)
-		if utils.IsAddress(paymaster) {
-			paymaster = "0x" + paymaster
+		paymaster = utils.TruncateString(paymasterAndData, 42)
+		if common.IsHexAddress(paymaster) {
+			paymaster = paymaster
 		} else {
 			paymaster = ""
 		}
@@ -824,7 +821,7 @@ func (t *_evmParser) getAddr(initCode string, paymasterAndData string) (string, 
 	return factoryAddr, paymaster
 }
 
-func (t *_evmParser) parseCallData(callData string) []*CallDetail {
+func (t *_evmParser) parseCallData(ctx context.Context, callData string) []*CallDetail {
 	if len(callData) < 8 {
 		return nil
 	}
@@ -833,22 +830,22 @@ func (t *_evmParser) parseCallData(callData string) []*CallDetail {
 	var callDetails []*CallDetail
 	switch sign {
 	case ExecuteSign:
-		callDetails = t.parseExecute(paramData)
+		callDetails = t.parseExecute(ctx, paramData)
 		break
 	case ExecuteCall:
-		callDetails = t.parseExecute(paramData)
+		callDetails = t.parseExecute(ctx, paramData)
 		break
 	case ExecuteBatchSign:
-		callDetails = t.parseExecuteBatch(paramData)
+		callDetails = t.parseExecuteBatch(ctx, paramData)
 		break
 	case ExecuteBatchCallSign:
-		callDetails = t.parseExecuteBatchCall(paramData)
+		callDetails = t.parseExecuteBatchCall(ctx, paramData)
 		break
 	}
 	return callDetails
 }
 
-func (t *_evmParser) parseExecuteBatchCall(paramData string) []*CallDetail {
+func (t *_evmParser) parseExecuteBatchCall(ctx context.Context, paramData string) []*CallDetail {
 	offset1 := utils.HexToDecimalInt(utils.Substring(paramData, 0, 64*1))
 	offset2 := utils.HexToDecimalInt(utils.Substring(paramData, 64*1, 64*2))
 	offset3 := utils.HexToDecimalInt(utils.Substring(paramData, 64*2, 64*3))
@@ -867,7 +864,7 @@ func (t *_evmParser) parseExecuteBatchCall(paramData string) []*CallDetail {
 	return callDetails
 }
 
-func (t *_evmParser) parseExecuteBatch(paramData string) []*CallDetail {
+func (t *_evmParser) parseExecuteBatch(ctx context.Context, paramData string) []*CallDetail {
 	offset1 := utils.HexToDecimalInt(utils.Substring(paramData, 0, 64*1))
 	offset2 := utils.HexToDecimalInt(utils.Substring(paramData, 64*1, 64*2))
 	offset3 := utils.HexToDecimalInt(utils.Substring(paramData, 64*2, 64*3))
@@ -888,7 +885,7 @@ func (t *_evmParser) parseExecuteBatch(paramData string) []*CallDetail {
 	return callDetails
 }
 
-func (t *_evmParser) parseExecute(paramData string) []*CallDetail {
+func (t *_evmParser) parseExecute(ctx context.Context, paramData string) []*CallDetail {
 	target := strings.ToLower(utils.HexToAddress(utils.Substring(paramData, 0, 64*1)))
 	value := utils.DivRav(utils.HexToDecimal(utils.Substring(paramData, 64*1, 64*2)).Int64())
 	offset := utils.HexToDecimalInt(utils.Substring(paramData, 64*2, 64*3))

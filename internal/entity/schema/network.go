@@ -20,7 +20,6 @@ func (Network) Fields() []ent.Field {
 		field.String("id").StorageKey("network").Unique().MaxLen(127).StructTag(`json:"network"`),
 		field.Int64("chain_id").StructTag(`json:"chainId"`),
 		field.String("name").MaxLen(255).StructTag(`json:"name"`),
-		field.String("logo").MaxLen(255).StructTag(`json:"logo"`),
 		field.String("http_rpc").StructTag(`json:"http_rpc"`),
 		field.Bool("is_testnet").StructTag(`json:"isTestnet"`),
 		field.Time("create_time").Default(time.Now).StructTag(`json:"createTime"`).Immutable(),

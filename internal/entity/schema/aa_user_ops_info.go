@@ -43,7 +43,7 @@ func (AAUserOpsInfo) Fields() []ent.Field {
 		field.Int64("verification_gas_limit").StructTag(`json:"verificationGasLimit"`),
 		field.Int64("max_fee_per_gas").StructTag(`json:"max_fee_per_gas"`),
 		field.Int64("max_priority_fee_per_gas").StructTag(`json:"maxPriorityFeePerGas"`),
-		field.Time("tx_time").StructTag(`json:"txTime"`),
+		field.Int64("tx_time").StructTag(`json:"txTime"`),
 		field.String("init_code").StructTag(`json:"initCode"`),
 		field.Int32("status").StructTag(`json:"status"`),
 		field.String("source").StructTag(`json:"source"`),
