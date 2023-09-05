@@ -35,7 +35,7 @@ func Resister(router fiber.Router) {
 
 	//user
 	//networksV1.Get("/user")
-	networksV1.Get("/user")
+	//networksV1.Get("/user")
 
 	//home page
 	networksV1.Get("/dailyStatistic", controller.GetDailyStatistic).Name(controller.NameGetDailyStatistic)
