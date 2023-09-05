@@ -5,8 +5,7 @@ type NetworkVo struct {
 	Name string `json:"name"`
 	// Network holds the value of the "network" field.
 	Network string `json:"network"`
-	// Logo holds the value of the "logo" field.
-	Logo string `json:"logo"`
+	ChainID int64  `json:"chainId"`
 	// IsTestnet holds the value of the "is_testnet" field.
 	IsTestnet bool `json:"isTestnet"`
 }

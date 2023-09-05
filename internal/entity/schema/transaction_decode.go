@@ -25,7 +25,7 @@ func (TransactionDecode) Fields() []ent.Field {
 		//block_hash               text,
 		field.String("block_hash").StructTag(`json:"blockHash"`),
 		//block_number             numeric,
-		field.Int64("block_number").StructTag(`json:"blockNumber"`).GoType(decimal.Decimal{}),
+		field.Int64("block_number").StructTag(`json:"blockNumber"`),
 		//nonce                    numeric,
 		field.Int64("nonce").StructTag(`json:"nonce"`).GoType(decimal.Decimal{}),
 		//transaction_index        numeric,
@@ -53,10 +53,9 @@ func (TransactionDecode) Fields() []ent.Field {
 		//type                     text,
 		field.String("type").StructTag(`json:"type"`),
 		//max_fee_per_gas          numeric,
-		field.Int64("max_fee_per_gas").
-			StructTag(`json:"maxFeePerGas"`).GoType(&decimal.Decimal{}).Optional().Nillable(),
+		field.Int64("max_fee_per_gas").StructTag(`json:"maxFeePerGas"`).GoType(decimal.Decimal{}).Nillable(),
 		//max_priority_fee_per_gas numeric,
-		field.Int64("max_priority_fee_per_gas").StructTag(`json:"maxPriorityFeePerGas"`).GoType(&decimal.Decimal{}).Optional().Nillable(),
+		field.Int64("max_priority_fee_per_gas").StructTag(`json:"maxPriorityFeePerGas"`).GoType(decimal.Decimal{}).Nillable(),
 		//access_list              jsonb
 		field.Other("access_list", &pgtype.JSONB{}).StructTag(`json:"accessList"`).SchemaType(map[string]string{
 			dialect.Postgres: "jsonb",

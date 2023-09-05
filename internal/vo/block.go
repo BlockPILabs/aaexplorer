@@ -7,7 +7,7 @@ import (
 
 type BlocksVo struct {
 	// ID of the ent.
-	ID decimal.Decimal `json:"number"`
+	ID int64 `json:"number"`
 	//// Time holds the value of the "time" field.
 	//Time time.Time `json:"time"`
 	// CreateTime holds the value of the "create_time" field.
@@ -70,7 +70,7 @@ type GetBlockRequest struct {
 
 type BlockVo struct {
 	// ID of the ent.
-	ID decimal.Decimal `json:"number"`
+	ID int64 `json:"number"`
 	// Time holds the value of the "time" field.
 	Time time.Time `json:"time"`
 	// CreateTime holds the value of the "create_time" field.

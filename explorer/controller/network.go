@@ -36,9 +36,9 @@ func GetNetworks(fcx *fiber.Ctx) error {
 	for i, network := range networks {
 		res.Records[i] = &vo.NetworkVo{
 			Name:      network.Name,
-			Network:   network.Network,
-			Logo:      network.Logo,
+			Network:   network.ID,
 			IsTestnet: network.IsTestnet,
+			ChainID:   network.ChainID,
 		}
 	}
 	log.Context(ctx).Debug("get networks success", "totalCount", res.TotalCount)

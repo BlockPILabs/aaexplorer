@@ -7,7 +7,6 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/blockdatadecode"
 	"github.com/BlockPILabs/aa-scan/internal/utils"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
-	"github.com/shopspring/decimal"
 	"strconv"
 )
 
@@ -57,10 +56,10 @@ func (dao *blockDao) Pagination(ctx context.Context, tx *ent.Client, network str
 	return
 }
 
-func (*baseDao) GetByBlockNumber(ctx context.Context, tx *ent.Client, blockNumber decimal.Decimal) (block *ent.BlockDataDecode, err error) {
-	//block, err = tx.BlockDataDecode.Query().Where(
-	//	blockdatadecode.ID(blockNumber),
-	//).First(ctx)
+func (*baseDao) GetByBlockNumber(ctx context.Context, tx *ent.Client, blockNumber int64) (block *ent.BlockDataDecode, err error) {
+	block, err = tx.BlockDataDecode.Query().Where(
+		blockdatadecode.ID(blockNumber),
+	).First(ctx)
 	return
 }
 
@@ -79,6 +78,6 @@ func (dao *baseDao) GetBlock(ctx context.Context, tx *ent.Client, blockNumberOrH
 		if err != nil {
 			return nil, err
 		}
-		return dao.GetByBlockNumber(ctx, tx, decimal.NewFromInt(blockNumber))
+		return dao.GetByBlockNumber(ctx, tx, blockNumber)
 	}
 }

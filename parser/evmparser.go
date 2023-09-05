@@ -1,5 +1,6 @@
 package parser
 
+/*
 import (
 	"context"
 	"encoding/hex"
@@ -627,3 +628,4 @@ func substringFromIndex(input string, index int) string {
 	}
 	return input[index:]
 }
+*/
