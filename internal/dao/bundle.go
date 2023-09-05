@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactioninfo"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aatransactioninfo"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 )
 
@@ -17,29 +17,27 @@ var BundleDao = &bundleDao{}
 func (*bundleDao) GetSortFields(ctx context.Context) []string {
 	return []string{
 		config.Default,
-		transactioninfo.FieldID,
-		transactioninfo.FieldTxTime,
+		aatransactioninfo.FieldID,
+		aatransactioninfo.FieldTime,
 	}
 }
-func (dao *bundleDao) Sort(ctx context.Context, query *ent.TransactionInfoQuery, sort int, order int) *ent.TransactionInfoQuery {
+func (dao *bundleDao) Sort(ctx context.Context, query *ent.AaTransactionInfoQuery, sort int, order int) *ent.AaTransactionInfoQuery {
 	opts := dao.orderOptions(ctx, order)
 	if len(opts) > 0 {
 		switch dao.sortField(ctx, dao.GetSortFields(ctx), sort) {
-		case transactioninfo.FieldID:
-			query.Order(transactioninfo.ByID(opts...))
+		case aatransactioninfo.FieldID:
+			query.Order(aatransactioninfo.ByID(opts...))
 		//case transactioninfo.FieldTxTime:
 		//	query.Order(transactioninfo.ByTxTime(opts...))
 		default:
-			query.Order(transactioninfo.ByTxTime(opts...))
+			query.Order(aatransactioninfo.ByTime(opts...))
 		}
 	}
 	return query
 }
 
-func (dao *bundleDao) Pagination(ctx context.Context, tx *ent.Client, network string, page vo.PaginationRequest) (list ent.TransactionInfos, total int, err error) {
-	query := tx.TransactionInfo.Query().Where(
-		transactioninfo.NetworkEQ(network),
-	)
+func (dao *bundleDao) Pagination(ctx context.Context, tx *ent.Client, network string, page vo.PaginationRequest) (list ent.AaTransactionInfos, total int, err error) {
+	query := tx.AaTransactionInfo.Query().Where()
 	// sort
 	query = dao.Sort(ctx, query, page.Sort, page.Order)
 

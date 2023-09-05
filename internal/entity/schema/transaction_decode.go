@@ -49,7 +49,7 @@ func (TransactionDecode) Fields() []ent.Field {
 		//v                        bigint,
 		field.Int64("v").StructTag(`json:"v"`).GoType(decimal.Decimal{}),
 		//chain_id                 bigint,
-		field.Int64("chain_id").StructTag(`json:"chainId"`).GoType(decimal.Decimal{}),
+		field.Int64("chain_id").StructTag(`json:"chainId"`),
 		//type                     text,
 		field.String("type").StructTag(`json:"type"`),
 		//max_fee_per_gas          numeric,

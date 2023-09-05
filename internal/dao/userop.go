@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/useropsinfo"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropsinfo"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 )
 
@@ -17,28 +17,28 @@ var UserOpDao = &userOpDao{}
 func (*userOpDao) GetSortFields(ctx context.Context) []string {
 	return []string{
 		config.Default,
-		useropsinfo.FieldID,
-		useropsinfo.FieldTxTime,
+		aauseropsinfo.FieldID,
+		aauseropsinfo.FieldTime,
 	}
 }
-func (dao *userOpDao) Sort(ctx context.Context, query *ent.UserOpsInfoQuery, sort int, order int) *ent.UserOpsInfoQuery {
+func (dao *userOpDao) Sort(ctx context.Context, query *ent.AAUserOpsInfoQuery, sort int, order int) *ent.AAUserOpsInfoQuery {
 	opts := dao.orderOptions(ctx, order)
 	if len(opts) > 0 {
 		switch dao.sortField(ctx, dao.GetSortFields(ctx), sort) {
-		case useropsinfo.FieldID:
-			query.Order(useropsinfo.ByID(opts...))
+		case aauseropsinfo.FieldID:
+			query.Order(aauseropsinfo.ByID(opts...))
 		//case useropsinfo.FieldTxTime:
 		//	query.Order(useropsinfo.ByTxTime(opts...))
 		default:
-			query.Order(useropsinfo.ByTxTime(opts...))
+			query.Order(aauseropsinfo.ByTime(opts...))
 		}
 	}
 	return query
 }
 
-func (dao *userOpDao) Pagination(ctx context.Context, tx *ent.Client, network string, page vo.PaginationRequest) (list ent.UserOpsInfos, total int, err error) {
-	query := tx.UserOpsInfo.Query().Where(
-		useropsinfo.NetworkEQ(network),
+func (dao *userOpDao) Pagination(ctx context.Context, tx *ent.Client, network string, page vo.PaginationRequest) (list ent.AAUserOpsInfos, total int, err error) {
+	query := tx.AAUserOpsInfo.Query().Where(
+		aauseropsinfo.NetworkEQ(network),
 	)
 	// sort
 	query = dao.Sort(ctx, query, page.Sort, page.Order)

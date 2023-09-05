@@ -759,34 +759,8 @@ func (t *_evmParser) parseUserOps(ctx context.Context, network *ent.Network, blo
 		parserTx.userOpInfo.BundlerProfit = parserTx.userOpInfo.BundlerProfit.Add(decimal.NewFromInt(userOpsInfo.ActualGasCost))
 
 	}
-	parserTx.userOpInfo.BundlerProfit = parserTx.userOpInfo.BundlerProfit.Sub(parserTx.transaction.Gas)
+	parserTx.userOpInfo.BundlerProfit = parserTx.receipt.GasUsed.Sub(parserTx.transaction.Gas)
 	return nil
-}
-
-func (t *_evmParser) getUserOpsCalldatas(ctx context.Context, details []*CallDetail, tx *types.Transaction, receipt *types.Receipt, txTime uint64, userOpsHash, sender string) []*ent.UserOpsCalldataCreate {
-	if len(details) == 0 {
-		return nil
-	}
-	client, err := entity.Client(context.Background())
-	if err != nil {
-		t.logger.Info("UserOpsCalldata", "err", err)
-	}
-	var userOpsCalldatas []*ent.UserOpsCalldataCreate
-	for _, detail := range details {
-		opsCalldata := client.UserOpsCalldata.Create().
-			SetUserOpsHash(userOpsHash).
-			SetTxHash(tx.Hash().String()).
-			SetTxValue(detail.value).
-			SetBlockNumber(receipt.BlockNumber.Int64()).
-			SetTxTime(int64(txTime)).
-			SetSender(sender).
-			SetSource("").
-			SetTarget(detail.target).
-			SetCalldata(detail.data)
-
-		userOpsCalldatas = append(userOpsCalldatas, opsCalldata)
-	}
-	return userOpsCalldatas
 }
 
 func (t *_evmParser) parseLogs(ctx context.Context, logs []*aa.Log) (map[string]UserOperationEvent, map[string]decimal.Decimal) {

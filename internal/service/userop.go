@@ -43,18 +43,18 @@ func (*userOpService) GetUserOps(ctx context.Context, req vo.GetUserOpsRequest) 
 	res.Records = make([]*vo.UserOpVo, len(list))
 	for i, info := range list {
 		res.Records[i] = &vo.UserOpVo{
-			UserOperationHash: info.UserOperationHash,
-			TxHash:            info.TxHash,
-			BlockNumber:       info.BlockNumber,
-			Network:           info.Network,
-			Sender:            info.Sender,
-			Target:            info.Target,
-			TxValue:           info.TxValue,
-			Fee:               info.Fee,
-			TxTime:            info.TxTime,
-			TxTimeFormat:      info.TxTimeFormat,
-			InitCode:          info.InitCode,
-			Status:            info.Status,
+			//UserOperationHash: info.UserOperationHash,
+			TxHash: info.TxHash,
+			//BlockNumber:       info.BlockNumber,
+			//Network:           info.Network,
+			//Sender:            info.Sender,
+			//Target:            info.Target,
+			//TxValue:           info.TxValue,
+			//Fee:               info.Fee,
+			//TxTime:            info.TxTime,
+			//TxTimeFormat:      info.TxTimeFormat,
+			//InitCode:          info.InitCode,
+			//Status:            info.Status,
 		}
 	}
 

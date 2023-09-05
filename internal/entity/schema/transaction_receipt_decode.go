@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
+	"github.com/shopspring/decimal"
 	"time"
 )
 
@@ -33,13 +34,13 @@ func (TransactionReceiptDecode) Fields() []ent.Field {
 			StructTag(`json:"contractAddress"`),
 		field.Int64("cumulative_gas_used").
 			StructTag(`json:"cumulativeGasUsed"`),
-		field.Int64("effective_gas_price").
+		field.String("effective_gas_price").
 			StructTag(`json:"effective_gas_price"`),
 		field.String("from_addr").
 			MaxLen(255).
 			StructTag(`json:"from"`),
 		field.Int64("gas_used").
-			StructTag(`json:"gasUsed"`),
+			StructTag(`json:"gasUsed"`).GoType(decimal.Decimal{}),
 		field.String("logs").
 			MaxLen(255).
 			StructTag(`json:"logs"`),
