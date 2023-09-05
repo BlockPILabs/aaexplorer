@@ -42,7 +42,7 @@ func NewStartCmd() *cobra.Command {
 				"pid", os.Getpid(),
 			)
 			// db start
-			err := entity.Start(config)
+			err := entity.Start(logger.With("lib", "ent"), config)
 			if err != nil {
 				return err
 			}

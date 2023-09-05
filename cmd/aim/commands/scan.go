@@ -29,7 +29,7 @@ var ScanCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		taskScheduler := chrono.NewDefaultTaskScheduler()
 		// db start
-		err := entity.Start(config)
+		err := entity.Start(logger.With("lib", "ent"), config)
 		if err != nil {
 			return
 		}
