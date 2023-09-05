@@ -47,7 +47,7 @@ var ScanCmd = &cobra.Command{
 		//test2()
 		//task.AssetSync()
 		//service.ScanBlock()
-		task.InitHourStatis()
+		task.InitTask()
 		//task.AssetSync()
 		//service.GetWalletBalanceDetail("0x6b1b831718d0faf86cfe790fb59a8dfe077db71b", interConfig.PolygonNetwork)
 		task.InitEvmParse(config, logger.With("module", "task"))

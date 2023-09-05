@@ -215,12 +215,16 @@ func calDailyStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, txHashes 
 		spentGas = spentGas.Add(fee)
 	}
 	price := service.GetNativePrice(network)
+	if price == nil {
+		price = &decimal.Zero
+	}
 	dailyStatistic := client.DailyStatisticDay.Create().
 		SetNetwork(network).
 		SetUserOpsNum(int64(len(infos))).
-		SetStatisticTime(startTime).
+		SetStatisticTime(startTime.UnixMilli()).
 		SetActiveWallet(int64(len(walletMap))).
 		SetGasFee(totalGasFee).
+		SetGasFeeUsd(price.Mul(totalGasFee)).
 		SetBundlerGasProfit(spentGas).
 		SetBundlerGasProfitUsd(price.Mul(spentGas)).
 		SetPaymasterGasPaid(paymasterFee).

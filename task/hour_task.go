@@ -286,7 +286,7 @@ func calHourStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, txHashes m
 		}
 	}
 
-	var totalGasFee decimal.Decimal
+	var totalGasFee = decimal.Zero
 	var txMap = make(map[string]bool)
 	var walletMap = make(map[string]bool)
 	var paymasterFee = decimal.Zero
@@ -302,12 +302,16 @@ func calHourStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, txHashes m
 	}
 
 	price := service.GetNativePrice(network)
+	if price == nil {
+		price = &decimal.Zero
+	}
 	dailyStatistic := client.DailyStatisticHour.Create().
-		SetNetwork(infos[0].Network).
+		SetNetwork(network).
 		SetUserOpsNum(int64(len(infos))).
-		SetStatisticTime(startTime).
+		SetStatisticTime(startTime.UnixMilli()).
 		SetActiveWallet(int64(len(walletMap))).
 		SetGasFee(totalGasFee).
+		SetGasFeeUsd(price.Mul(totalGasFee)).
 		SetBundlerGasProfit(spentGas).
 		SetBundlerGasProfitUsd(price.Mul(spentGas)).
 		SetPaymasterGasPaid(paymasterFee).

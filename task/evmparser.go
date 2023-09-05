@@ -558,7 +558,7 @@ func (t *_evmParser) insertUserOpsInfo(ctx context.Context, client *ent.Client, 
 			SetActualGasUsed(ops.ActualGasUsed).
 			SetCreateTime(ops.CreateTime).
 			SetUpdateTime(ops.UpdateTime).
-			SetUsdAmount(ops.UsdAmount).
+			SetUsdAmount(*ops.UsdAmount).
 			SetID(ops.ID)
 
 		userOpsInfoCreates = append(userOpsInfoCreates, userOpsCreate)
@@ -698,7 +698,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, network *ent.Network, blo
 			ActualGasUsed:        0,
 			CreateTime:           now,
 			UpdateTime:           now,
-			UsdAmount:            decimal.Decimal{},
+			UsdAmount:            &decimal.Decimal{},
 		}
 
 		factoryAddr, paymaster := t.getAddr(ctx, userOpsInfo.InitCode, userOpsInfo.PaymasterAndData)
