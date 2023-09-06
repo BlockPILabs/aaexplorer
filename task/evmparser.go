@@ -10,10 +10,12 @@ import (
 	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aaaccountdata"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aablocksync"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aatransactioninfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropscalldata"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropsinfo"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/account"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/blockdatadecode"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactiondecode"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactionreceiptdecode"
@@ -30,8 +32,10 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
+	"golang.org/x/exp/maps"
 	"golang.org/x/sync/errgroup"
 	"math/big"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -48,61 +52,6 @@ const ExecuteSign = "0xb61d27f6"
 const ExecuteCall = "0x9e5d4c49"
 const ExecuteBatchSign = "0x47e1da2a"
 const ExecuteBatchCallSign = "0x912ccaa3"
-
-type UserOperationEvent struct {
-	OpsHash       string
-	Sender        string
-	Paymaster     string
-	Nonce         int64
-	Success       int
-	ActualGasCost int64
-	ActualGasUsed int64
-	Target        string
-	Factory       string
-}
-
-type CallDetail struct {
-	target string
-	value  decimal.Decimal
-	data   string
-}
-
-type _evmParser struct {
-	logger          log.Logger
-	config          *config.Config
-	startBlock      map[string]int64
-	abi             abi.ABI
-	handleOpsMethod *abi.Method
-}
-
-type parserBlock struct {
-	block       *ent.BlockDataDecode
-	transitions []*parserTransaction
-	userOpInfo  *ent.AaBlockInfo
-	aaAccounts  *sync.Map
-}
-
-func (b *parserBlock) AaAccountData(address string) *ent.AaAccountData {
-	a, _ := b.aaAccounts.LoadOrStore(address, &ent.AaAccountData{ID: address})
-	return a.(*ent.AaAccountData)
-}
-func (b *parserBlock) AaAccountDataSlice() ent.AaAccountDataSlice {
-	s := ent.AaAccountDataSlice{}
-	b.aaAccounts.Range(func(key, value any) bool {
-		s = append(s, value.(*ent.AaAccountData))
-		return true
-	})
-	return s
-}
-
-type parserTransaction struct {
-	transaction     *ent.TransactionDecode
-	receipt         *ent.TransactionReceiptDecode
-	userOpInfo      *ent.AaTransactionInfo
-	userops         ent.AAUserOpsInfos
-	logs            []*aa.Log
-	userOpsCalldata ent.AAUserOpsCalldataSlice
-}
 
 func InitEvmParse(config *config.Config, logger log.Logger) error {
 	logger = logger.With("task", "evmparser")
@@ -292,6 +241,7 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 		t.insertTransactions(ctx, tx.Client(), network, aaTransactionInfos)
 		t.insertuserOpsInfoCalldatas(ctx, tx.Client(), network, userOpsInfoCalldatas)
 		t.insertAccounts(ctx, tx.Client(), network, aaAccountDataMap)
+		t.insertAaAccounts(ctx, tx.Client(), network, aaAccountDataMap)
 
 		// set sync status
 		if len(setBlockSyncedId) > 0 {
@@ -446,7 +396,7 @@ func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *e
 		if sign != HandleOpsSign {
 			continue
 		}
-		t.parseUserOps(ctx, network, block, parserTx)
+		t.parseUserOps(ctx, client, network, block, parserTx)
 
 		block.userOpInfo.BundlerProfit = block.userOpInfo.BundlerProfit.Add(parserTx.userOpInfo.BundlerProfit)
 		block.userOpInfo.UseropCount += len(parserTx.userops)
@@ -641,18 +591,148 @@ func (t *_evmParser) insertUserOpsInfo(ctx context.Context, client *ent.Client, 
 }
 
 func (t *_evmParser) insertAccounts(ctx context.Context, client *ent.Client, network *ent.Network, dataMap map[string]*ent.AaAccountData) {
-	//keys := maps.Keys(dataMap)
-	//
-	//accounts := client.Account.
-	//	Query().
-	//	Where(
-	//		account.IDIn(keys...),
-	//	).AllX(ctx)
-	//accountsMap := make()
+	if len(dataMap) < 1 {
+		return
+	}
+	keys := maps.Keys(dataMap)
 
+	accounts := client.Account.
+		Query().
+		Where(
+			account.IDIn(keys...),
+		).AllX(ctx)
+
+	accountsMap := map[string]*ent.Account{}
+	for i, a := range accounts {
+		accountsMap[a.ID] = accounts[i]
+	}
+	var insertAccounts []*ent.AccountCreate
+
+	// find insert
+	for id, aaAccount := range dataMap {
+		if _, ok := accountsMap[id]; !ok {
+			emptyArray := pgtype.TextArray{}
+			emptyArray.Set([]string{})
+			create := client.Account.Create().
+				SetID(aaAccount.ID).
+				SetAbi("").
+				SetLabel(&emptyArray).
+				SetTag(&emptyArray)
+
+			if len(aaAccount.AaType) > 0 {
+				tags := []string{aaAccount.AaType}
+				textArray := &pgtype.TextArray{}
+				err := textArray.Set(tags)
+				if err == nil {
+					create.SetTag(textArray)
+				}
+			}
+			insertAccounts = append(insertAccounts, create)
+		}
+	}
+
+	// find update
+	for id, a := range accountsMap {
+		if aaAccount, ok := dataMap[id]; ok {
+			upd := client.Account.UpdateOneID(id)
+			needUpd := false
+
+			if len(aaAccount.AaType) > 0 {
+				var tags []string
+				if a.Tag != nil && len(a.Tag.Elements) > 0 {
+					_ = a.Tag.AssignTo(&tags)
+				}
+				if !slices.Contains(tags, aaAccount.AaType) {
+					tags = append(tags, aaAccount.AaType)
+					textArray := &pgtype.TextArray{}
+					err := textArray.Set(tags)
+					if err == nil {
+						upd.SetTag(textArray)
+						needUpd = true
+					}
+				}
+			}
+
+			if needUpd {
+				_ = upd.Exec(ctx)
+			}
+
+		}
+	}
+	if len(insertAccounts) > 0 {
+		err := client.Account.CreateBulk(insertAccounts...).Exec(ctx)
+		if err != nil {
+			log.Context(ctx).Error("account create error", "err", err)
+		}
+	}
+
+	//accountsMap := make()
+	//fmt.Println(accounts)
+}
+func (t *_evmParser) insertAaAccounts(ctx context.Context, client *ent.Client, network *ent.Network, dataMap map[string]*ent.AaAccountData) {
+	if len(dataMap) < 1 {
+		return
+	}
+	keys := maps.Keys(dataMap)
+
+	accounts := client.AaAccountData.
+		Query().
+		Where(
+			aaaccountdata.IDIn(keys...),
+		).AllX(ctx)
+
+	accountsMap := map[string]*ent.AaAccountData{}
+	for i, a := range accounts {
+		accountsMap[a.ID] = accounts[i]
+	}
+	var insertAccounts []*ent.AaAccountDataCreate
+
+	// find insert
+	for id, aaAccount := range dataMap {
+		if _, ok := accountsMap[id]; !ok {
+			create := client.AaAccountData.Create().
+				SetID(aaAccount.ID).
+				SetAaType(aaAccount.AaType).
+				SetFactory(aaAccount.Factory).
+				SetFactoryTime(aaAccount.FactoryTime)
+			insertAccounts = append(insertAccounts, create)
+		}
+	}
+
+	// find update
+	for id, a := range accountsMap {
+		if aaAccount, ok := dataMap[id]; ok {
+			upd := client.AaAccountData.UpdateOneID(id)
+			needUpd := false
+
+			if len(a.AaType) < 1 && len(aaAccount.AaType) > 0 {
+				upd.SetAaType(aaAccount.AaType)
+				needUpd = true
+			}
+
+			if len(aaAccount.Factory) > 0 {
+				upd.SetFactory(aaAccount.Factory)
+				upd.SetFactoryTime(aaAccount.FactoryTime)
+				needUpd = true
+			}
+
+			if needUpd {
+				_ = upd.Exec(ctx)
+			}
+
+		}
+	}
+	if len(insertAccounts) > 0 {
+		err := client.AaAccountData.CreateBulk(insertAccounts...).Exec(ctx)
+		if err != nil {
+			log.Context(ctx).Error("account create error", "err", err)
+		}
+	}
+
+	//accountsMap := make()
 }
 
-func (t *_evmParser) parseUserOps(ctx context.Context, network *ent.Network, block *parserBlock, parserTx *parserTransaction) error {
+func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, network *ent.Network, block *parserBlock, parserTx *parserTransaction) error {
 
 	data, err := hexutil.Decode(parserTx.transaction.Input)
 	if err != nil {
@@ -700,13 +780,15 @@ func (t *_evmParser) parseUserOps(ctx context.Context, network *ent.Network, blo
 	entryPoint.AaType = config.AaAccountTypeEntryPoint
 
 	for _, op := range ops {
-		callDetails := t.parseCallData(ctx, hexutil.Encode(op.CallData))
+		callDetails := t.parseCallData(ctx, client, network, hexutil.Encode(op.CallData))
 		var target = ""
+		var source = ""
 		var targetsMap = map[string]string{}
 		var targets = []string{}
 		for i, callDetail := range callDetails {
 			if i == 0 {
 				target = callDetail.target
+				source = callDetail.source
 			}
 			if _, ok := targetsMap[callDetail.target]; !ok {
 				targetsMap[callDetail.target] = callDetail.target
@@ -746,7 +828,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, network *ent.Network, blo
 			TxTime:               parserTx.transaction.Time.Unix(),
 			InitCode:             hexutil.Encode(op.InitCode),
 			Status:               0,
-			Source:               "",
+			Source:               source,
 			ActualGasCost:        0,
 			ActualGasUsed:        0,
 			CreateTime:           now,
@@ -810,7 +892,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, network *ent.Network, blo
 				Sender:      userOpsInfo.Sender,
 				Target:      callDetail.target,
 				TxValue:     callDetail.value,
-				Source:      "",
+				Source:      callDetail.source,
 				Calldata:    callDetail.data,
 				TxTime:      userOpsInfo.TxTime,
 				CreateTime:  now,
@@ -892,7 +974,7 @@ func (t *_evmParser) getAddr(ctx context.Context, initCode string, paymasterAndD
 	return factoryAddr, paymaster
 }
 
-func (t *_evmParser) parseCallData(ctx context.Context, callData string) []*CallDetail {
+func (t *_evmParser) parseCallData(ctx context.Context, client *ent.Client, network *ent.Network, callData string) []*CallDetail {
 	if len(callData) < 8 {
 		return nil
 	}
@@ -913,6 +995,25 @@ func (t *_evmParser) parseCallData(ctx context.Context, callData string) []*Call
 		callDetails = t.parseExecuteBatchCall(ctx, paramData)
 		break
 	}
+
+	client, _ = entity.Client(ctx, network.ID)
+
+	for _, detail := range callDetails {
+		if len(detail.data) < 8 {
+			continue
+		}
+		detail.source = detail.data[0:8]
+		accountAbi, err := service.AccountService.GetAbiByAddress(ctx, client, detail.target)
+		if err != nil {
+			continue
+		}
+		method, err := accountAbi.MethodById(hexutil.MustDecode("0x" + detail.source))
+		if err != nil {
+			continue
+		}
+		detail.source = method.Name
+	}
+
 	return callDetails
 }
 

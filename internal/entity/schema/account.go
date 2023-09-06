@@ -16,14 +16,14 @@ type Account struct {
 func (Account) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("id").StorageKey("address").StructTag(`json:"address"`),
-		field.Bool("is_contract").StructTag(`json:"is_contract"`),
-		field.Other("tag", &pgtype.TextArray{}).StructTag(`json:"tag"`).SchemaType(map[string]string{
+		field.Bool("is_contract").StructTag(`json:"is_contract"`).Optional(),
+		field.Other("tag", &pgtype.TextArray{}).Optional().StructTag(`json:"tag"`).SchemaType(map[string]string{
 			dialect.Postgres: "text[]",
 		}),
-		field.Other("label", &pgtype.TextArray{}).StructTag(`json:"label"`).SchemaType(map[string]string{
+		field.Other("label", &pgtype.TextArray{}).Optional().StructTag(`json:"label"`).SchemaType(map[string]string{
 			dialect.Postgres: "text[]",
 		}),
-		field.String("abi").StructTag(`json:"abi"`),
+		field.String("abi").StructTag(`json:"abi"`).Optional(),
 	}
 }
 
