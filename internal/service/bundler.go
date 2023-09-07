@@ -28,7 +28,7 @@ func (*bundlerService) GetBundlers(ctx context.Context, req vo.GetBundlersReques
 		return &res, vo.ErrParams.SetData(err)
 	}
 
-	client, err := entity.Client(ctx)
+	client, err := entity.Client(ctx, req.Network)
 	if err != nil {
 		return nil, err
 	}

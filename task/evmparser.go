@@ -35,7 +35,6 @@ import (
 	"golang.org/x/exp/maps"
 	"golang.org/x/sync/errgroup"
 	"math/big"
-	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -642,7 +641,15 @@ func (t *_evmParser) insertAccounts(ctx context.Context, client *ent.Client, net
 				if a.Tag != nil && len(a.Tag.Elements) > 0 {
 					_ = a.Tag.AssignTo(&tags)
 				}
-				if !slices.Contains(tags, aaAccount.AaType) {
+
+				tagContains := false
+				for _, tag := range tags {
+					if tag == aaAccount.AaType {
+						tagContains = true
+					}
+				}
+
+				if !tagContains {
 					tags = append(tags, aaAccount.AaType)
 					textArray := &pgtype.TextArray{}
 					err := textArray.Set(tags)

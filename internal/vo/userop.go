@@ -21,16 +21,15 @@ type UserOpVo struct {
 	Fee decimal.Decimal `json:"fee"`
 	// TxTime holds the value of the "tx_time" field.
 	TxTime int64 `json:"txTime"`
-	// TxTimeFormat holds the value of the "tx_time_format" field.
-	TxTimeFormat string `json:"txTimeFormat"`
 	// InitCode holds the value of the "init_code" field.
 	InitCode string `json:"initCode"`
 	// Status holds the value of the "status" field.
-	Status int `json:"status"`
+	Status int32 `json:"status"`
 }
 type GetUserOpsRequest struct {
 	PaginationRequest
-	Network string `json:"network" params:"network" validate:"required,min=3"`
+	Network           string `json:"network" params:"network" validate:"required,min=3"`
+	LatestBlockNumber int64  `json:"latestBlockNumber" params:"latestBlockNumber" validate:"min=0"`
 }
 
 type GetUserOpsResponse struct {

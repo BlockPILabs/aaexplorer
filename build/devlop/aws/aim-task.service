@@ -1,0 +1,12 @@
+# vim /etc/systemd/system/aim-task.service
+# sudo systemctl daemon-reload
+# sudo systemctl restart aim-task
+[Unit]
+Description=aa scan api service 
+Documentation=https://aa-scan-api.testnet.204001.xyz/
+
+[Service]
+Type=simple
+WorkingDirectory=/blockpi/aa-scan
+ExecStart=/blockpi/aa-scan/aim --home ./.aim scan
+PrivateTmp=true
