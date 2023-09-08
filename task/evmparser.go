@@ -543,7 +543,9 @@ func (t *_evmParser) insertUserOpsInfo(ctx context.Context, client *ent.Client, 
 			SetCreateTime(ops.CreateTime).
 			SetUpdateTime(ops.UpdateTime).
 			SetUsdAmount(*ops.UsdAmount).
-			SetID(ops.ID)
+			SetID(ops.ID).
+			SetTargetsCount(ops.TargetsCount).
+			SetAaIndex(ops.AaIndex)
 
 		userOpsInfoCreates = append(userOpsInfoCreates, userOpsCreate)
 	}
@@ -582,7 +584,9 @@ func (t *_evmParser) insertUserOpsInfo(ctx context.Context, client *ent.Client, 
 				UpdateActualGasCost().
 				UpdateActualGasUsed().
 				UpdateUpdateTime().
-				UpdateUsdAmount()
+				UpdateUsdAmount().
+				UpdateAaIndex().
+				UpdateTargetsCount()
 		}).Exec(context.Background())
 	if err != nil {
 		log.Context(ctx).Info("insert AAUserOpsInfo error", "err", err)
