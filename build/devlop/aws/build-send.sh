@@ -4,7 +4,7 @@ cwd=$(dirname $0)
 cd $cwd
 cd ../../../
 pwd
-
+set -x
 make build
 ssh root@18.211.227.200 systemctl stop aim
 ssh root@18.211.227.200 systemctl stop aim-task
