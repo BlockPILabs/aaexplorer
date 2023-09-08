@@ -39,6 +39,8 @@ type GetUserOpsRequest struct {
 	PaginationRequest
 	Network           string `json:"network" params:"network" validate:"required,min=3"`
 	LatestBlockNumber int64  `json:"latestBlockNumber" params:"latestBlockNumber" validate:"min=0"`
+	BlockNumber       int64  `json:"blockNumber" params:"blockNumber" validate:"min=0"`
+	TxHash            string `json:"txHash" params:"txHash"`
 }
 
 type GetUserOpsResponse struct {
