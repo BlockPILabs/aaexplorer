@@ -786,7 +786,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 	entryPoint := block.AaAccountData(parserTx.transaction.ToAddr)
 	entryPoint.AaType = config.AaAccountTypeEntryPoint
 
-	for _, op := range ops {
+	for aaIndex, op := range ops {
 		callDetails := t.parseCallData(ctx, client, network, hexutil.Encode(op.CallData))
 		var target = ""
 		var source = ""
@@ -841,6 +841,8 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 			CreateTime:           now,
 			UpdateTime:           now,
 			UsdAmount:            &decimal.Decimal{},
+			AaIndex:              aaIndex + 1,
+			TargetsCount:         len(callDetails),
 		}
 		sender := block.AaAccountData(userOpsInfo.Sender)
 		sender.AaType = config.AaAccountTypeAA
@@ -874,7 +876,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 			userOpsInfo.TxValue = opsTxValue
 		}
 
-		for i, callDetail := range callDetails {
+		for aaCallIndex, callDetail := range callDetails {
 			id := crypto.
 				Keccak256Hash(
 					[]byte(fmt.Sprintf(
@@ -885,7 +887,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 						callDetail.target,
 						callDetail.data,
 						callDetail.value.IntPart(),
-						i+1,
+						aaIndex+1,
 					)),
 				).
 				Hex()
@@ -904,7 +906,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 				TxTime:      userOpsInfo.TxTime,
 				CreateTime:  now,
 				UpdateTime:  now,
-				AaIndex:     int64(i + 1),
+				AaIndex:     aaCallIndex + 1,
 			}
 			parserTx.userOpsCalldata = append(parserTx.userOpsCalldata, aaUserOpsCalldata)
 

@@ -41,7 +41,7 @@ func (AAUserOpsCalldata) Fields() []ent.Field {
 		field.Int64("tx_time").StructTag(`json:"txTime"`),
 		field.Time("create_time").StructTag(`json:"createTime"`),
 		field.Time("update_time").StructTag(`json:"updateTime"`),
-		field.Int64("aa_index").StructTag(`json:"aaIndex"`),
+		field.Int("aa_index").StructTag(`json:"aaIndex"`),
 	}
 }
 

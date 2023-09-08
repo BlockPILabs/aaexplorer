@@ -27,32 +27,38 @@ func (dao *userOpDao) Sort(ctx context.Context, query *ent.AAUserOpsInfoQuery, s
 		switch dao.sortField(ctx, dao.GetSortFields(ctx), sort) {
 		case aauseropsinfo.FieldID:
 			query.Order(aauseropsinfo.ByID(opts...))
-		//case useropsinfo.FieldTxTime:
-		//	query.Order(useropsinfo.ByTxTime(opts...))
+		case aauseropsinfo.FieldTxTime:
+			query.Order(aauseropsinfo.ByTxTime(opts...))
 		default:
-			query.Order(aauseropsinfo.ByTime(opts...))
+			query.Order(aauseropsinfo.ByBlockNumber(opts...))
 		}
 	}
 	return query
 }
 
-func (dao *userOpDao) Pagination(ctx context.Context, tx *ent.Client, network string, page vo.PaginationRequest) (list ent.AAUserOpsInfos, total int, err error) {
+func (dao *userOpDao) Pagination(ctx context.Context, tx *ent.Client, req vo.GetUserOpsRequest) (list ent.AAUserOpsInfos, total int, err error) {
 	query := tx.AAUserOpsInfo.Query().Where(
-		aauseropsinfo.NetworkEQ(network),
+		aauseropsinfo.NetworkEQ(req.Network),
 	)
+
+	if req.LatestBlockNumber > 0 {
+		query = query.Where(
+			aauseropsinfo.BlockNumberGT(req.LatestBlockNumber),
+		)
+	}
 	// sort
-	query = dao.Sort(ctx, query, page.Sort, page.Order)
+	query = dao.Sort(ctx, query, req.Sort, req.Order)
 
 	total = query.CountX(ctx)
 
-	if total < 1 || page.GetOffset() > total {
+	if total < 1 || req.GetOffset() > total {
 		return
 	}
 
 	// limit
 	query = query.
-		Offset(page.GetOffset()).
-		Limit(page.PerPage)
+		Offset(req.GetOffset()).
+		Limit(req.PerPage)
 
 	list, err = query.All(ctx)
 	return

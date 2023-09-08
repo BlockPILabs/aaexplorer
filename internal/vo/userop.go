@@ -1,8 +1,12 @@
 package vo
 
-import "github.com/shopspring/decimal"
+import (
+	"github.com/shopspring/decimal"
+)
 
 type UserOpVo struct {
+	// Time holds the value of the "time" field.
+	Time int64 `json:"time"`
 	// UserOperationHash holds the value of the "user_operation_hash" field.
 	UserOperationHash string `json:"userOperationHash"`
 	// TxHash holds the value of the "tx_hash" field.
@@ -19,12 +23,12 @@ type UserOpVo struct {
 	TxValue decimal.Decimal `json:"txValue"`
 	// Fee holds the value of the "fee" field.
 	Fee decimal.Decimal `json:"fee"`
-	// TxTime holds the value of the "tx_time" field.
-	TxTime int64 `json:"txTime"`
 	// InitCode holds the value of the "init_code" field.
 	InitCode string `json:"initCode"`
 	// Status holds the value of the "status" field.
 	Status int32 `json:"status"`
+	// Source holds the value of the "source" field.
+	Source string `json:"source"`
 }
 type GetUserOpsRequest struct {
 	PaginationRequest

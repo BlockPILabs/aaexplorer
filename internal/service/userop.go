@@ -33,7 +33,7 @@ func (*userOpService) GetUserOps(ctx context.Context, req vo.GetUserOpsRequest) 
 		return nil, err
 	}
 	//
-	list, total, err := dao.UserOpDao.Pagination(ctx, client, req.Network, req.PaginationRequest)
+	list, total, err := dao.UserOpDao.Pagination(ctx, client, req)
 	if err != nil {
 		return nil, err
 	}
@@ -51,25 +51,11 @@ func (*userOpService) GetUserOps(ctx context.Context, req vo.GetUserOpsRequest) 
 			Target:            info.Target,
 			TxValue:           info.TxValue,
 			Fee:               info.Fee,
-			TxTime:            info.TxTime,
+			Time:              info.Time.Unix(),
 			InitCode:          info.InitCode,
 			Status:            info.Status,
+			Source:            info.Source,
 		}
-		// res.Records[i] = &vo.UserOpVo{
-		//
-		//	//UserOperationHash: info.UserOperationHash,
-		//	TxHash: info.TxHash,
-		//	//BlockNumber:       info.BlockNumber,
-		//	//Network:           info.Network,
-		//	//Sender:            info.Sender,
-		//	//Target:            info.Target,
-		//	//TxValue:           info.TxValue,
-		//	//Fee:               info.Fee,
-		//	//TxTime:            info.TxTime,
-		//	//TxTimeFormat:      info.TxTimeFormat,
-		//	//InitCode:          info.InitCode,
-		//	//Status:            info.Status,
-		//}
 	}
 
 	return &res, nil
