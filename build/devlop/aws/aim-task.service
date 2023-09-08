@@ -1,5 +1,6 @@
 # vim /etc/systemd/system/aim-task.service
 # sudo systemctl daemon-reload
+# sudo systemctl status aim-task
 # sudo systemctl restart aim-task
 [Unit]
 Description=aa scan api service 
