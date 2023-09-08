@@ -8,10 +8,7 @@ import (
 )
 
 import (
-	"context"
 	"entgo.io/ent/dialect/sql"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropscalldata"
 )
 
 type userOpCallDataDao struct {
