@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
+	"github.com/BlockPILabs/aa-scan/internal/memo"
 	aimos "github.com/BlockPILabs/aa-scan/internal/os"
 	"github.com/BlockPILabs/aa-scan/task"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -33,6 +34,11 @@ var ScanCmd = &cobra.Command{
 		if err != nil {
 			return
 		}
+
+		err = memo.Start(logger.With("lib", "memo"), config)
+		if err != nil {
+			return
+		}
 		_, err = taskScheduler.ScheduleWithFixedDelay(func(ctx context.Context) {
 			//parser.ScanBlock()
 		}, 5*time.Second)
@@ -56,8 +62,6 @@ var ScanCmd = &cobra.Command{
 		//test2()
 		//task.AssetSync()
 		aimos.TrapSignal(logger, func() {})
-
-		task.InitTask()
 
 		// Run forever.
 		select {}

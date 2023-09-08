@@ -6,22 +6,9 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"github.com/shopspring/decimal"
-	"time"
 )
 
 type AAUserOpsCalldata struct {
-	Time        time.Time
-	Uuid        string
-	UserOpsHash string
-	TxHash      string
-	BlockNumber int64
-	Network     string
-	Sender      string
-	Target      string
-	TxValue     decimal.Decimal
-	Source      string
-	Calldata    string
-	TxTime      int64
 	ent.Schema
 }
 
@@ -35,13 +22,13 @@ func (AAUserOpsCalldata) Fields() []ent.Field {
 		field.String("network").StructTag(`json:"network"`),
 		field.String("sender").StructTag(`json:"sender"`),
 		field.String("target").StructTag(`json:"target"`),
-		field.Int64("tx_value").StructTag(`json:"txValue"`).GoType(decimal.Decimal{}),
+		field.Int64("tx_value").StructTag(`json:"txValue"`).GoType(&decimal.Decimal{}).Nillable().Optional(),
 		field.String("source").StructTag(`json:"source"`),
 		field.String("calldata").StructTag(`json:"calldata"`),
 		field.Int64("tx_time").StructTag(`json:"txTime"`),
 		field.Time("create_time").StructTag(`json:"createTime"`),
 		field.Time("update_time").StructTag(`json:"updateTime"`),
-		field.Int64("aa_index").StructTag(`json:"aaIndex"`),
+		field.Int("aa_index").StructTag(`json:"aaIndex"`),
 	}
 }
 

@@ -60,10 +60,10 @@ func Start(logger log.Logger, cfg *config.Config) error {
 			opts = append(opts, ent.Debug(), ent.Log(func(a ...any) {
 				if len(a) == 1 {
 					msg := fmt.Sprint(a[0])
-					logger.Info(msg)
+					logger.Debug(msg)
 				} else if len(a) > 1 {
 					msg := fmt.Sprint(a[0])
-					logger.Info(msg, "args", a[1:])
+					logger.Debug(msg, "args", a[1:])
 				}
 			}))
 		}

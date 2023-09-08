@@ -3,6 +3,8 @@ package vo
 type NetworkVo struct {
 	// Name holds the value of the "name" field.
 	Name string `json:"name"`
+	// ChainName holds the value of the "chain_name" field.
+	ChainName string `json:"chainName"`
 	// Network holds the value of the "network" field.
 	Network string `json:"network"`
 	ChainID int64  `json:"chainId"`

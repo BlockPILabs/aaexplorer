@@ -27,6 +27,7 @@ func (AAUserOpsInfo) Fields() []ent.Field {
 		field.Other("targets", &pgtype.TextArray{}).StructTag(`json:"targets"`).SchemaType(map[string]string{
 			dialect.Postgres: "varchar(127)[]",
 		}),
+		field.Int("targets_count").StructTag(`json:"targetsCount"`),
 		field.Int64("tx_value").StructTag(`json:"txValue"`).GoType(decimal.Decimal{}),
 		field.Int64("fee").StructTag(`json:"fee"`).GoType(decimal.Decimal{}),
 		field.String("bundler").StructTag(`json:"bundler"`),
@@ -52,6 +53,7 @@ func (AAUserOpsInfo) Fields() []ent.Field {
 		field.Time("create_time").StructTag(`json:"createTime"`),
 		field.Time("update_time").StructTag(`json:"updateTime"`),
 		field.Int64("usd_amount").StructTag(`json:"usdAmount"`).GoType(decimal.Decimal{}).Optional().Nillable(),
+		field.Int("aa_index").StructTag(`json:"aaIndex"`),
 	}
 }
 

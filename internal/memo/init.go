@@ -1,0 +1,54 @@
+package memo
+
+import (
+	"github.com/BlockPILabs/aa-scan/config"
+	"github.com/BlockPILabs/aa-scan/internal/log"
+	"github.com/dgraph-io/ristretto"
+	"sync"
+	"time"
+)
+
+type cache struct {
+	c      *ristretto.Cache
+	config *ristretto.Config
+	logger log.Logger
+	lck    sync.Mutex
+}
+
+var instance = &cache{}
+
+func (c *cache) init() (err error) {
+	if c.c == nil {
+		c.lck.Lock()
+		defer c.lck.Unlock()
+		if c.c == nil {
+			instance.c, err = ristretto.NewCache(c.config)
+		}
+	}
+	return
+}
+func Start(logger log.Logger, config *config.Config) (err error) {
+	instance.config = config.MemoCache
+	instance.logger = logger
+	return instance.init()
+}
+
+func Get(key interface{}) (interface{}, bool) {
+	instance.init()
+	return instance.c.Get(key)
+}
+
+func Set(key, value interface{}, cost int64) bool {
+	instance.init()
+	return instance.c.Set(key, value, cost)
+}
+
+func SetWithTTL(key, value interface{}, cost int64, ttl time.Duration) bool {
+	instance.init()
+	return instance.c.SetWithTTL(key, value, cost, ttl)
+}
+
+func Del(key interface{}) {
+	instance.init()
+	instance.c.Del(key)
+}

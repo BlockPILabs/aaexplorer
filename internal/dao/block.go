@@ -56,21 +56,21 @@ func (dao *blockDao) Pagination(ctx context.Context, tx *ent.Client, network str
 	return
 }
 
-func (*baseDao) GetByBlockNumber(ctx context.Context, tx *ent.Client, blockNumber int64) (block *ent.BlockDataDecode, err error) {
+func (*blockDao) GetByBlockNumber(ctx context.Context, tx *ent.Client, blockNumber int64) (block *ent.BlockDataDecode, err error) {
 	block, err = tx.BlockDataDecode.Query().Where(
 		blockdatadecode.ID(blockNumber),
 	).First(ctx)
 	return
 }
 
-func (*baseDao) GetByBlockHash(ctx context.Context, tx *ent.Client, hash string) (block *ent.BlockDataDecode, err error) {
+func (*blockDao) GetByBlockHash(ctx context.Context, tx *ent.Client, hash string) (block *ent.BlockDataDecode, err error) {
 	block, err = tx.BlockDataDecode.Query().Where(
 		blockdatadecode.Hash(hash),
 	).First(ctx)
 	return
 }
 
-func (dao *baseDao) GetBlock(ctx context.Context, tx *ent.Client, blockNumberOrHash string) (block *ent.BlockDataDecode, err error) {
+func (dao *blockDao) GetBlock(ctx context.Context, tx *ent.Client, blockNumberOrHash string) (block *ent.BlockDataDecode, err error) {
 	if utils.Has0xPrefix(blockNumberOrHash) {
 		return dao.GetByBlockHash(ctx, tx, blockNumberOrHash)
 	} else {
