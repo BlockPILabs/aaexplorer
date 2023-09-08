@@ -63,3 +63,33 @@ func (dao *userOpDao) Pagination(ctx context.Context, tx *ent.Client, req vo.Get
 	list, err = query.All(ctx)
 	return
 }
+
+type UserOpsCondition struct {
+	UserOperationHash *string
+	TxHash            *string
+}
+
+func (dao *userOpDao) Pages(ctx context.Context, tx *ent.Client, page vo.PaginationRequest, condition UserOpsCondition) (a []*ent.AAUserOpsInfo, count int, err error) {
+	query := tx.AAUserOpsInfo.Query()
+
+	if condition.UserOperationHash != nil {
+		query = query.Where(aauseropsinfo.ID(*condition.UserOperationHash))
+	}
+
+	if condition.TxHash != nil {
+		query = query.Where(aauseropsinfo.TxHash(*condition.TxHash))
+	}
+
+	if page.Sort > 0 {
+		query = query.Order(dao.orderPage(ctx, aauseropsinfo.Columns, page))
+	}
+
+	count = query.CountX(ctx)
+	if count < 1 || page.GetOffset() > count {
+		return
+	}
+
+	query = query.Limit(page.GetPerPage()).Offset(page.GetOffset())
+	a, err = query.All(ctx)
+	return
+}
