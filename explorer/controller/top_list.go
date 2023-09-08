@@ -1,56 +1,80 @@
 package controller
 
 import (
-	"fmt"
-	"github.com/BlockPILabs/aa-scan/internal/entity"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/bundlerinfo"
+	"github.com/BlockPILabs/aa-scan/internal/log"
+	"github.com/BlockPILabs/aa-scan/internal/service"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 	"github.com/gofiber/fiber/v2"
-	"github.com/shopspring/decimal"
 )
 
 const (
-	Bundler   = "bundler"
-	Paymaster = "paymaster"
-	Factory   = "factory"
+	NameGetTopBundler   = "get_top_bundler"
+	NameGetTopPaymaster = "get_top_paymaster"
+	NameGetTopFactory   = "get_top_factory"
 )
 
-func GetTopList(fcx *fiber.Ctx, req vo.TopRequest) error {
-	context := fcx.Context()
-	reqType := req.Type
-	client, err := entity.Client(context)
+func GetTopBundler(fcx *fiber.Ctx) error {
+	ctx := fcx.UserContext()
+	logger := log.Context(fcx.UserContext())
+
+	logger.Debug("start get top bundler")
+	req := vo.TopBundlerRequest{}
+	err := fcx.ParamsParser(&req)
 	if err != nil {
-		return nil
+		logger.Warn("params parse error", "err", err)
 	}
-	if reqType == Bundler {
-		bundlerInfos, err := client.BundlerInfo.Query().Order(ent.Desc(bundlerinfo.FieldBundlesNumD1)).Limit(10).All(context)
-		if err != nil {
-			return nil
-		}
-		toBundlerResponse(bundlerInfos)
-		return vo.NewResultJsonResponse(bundlerInfos).JSON(fcx)
-	} else if reqType == Paymaster {
-
-	} else if reqType == Factory {
-
+	err = fcx.QueryParser(&req)
+	if err != nil {
+		logger.Warn("query params parse error", "err", err, "network", req.Network)
 	}
 
-	return nil
+	res, err := service.GetTopBundler(ctx, req)
+	if err != nil {
+		logger.Error("get top bundler error", "err", err)
+	}
+	return vo.NewResultJsonResponse(res).JSON(fcx)
 }
 
-func toBundlerResponse(infos []*ent.BundlerInfo) []*vo.TopBundlerResponse {
-	if len(infos) == 0 {
-		return nil
+func GetTopPaymaster(fcx *fiber.Ctx) error {
+	ctx := fcx.UserContext()
+	logger := log.Context(fcx.UserContext())
+
+	logger.Debug("start get top paymaster")
+	req := vo.TopPaymasterRequest{}
+	err := fcx.ParamsParser(&req)
+	if err != nil {
+		logger.Warn("params parse error", "err", err)
 	}
-	var resp []*vo.TopBundlerResponse
-	for _, bundler := range infos {
-		top := vo.TopBundlerResponse{
-			Address:    bundler.Bundler,
-			Bundles:    bundler.BundlesNumD1,
-			Success24H: decimal.Zero,
-		}
-		fmt.Println(top)
+	err = fcx.QueryParser(&req)
+	if err != nil {
+		logger.Warn("query params parse error", "err", err, "network", req.Network)
 	}
-	return resp
+
+	res, err := service.GetTopPaymaster(ctx, req)
+	if err != nil {
+		logger.Error("get top paymaster error", "err", err)
+	}
+	return vo.NewResultJsonResponse(res).JSON(fcx)
+}
+
+func GetTopFactory(fcx *fiber.Ctx) error {
+	ctx := fcx.UserContext()
+	logger := log.Context(fcx.UserContext())
+
+	logger.Debug("start get top factory")
+	req := vo.TopFactoryRequest{}
+	err := fcx.ParamsParser(&req)
+	if err != nil {
+		logger.Warn("params parse error", "err", err)
+	}
+	err = fcx.QueryParser(&req)
+	if err != nil {
+		logger.Warn("query params parse error", "err", err, "network", req.Network)
+	}
+
+	res, err := service.GetTopFactory(ctx, req)
+	if err != nil {
+		logger.Error("get top factory error", "err", err)
+	}
+	return vo.NewResultJsonResponse(res).JSON(fcx)
 }

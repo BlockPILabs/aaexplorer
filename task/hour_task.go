@@ -7,6 +7,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropsinfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/tokenpriceinfo"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactiondecode"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactionreceiptdecode"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/userassetinfo"
 	"github.com/BlockPILabs/aa-scan/service"
@@ -63,6 +64,8 @@ func doHourStatistic() {
 			continue
 		}
 
+		txCount, err := client.TransactionDecode.Query().Where(transactiondecode.TimeGTE(startTime), transactiondecode.TimeLT(endTime)).Count(context.Background())
+
 		bundlerMap := make(map[string][]*ent.AAUserOpsInfo)
 		paymasterMap := make(map[string][]*ent.AAUserOpsInfo)
 		factoryMap := make(map[string][]*ent.AAUserOpsInfo)
@@ -107,7 +110,7 @@ func doHourStatistic() {
 			txHashes[opsInfo.TxHash] = true
 		}
 
-		dailyStatisticHour := calHourStatistic(client, opsInfos, txHashes, network, startTime)
+		dailyStatisticHour := calHourStatistic(client, opsInfos, txHashes, network, txCount, startTime)
 
 		bundlerList := calBundlerStatis(client, bundlerMap, startTime, earnMap, totalBundleMap, network)
 		paymasterList := calPaymasterStatis(client, paymasterMap, startTime, network)
@@ -265,7 +268,7 @@ func saveWhaleStatisticHour(ctx context.Context, client *ent.Client, time time.T
 
 }
 
-func calHourStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, txHashes map[string]bool, network string, startTime time.Time) *ent.DailyStatisticHourCreate {
+func calHourStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, txHashes map[string]bool, network string, txCount int, startTime time.Time) *ent.DailyStatisticHourCreate {
 	if len(infos) == 0 {
 		return nil
 	}
@@ -316,7 +319,8 @@ func calHourStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, txHashes m
 		SetBundlerGasProfitUsd(price.Mul(spentGas)).
 		SetPaymasterGasPaid(paymasterFee).
 		SetPaymasterGasPaidUsd(price.Mul(paymasterFee)).
-		SetTxNum(int64(len(txMap)))
+		SetAaTxNum(int64(len(txMap))).
+		SetTxNum(int64(txCount))
 
 	return dailyStatistic
 }
