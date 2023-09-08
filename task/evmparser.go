@@ -51,6 +51,7 @@ const ExecuteSign = "0xb61d27f6"
 const ExecuteCall = "0x9e5d4c49"
 const ExecuteBatchSign = "0x47e1da2a"
 const ExecuteBatchCallSign = "0x912ccaa3"
+const EmptyMethod = "00000000"
 
 func InitEvmParse(config *config.Config, logger log.Logger) error {
 	logger = logger.With("task", "evmparser")
@@ -1016,11 +1017,16 @@ func (t *_evmParser) parseCallData(ctx context.Context, client *ent.Client, netw
 			continue
 		}
 		detail.source = detail.data[0:8]
+		if detail.source == EmptyMethod {
+			detail.source = ""
+			continue
+		}
 		accountAbi, err := service.AccountService.GetAbiByAddress(ctx, client, detail.target)
 		if err != nil {
 			continue
 		}
-		method, err := accountAbi.MethodById(hexutil.MustDecode("0x" + detail.source))
+		detail.source = "0x" + detail.source
+		method, err := accountAbi.MethodById(hexutil.MustDecode(detail.source))
 		if err != nil {
 			continue
 		}
