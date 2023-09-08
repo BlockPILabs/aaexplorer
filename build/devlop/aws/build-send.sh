@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 cwd=$(dirname $0)
-cd $cwd
-cd ../../../
+cd $cwd || exit
+cd ../../../ || exit
 pwd
 set -x
 make build

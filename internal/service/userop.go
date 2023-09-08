@@ -6,6 +6,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/log"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
+	"strings"
 )
 
 type userOpService struct {
@@ -46,7 +47,13 @@ func (*userOpService) GetUserOps(ctx context.Context, req vo.GetUserOpsRequest) 
 		for _, info := range list {
 			lists[info.ID] = []string{info.Target}
 			if info.TargetsCount > 0 {
-				userOpsHashIn = append(userOpsHashIn, info.ID)
+
+				if len(info.Targets.Elements) == 1 {
+					lists[info.ID] = strings.Split(strings.Trim(strings.Repeat(info.Target+"-", info.TargetsCount), "-"), "-")
+				} else {
+					userOpsHashIn = append(userOpsHashIn, info.ID)
+				}
+
 			}
 		}
 		if len(userOpsHashIn) > 0 {
@@ -55,7 +62,6 @@ func (*userOpService) GetUserOps(ctx context.Context, req vo.GetUserOpsRequest) 
 				lists[id] = targets
 			}
 		}
-
 		//
 		for i, info := range list {
 			res.Records[i] = &vo.UserOpVo{
