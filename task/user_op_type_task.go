@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropscalldata"
@@ -12,6 +13,7 @@ import (
 )
 
 func UserOpTypeTask() {
+	day1Task()
 	d1Scheduler := chrono.NewDefaultTaskScheduler()
 	_, err := d1Scheduler.ScheduleWithCron(func(ctx context.Context) {
 		day1Task()
@@ -20,6 +22,8 @@ func UserOpTypeTask() {
 		log.Println(err)
 	}
 
+	day7Task()
+	day30Task()
 	dayScheduler := chrono.NewDefaultTaskScheduler()
 	_, err = dayScheduler.ScheduleWithCron(func(ctx context.Context) {
 		day7Task()
@@ -40,108 +44,137 @@ func day7Task() {
 }
 
 func doTaskDay(days int) {
-	client, err := entity.Client(context.Background())
+	cli, err := entity.Client(context.Background())
 	if err != nil {
 		return
 	}
-	now := time.Now()
-	startTime := time.Date(now.Year(), now.Month(), now.Day()-days, 0, 0, 0, 0, now.Location())
-	endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	opsCalldatas, err := client.AAUserOpsCalldata.
-		Query().
-		Where(
-			aauseropscalldata.TxTimeGTE(startTime.Unix()),
-			aauseropscalldata.TxTimeLT(endTime.Unix()),
-		).
-		All(context.Background())
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	if len(opsCalldatas) == 0 {
+	records, err := cli.BlockScanRecord.Query().All(context.Background())
+	if len(records) == 0 {
 		return
 	}
-
-	sourceMap := make(map[string]int64)
-	for _, calldata := range opsCalldatas {
-		source := calldata.Source
-		count, sourceOk := sourceMap[source]
-		if !sourceOk {
-			count = 0
+	for _, record := range records {
+		network := record.Network
+		client, err := entity.Client(context.Background())
+		if err != nil {
+			return
 		}
-		count += 1
-		sourceMap[source] = count
+		now := time.Now()
+		//-days
+		startTime := time.Date(now.Year(), now.Month(), now.Day()-200, 0, 0, 0, 0, now.Location())
+		endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		opsCalldatas, err := client.AAUserOpsCalldata.
+			Query().
+			Where(
+				aauseropscalldata.TxTimeGTE(startTime.Unix()),
+				aauseropscalldata.TxTimeLT(endTime.Unix()),
+			).
+			All(context.Background())
 
-	}
-	network := opsCalldatas[0].Network
-	var userOpCreates []*ent.UserOpTypeStatisticCreate
-	for source, count := range sourceMap {
-		userOpCreate := client.UserOpTypeStatistic.Create().
-			SetStatisticType("d" + string(days)).
-			SetUserOpType(source).
-			SetOpNum(count).
-			SetUserOpSign(source).
-			SetNetwork(opsCalldatas[0].Network)
-		userOpCreates = append(userOpCreates, userOpCreate)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if len(opsCalldatas) == 0 {
+			return
+		}
 
+		sourceMap := make(map[string]int64)
+		for _, calldata := range opsCalldatas {
+			source := calldata.Source
+			count, sourceOk := sourceMap[source]
+			if !sourceOk {
+				count = 0
+			}
+			count += 1
+			sourceMap[source] = count
+
+		}
+		var statisticType = config.RangeD7
+		if days == 30 {
+			statisticType = config.RangeD30
+		}
+		var userOpCreates []*ent.UserOpTypeStatisticCreate
+		for source, count := range sourceMap {
+			userOpCreate := client.UserOpTypeStatistic.Create().
+				SetStatisticType(statisticType).
+				SetUserOpType(source).
+				SetOpNum(count).
+				SetUserOpSign(source).
+				SetNetwork(network)
+			userOpCreates = append(userOpCreates, userOpCreate)
+
+		}
+		client.UserOpTypeStatistic.Delete().
+			Where(useroptypestatistic.StatisticTypeEQ(statisticType), useroptypestatistic.NetworkEQ(network)).Exec(context.Background())
+		err = client.UserOpTypeStatistic.CreateBulk(userOpCreates...).Exec(context.Background())
+		if err != nil {
+			log.Println(err)
+		}
 	}
-	client.UserOpTypeStatistic.Delete().
-		Where(useroptypestatistic.StatisticTypeEQ("d"+string(days)), useroptypestatistic.NetworkEQ(network)).Exec(context.Background())
-	err = client.UserOpTypeStatistic.CreateBulk(userOpCreates...).Exec(context.Background())
-	if err != nil {
-		log.Println(err)
-	}
+
 }
 
 func day1Task() {
-	client, err := entity.Client(context.Background())
+	cli, err := entity.Client(context.Background())
 	if err != nil {
 		return
 	}
-	now := time.Now()
-	startTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-24, 0, 0, 0, now.Location())
-	endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, now.Location())
-	opsCalldatas, err := client.AAUserOpsCalldata.
-		Query().
-		Where(
-			aauseropscalldata.TxTimeGTE(startTime.Unix()),
-			aauseropscalldata.TxTimeLT(endTime.Unix()),
-		).
-		All(context.Background())
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	if len(opsCalldatas) == 0 {
+	records, err := cli.BlockScanRecord.Query().All(context.Background())
+	if len(records) == 0 {
 		return
 	}
-
-	sourceMap := make(map[string]int64)
-	for _, calldata := range opsCalldatas {
-		source := calldata.Source
-		count, sourceOk := sourceMap[source]
-		if !sourceOk {
-			count = 0
+	for _, record := range records {
+		network := record.Network
+		client, err := entity.Client(context.Background())
+		if err != nil {
+			return
 		}
-		count += 1
-		sourceMap[source] = count
+		now := time.Now()
+		//-24
+		startTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-10000, 0, 0, 0, now.Location())
+		endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, now.Location())
+		opsCalldatas, err := client.AAUserOpsCalldata.
+			Query().
+			Where(
+				aauseropscalldata.TxTimeGTE(startTime.Unix()),
+				aauseropscalldata.TxTimeLT(endTime.Unix()),
+			).
+			All(context.Background())
 
-	}
-	var userOpCreates []*ent.UserOpTypeStatisticCreate
-	for source, count := range sourceMap {
-		userOpCreate := client.UserOpTypeStatistic.Create().
-			SetStatisticType("d1").
-			SetUserOpType(source).
-			SetOpNum(count).
-			SetUserOpSign(source).
-			SetNetwork(opsCalldatas[0].Network)
-		userOpCreates = append(userOpCreates, userOpCreate)
-	}
-	client.UserOpTypeStatistic.Delete().
-		Where(useroptypestatistic.StatisticTypeEQ("d1"), useroptypestatistic.NetworkEQ(opsCalldatas[0].Network)).Exec(context.Background())
-	err = client.UserOpTypeStatistic.CreateBulk(userOpCreates...).Exec(context.Background())
-	if err != nil {
-		log.Println(err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if len(opsCalldatas) == 0 {
+			return
+		}
 
+		sourceMap := make(map[string]int64)
+		for _, calldata := range opsCalldatas {
+			source := calldata.Source
+			count, sourceOk := sourceMap[source]
+			if !sourceOk {
+				count = 0
+			}
+			count += 1
+			sourceMap[source] = count
+
+		}
+		var userOpCreates []*ent.UserOpTypeStatisticCreate
+		for source, count := range sourceMap {
+			userOpCreate := client.UserOpTypeStatistic.Create().
+				SetStatisticType(config.RangeH24).
+				SetUserOpType(source).
+				SetOpNum(count).
+				SetUserOpSign(source).
+				SetNetwork(network)
+			userOpCreates = append(userOpCreates, userOpCreate)
+		}
+		client.UserOpTypeStatistic.Delete().
+			Where(useroptypestatistic.StatisticTypeEQ(config.RangeH24), useroptypestatistic.NetworkEQ(opsCalldatas[0].Network)).Exec(context.Background())
+		_, err = client.UserOpTypeStatistic.CreateBulk(userOpCreates...).Save(context.Background())
+		if err != nil {
+			log.Println(err)
+
+		}
 	}
+
 }

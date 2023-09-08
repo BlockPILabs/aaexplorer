@@ -6,23 +6,47 @@ type TopRequest struct {
 	Type string
 }
 
+type TopBundlerRequest struct {
+	Network string `json:"network"`
+}
+
+type TopPaymasterRequest struct {
+	Network string `json:"network"`
+}
+
+type TopFactoryRequest struct {
+	Network string `json:"network"`
+}
+
 type TopBundlerResponse struct {
-	Address         string
-	Bundles         int64
-	Success24H      decimal.Decimal
-	FeeEarned24H    decimal.Decimal
-	FeeEarnedUsd24H decimal.Decimal
+	BundlerDetails []*BundlerDetail
+}
+
+type BundlerDetail struct {
+	Address         string          `json:"address"`
+	Bundles         int64           `json:"bundles"`
+	Success24H      decimal.Decimal `json:"success24H"`
+	FeeEarned24H    decimal.Decimal `json:"feeEarned24H"`
+	FeeEarnedUsd24H decimal.Decimal `json:"feeEarnedUsd24H"`
 }
 
 type TopPaymasterResponse struct {
-	Address         string
-	Reserve         decimal.Decimal
-	GasSponsored    decimal.Decimal
-	GasSponsoredUsd decimal.Decimal
+	PaymasterDetails []*PaymasterDetail
+}
+
+type PaymasterDetail struct {
+	Address         string          `json:"address"`
+	ReserveUsd      decimal.Decimal `json:"reserveUsd"`
+	GasSponsored    decimal.Decimal `json:"gasSponsored"`
+	GasSponsoredUsd decimal.Decimal `json:"gasSponsoredUsd"`
 }
 
 type TopFactoryResponse struct {
-	Address       string
-	ActiveAccount int64
-	TotalAccount  int64
+	FactoryDetails []*FactoryDetail
+}
+
+type FactoryDetail struct {
+	Address       string `json:"address"`
+	ActiveAccount int64  `json:"activeAccount"`
+	TotalAccount  int64  `json:"totalAccount"`
 }

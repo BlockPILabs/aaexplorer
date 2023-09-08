@@ -8,6 +8,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/dailystatisticday"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/dailystatistichour"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
+	"github.com/shopspring/decimal"
 	"log"
 	"time"
 )
@@ -117,4 +118,89 @@ func getResponseHour(hours []*ent.DailyStatisticHour) *vo.DailyStatisticResponse
 
 	resp.Details = details
 	return resp
+}
+
+func GetAATxnDominance(ctx context.Context, req vo.AATxnDominanceRequest) (*vo.AATxnDominanceResponse, error) {
+
+	network := req.Network
+	client, err := entity.Client(ctx, network)
+	if err != nil {
+		return nil, err
+	}
+	timeRange := req.TimeRange
+	var resp *vo.AATxnDominanceResponse
+
+	if timeRange == config.RangeH24 {
+		startTime := time.Now().Add(-24 * time.Hour)
+		dailyStatisticHours, err := client.DailyStatisticHour.Query().Where(dailystatistichour.StatisticTimeGTE(startTime.UnixMilli()), dailystatistichour.NetworkEqualFold(network)).All(ctx)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		resp = getDominanceResponseHour(dailyStatisticHours)
+	} else if timeRange == config.RangeD7 {
+		startTime := time.Now().Add(-7 * 24 * time.Hour)
+		dailyStatisticDays, err := client.DailyStatisticDay.Query().Where(dailystatisticday.StatisticTimeGTE(startTime.UnixMilli()), dailystatisticday.NetworkEqualFold(network)).All(ctx)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		resp = getDominanceResponseDay(dailyStatisticDays)
+	} else if timeRange == config.RangeD30 {
+		startTime := time.Now().Add(-150 * 24 * time.Hour)
+		dailyStatisticDays, err := client.DailyStatisticDay.Query().Where(dailystatisticday.StatisticTimeGTE(startTime.UnixMilli()), dailystatisticday.NetworkEqualFold(network)).All(ctx)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		resp = getDominanceResponseDay(dailyStatisticDays)
+	}
+
+	return resp, nil
+}
+
+func getDominanceResponseDay(days []*ent.DailyStatisticDay) *vo.AATxnDominanceResponse {
+	if len(days) == 0 {
+		return nil
+	}
+	var resp *vo.AATxnDominanceResponse
+	var details []*vo.AATxnDominanceDetail
+	for _, statisticDay := range days {
+		rate := getRate(statisticDay.TxNum, statisticDay.AaTxNum)
+		detail := &vo.AATxnDominanceDetail{
+			Time:      statisticDay.StatisticTime,
+			Dominance: rate,
+		}
+		details = append(details, detail)
+	}
+
+	resp.DominanceDetails = details
+	return resp
+}
+
+func getDominanceResponseHour(hours []*ent.DailyStatisticHour) *vo.AATxnDominanceResponse {
+	if len(hours) == 0 {
+		return nil
+	}
+	var resp *vo.AATxnDominanceResponse
+	var details []*vo.AATxnDominanceDetail
+	for _, statisticHour := range hours {
+		rate := getRate(statisticHour.TxNum, statisticHour.AaTxNum)
+		detail := &vo.AATxnDominanceDetail{
+			Time:      statisticHour.StatisticTime,
+			Dominance: rate,
+		}
+		details = append(details, detail)
+	}
+
+	resp.DominanceDetails = details
+	return resp
+}
+
+func getRate(txNum int64, aaTxNum int64) string {
+	if txNum == 0 {
+		return "100" + "%"
+	}
+
+	return decimal.NewFromInt(aaTxNum).DivRound(decimal.NewFromInt(txNum), 4).Mul(decimal.NewFromInt(100)).String() + "%"
 }

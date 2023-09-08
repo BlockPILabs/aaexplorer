@@ -31,6 +31,11 @@ type UserOpVo struct {
 	Status int32 `json:"status"`
 	// Source holds the value of the "source" field.
 	Source string `json:"source"`
+
+	// Targets holds the value of the "targets" field.
+	Targets []string `json:"targets"`
+	// TargetsCount holds the value of the "targets_count" field.
+	TargetsCount int `json:"targetsCount"`
 }
 type GetUserOpsRequest struct {
 	PaginationRequest

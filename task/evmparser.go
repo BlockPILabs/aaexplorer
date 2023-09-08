@@ -51,6 +51,7 @@ const ExecuteSign = "0xb61d27f6"
 const ExecuteCall = "0x9e5d4c49"
 const ExecuteBatchSign = "0x47e1da2a"
 const ExecuteBatchCallSign = "0x912ccaa3"
+const EmptyMethod = "00000000"
 
 func InitEvmParse(config *config.Config, logger log.Logger) error {
 	logger = logger.With("task", "evmparser")
@@ -543,7 +544,9 @@ func (t *_evmParser) insertUserOpsInfo(ctx context.Context, client *ent.Client, 
 			SetCreateTime(ops.CreateTime).
 			SetUpdateTime(ops.UpdateTime).
 			SetUsdAmount(*ops.UsdAmount).
-			SetID(ops.ID)
+			SetID(ops.ID).
+			SetTargetsCount(ops.TargetsCount).
+			SetAaIndex(ops.AaIndex)
 
 		userOpsInfoCreates = append(userOpsInfoCreates, userOpsCreate)
 	}
@@ -582,7 +585,9 @@ func (t *_evmParser) insertUserOpsInfo(ctx context.Context, client *ent.Client, 
 				UpdateActualGasCost().
 				UpdateActualGasUsed().
 				UpdateUpdateTime().
-				UpdateUsdAmount()
+				UpdateUsdAmount().
+				UpdateAaIndex().
+				UpdateTargetsCount()
 		}).Exec(context.Background())
 	if err != nil {
 		log.Context(ctx).Info("insert AAUserOpsInfo error", "err", err)
@@ -787,15 +792,14 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 	entryPoint.AaType = config.AaAccountTypeEntryPoint
 
 	for aaIndex, op := range ops {
-		callDetails := t.parseCallData(ctx, client, network, hexutil.Encode(op.CallData))
-		var target = ""
 		var source = ""
+		var target = ""
+		callDetails, source := t.parseCallData(ctx, client, network, hexutil.Encode(op.CallData))
 		var targetsMap = map[string]string{}
 		var targets = []string{}
 		for i, callDetail := range callDetails {
 			if i == 0 {
 				target = callDetail.target
-				source = callDetail.source
 			}
 			if _, ok := targetsMap[callDetail.target]; !ok {
 				targetsMap[callDetail.target] = callDetail.target
@@ -983,47 +987,60 @@ func (t *_evmParser) getAddr(ctx context.Context, initCode string, paymasterAndD
 	return factoryAddr, paymaster
 }
 
-func (t *_evmParser) parseCallData(ctx context.Context, client *ent.Client, network *ent.Network, callData string) []*CallDetail {
+func (t *_evmParser) parseCallData(ctx context.Context, client *ent.Client, network *ent.Network, callData string) ([]*CallDetail, string) {
 	if len(callData) < 8 {
-		return nil
+		return nil, ""
 	}
 	sign := utils.Substring(callData, 0, 10)
 	paramData := utils.SubstringFromIndex(callData, 10)
 	var callDetails []*CallDetail
+	var source = ""
 	switch sign {
 	case ExecuteSign:
 		callDetails = t.parseExecute(ctx, paramData)
+		source = "execute"
 		break
 	case ExecuteCall:
 		callDetails = t.parseExecute(ctx, paramData)
+		source = "executeCall"
 		break
 	case ExecuteBatchSign:
 		callDetails = t.parseExecuteBatch(ctx, paramData)
+		source = "executeBatch"
 		break
 	case ExecuteBatchCallSign:
 		callDetails = t.parseExecuteBatchCall(ctx, paramData)
+		source = "executeBatchCall"
 		break
 	}
 
 	client, _ = entity.Client(ctx, network.ID)
 
-	for _, detail := range callDetails {
+	for i, detail := range callDetails {
 		if len(detail.data) < 8 {
 			continue
 		}
 		detail.source = detail.data[0:8]
+		if detail.source == EmptyMethod {
+			detail.source = ""
+			continue
+		}
 		accountAbi, err := service.AccountService.GetAbiByAddress(ctx, client, detail.target)
 		if err != nil {
 			continue
 		}
-		method, err := accountAbi.MethodById(hexutil.MustDecode("0x" + detail.source))
+		detail.source = "0x" + detail.source
+		method, err := accountAbi.MethodById(hexutil.MustDecode(detail.source))
 		if err != nil {
 			continue
 		}
 		detail.source = method.Name
+		if i == 0 {
+			source = detail.source
+		}
 	}
 
-	return callDetails
+	return callDetails, source
 }
 
 func (t *_evmParser) parseExecuteBatchCall(ctx context.Context, paramData string) []*CallDetail {
@@ -1034,11 +1051,14 @@ func (t *_evmParser) parseExecuteBatchCall(ctx context.Context, paramData string
 	var callDetails []*CallDetail
 	for i := 1; i <= *num1; i++ {
 		target := utils.HexToAddress(utils.Substring(paramData, *offset1*2+64*i, *offset1*2+64*(i+1)))
+		if len(target) < 1 {
+			continue
+		}
 		value := utils.DivRav(utils.HexToDecimal(utils.Substring(paramData, *offset2*2+64*i, *offset2*2+64*(i+1))).Int64())
 		data := utils.Substring(paramData, *offset3*2+64*i, *offset3*2+64*(i+1))
 		callDetails = append(callDetails, &CallDetail{
 			target: target,
-			value:  value,
+			value:  &value,
 			data:   data,
 		})
 	}
@@ -1055,11 +1075,14 @@ func (t *_evmParser) parseExecuteBatch(ctx context.Context, paramData string) []
 	var callDetails []*CallDetail
 	for i := 1; i <= *num1; i++ {
 		target := utils.HexToAddress(utils.Substring(paramData, *offset1*2+64*i, *offset1*2+64*(i+1)))
+		if len(target) < 1 {
+			continue
+		}
 		value := utils.DivRav(utils.HexToDecimal(utils.Substring(paramData, *offset2*2+64*i, *offset2*2+64*(i+1))).Int64())
 		data := utils.Substring(paramData, *offset3*2+64*i, *offset3*2+64*(i+1))
 		callDetails = append(callDetails, &CallDetail{
 			target: target,
-			value:  value,
+			value:  &value,
 			data:   data,
 		})
 	}
@@ -1075,7 +1098,7 @@ func (t *_evmParser) parseExecute(ctx context.Context, paramData string) []*Call
 	var details []*CallDetail
 	details = append(details, &CallDetail{
 		target: target,
-		value:  value,
+		value:  &value,
 		data:   data,
 	})
 

@@ -26,11 +26,15 @@ func InitTask() {
 	//day statistics
 	InitDayStatis()
 
-	topBundlers()
+	TopBundlers()
 
-	topPaymaster()
+	TopPaymaster()
 
-	topFactories()
+	TopFactories()
+
+	UserOpTypeTask()
+
+	AAContractInteractTask()
 
 }
 
@@ -44,7 +48,7 @@ func addOpsInfo(key string, opsInfo *ent.AAUserOpsInfo, bundlerMap map[string][]
 	bundlerMap[key] = bundlerOps
 }
 
-func topFactories() {
+func TopFactories() {
 	doTopFactoryHour()
 	factoryScheduler := chrono.NewDefaultTaskScheduler()
 
@@ -74,7 +78,7 @@ func doTopFactoryHour() {
 			continue
 		}
 		now := time.Now()
-		startTime := time.Date(now.Year(), now.Month(), now.Day()-7, now.Hour()-23, 0, 0, 0, now.Location())
+		startTime := time.Date(now.Year(), now.Month(), now.Day()-500, now.Hour()-23, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 0, 0, 0, now.Location())
 		factoryStatisHours, err := client.FactoryStatisHour.
 			Query().
@@ -126,7 +130,7 @@ func doTopFactoryHour() {
 
 }
 
-func topPaymaster() {
+func TopPaymaster() {
 	doTopPaymasterHour()
 	paymasterScheduler := chrono.NewDefaultTaskScheduler()
 
@@ -156,7 +160,7 @@ func doTopPaymasterHour() {
 			continue
 		}
 		now := time.Now()
-		startTime := time.Date(now.Year(), now.Month(), now.Day()-7, now.Hour()-23, 0, 0, 0, now.Location())
+		startTime := time.Date(now.Year(), now.Month(), now.Day()-500, now.Hour()-23, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 0, 0, 0, now.Location())
 		paymasterStatisHours, err := client.PaymasterStatisHour.
 			Query().
@@ -193,6 +197,8 @@ func doTopPaymasterHour() {
 			}
 			paymasterInfo.Paymaster = paymasterStatisHour.Paymaster
 			paymasterInfo.Network = paymasterStatisHour.Network
+			paymasterInfo.Reserve = paymasterStatisHour.Reserve
+			paymasterInfo.ReserveUsd = paymasterStatisHour.ReserveUsd
 			paymasterInfoMap[paymaster] = paymasterInfo
 
 		}
@@ -211,7 +217,7 @@ func doTopPaymasterHour() {
 
 }
 
-func topBundlers() {
+func TopBundlers() {
 	doTopBundlersHour()
 	bundlerScheduler := chrono.NewDefaultTaskScheduler()
 
@@ -241,7 +247,7 @@ func doTopBundlersHour() {
 			continue
 		}
 		now := time.Now()
-		startTime := time.Date(now.Year(), now.Month(), now.Day()-7, now.Hour()-23, 0, 0, 0, now.Location())
+		startTime := time.Date(now.Year(), now.Month(), now.Day()-500, now.Hour()-23, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 0, 0, 0, now.Location())
 		bundlerStatisHours, err := client.BundlerStatisHour.
 			Query().
@@ -262,7 +268,15 @@ func doTopBundlersHour() {
 		var totalBundleNum = int64(0)
 		var bundleNumMap = make(map[string]int64)
 		var totalNumMap = make(map[string]int64)
+		var feeEarnedMap = make(map[string]decimal.Decimal)
 		for _, bundlerStatisHour := range bundlerStatisHours {
+			bundler := bundlerStatisHour.Bundler
+			feeEarned, feeOk := feeEarnedMap[bundler]
+			if !feeOk {
+				feeEarned = decimal.Zero
+			}
+			feeEarnedMap[bundler] = feeEarned.Add(*bundlerStatisHour.FeeEarned)
+
 			totalBundleNum += bundlerStatisHour.BundlesNum
 			bundleNum, ok := bundleNumMap[bundlerStatisHour.Bundler]
 			if !ok {
@@ -276,7 +290,7 @@ func doTopBundlersHour() {
 			totalNumMap[bundlerStatisHour.Bundler] = int64(totalNum) + bundlerStatisHour.TotalNum
 		}
 		bundleRateMap, sucRateMap := getRate(totalBundleNum, bundleNumMap, totalNumMap)
-
+		price := service.GetNativePrice(network)
 		bundlerInfoMap := make(map[string]*ent.BundlerInfo)
 		for _, bundlerStatisHour := range bundlerStatisHours {
 			bundler := bundlerStatisHour.Bundler
@@ -308,12 +322,19 @@ func doTopBundlersHour() {
 				bundlerInfo.SuccessRateD1 = sucRateMap[bundler]
 			}
 
+			if feeEarnedMap != nil {
+				feeEarnUsd := price.Mul(feeEarnedMap[bundler])
+				bundlerInfo.FeeEarned = bundlerInfo.FeeEarned.Add(feeEarnedMap[bundler])
+				bundlerInfo.FeeEarnedD1 = feeEarnedMap[bundler]
+				bundlerInfo.FeeEarnedUsd = bundlerInfo.FeeEarnedUsd.Add(feeEarnUsd)
+				bundlerInfo.FeeEarnedUsdD1 = feeEarnUsd
+			}
+
 			bundlerInfo.Bundler = bundlerStatisHour.Bundler
 			bundlerInfo.Network = bundlerStatisHour.Network
 			bundlerInfoMap[bundler] = bundlerInfo
 
 		}
-
 		for bundler, bundlerInfo := range bundlerInfoMap {
 			if len(bundler) == 0 {
 				continue
@@ -363,6 +384,22 @@ func saveOrUpdateBundler(client *ent.Client, bundler string, info *ent.BundlerIn
 			SetGasCollected(info.GasCollected).
 			SetUserOpsNumD1(info.UserOpsNumD1).
 			SetBundlesNumD1(info.BundlesNumD1).
+			SetFeeEarned(info.FeeEarned).
+			SetFeeEarnedUsd(info.FeeEarnedUsd).
+			SetFeeEarnedD1(info.FeeEarnedD1).
+			SetFeeEarnedUsdD1(info.FeeEarnedUsdD1).
+			SetFeeEarnedD7(info.FeeEarnedD7).
+			SetFeeEarnedUsdD7(info.FeeEarnedUsdD7).
+			SetFeeEarnedD30(info.FeeEarnedD30).
+			SetFeeEarnedUsdD30(info.FeeEarnedUsdD30).
+			SetSuccessRate(info.SuccessRate).
+			SetSuccessRateD1(info.SuccessRateD1).
+			SetSuccessRateD7(info.SuccessRateD7).
+			SetSuccessRateD30(info.SuccessRateD30).
+			SetBundleRate(info.BundleRate).
+			SetBundleRateD7(info.BundleRateD7).
+			SetBundleRateD1(info.BundleRateD1).
+			SetBundleRateD30(info.BundleRateD30).
 			Save(context.Background())
 		if err != nil {
 			log.Printf("Save bundler err, %s\n", err)
@@ -399,6 +436,10 @@ func saveOrUpdatePaymaster(client *ent.Client, paymaster string, info *ent.Payma
 			SetGasSponsored(info.GasSponsored).
 			SetUserOpsNumD1(info.UserOpsNumD1).
 			SetGasSponsoredD1(info.GasSponsoredD1).
+			SetGasSponsoredUsd(info.GasSponsoredUsdD1).
+			SetGasSponsoredUsdD1(info.GasSponsoredUsdD1).
+			SetReserve(info.Reserve).
+			SetReserveUsd(info.ReserveUsd).
 			Save(context.Background())
 		if err != nil {
 			log.Printf("Save paymaster err, %s\n", err)
