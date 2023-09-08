@@ -699,8 +699,20 @@ func (t *_evmParser) insertAaAccounts(ctx context.Context, client *ent.Client, n
 	}
 	var insertAccounts []*ent.AaAccountDataCreate
 
+	factoryMap := map[string]*ent.AaAccountData{}
+	paymasterMap := map[string]*ent.AaAccountData{}
+	bundlerMap := map[string]*ent.AaAccountData{}
+
 	// find insert
 	for id, aaAccount := range dataMap {
+		switch aaAccount.AaType {
+		case config.AaAccountTypeFactory:
+			factoryMap[aaAccount.ID] = dataMap[id]
+		case config.AaAccountTypePaymaster:
+			paymasterMap[aaAccount.ID] = dataMap[id]
+		case config.AaAccountTypeBundler:
+			bundlerMap[aaAccount.ID] = dataMap[id]
+		}
 		if _, ok := accountsMap[id]; !ok {
 			create := client.AaAccountData.Create().
 				SetID(aaAccount.ID).
@@ -741,7 +753,6 @@ func (t *_evmParser) insertAaAccounts(ctx context.Context, client *ent.Client, n
 		}
 	}
 
-	//accountsMap := make()
 }
 
 func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, network *ent.Network, block *parserBlock, parserTx *parserTransaction) error {

@@ -13,7 +13,7 @@ type AaAccountData struct {
 
 func (AaAccountData) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("id").StorageKey("address").StructTag(`json:"address"`),
+		field.String("id").StorageKey("address").StructTag(`json:"address"`).Unique(),
 		field.String("aa_type").StructTag(`json:"aaType"`),
 		field.String("factory").StructTag(`json:"factory"`),
 		field.Time("factory_time").StructTag(`json:"factoryTime"`),
