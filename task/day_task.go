@@ -7,6 +7,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropsinfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/tokenpriceinfo"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactiondecode"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactionreceiptdecode"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/userassetinfo"
 	"github.com/BlockPILabs/aa-scan/service"
@@ -55,11 +56,12 @@ func doDayStatistic() {
 				aauseropsinfo.TxTimeLT(endTime.Unix()),
 			).
 			All(context.Background())
-
 		if err != nil {
 			log.Println(err)
 			continue
 		}
+
+		txCount, err := client.TransactionDecode.Query().Where(transactiondecode.TimeGTE(startTime), transactiondecode.TimeLT(endTime)).Count(context.Background())
 
 		receiveMap := make(map[string]decimal.Decimal)
 		totalBundleMap := make(map[string]map[string]int)
@@ -104,7 +106,7 @@ func doDayStatistic() {
 			txHashes[opsInfo.TxHash] = true
 		}
 
-		dailyStatisticDay := calDailyStatistic(client, opsInfos, txHashes, network, startTime)
+		dailyStatisticDay := calDailyStatistic(client, opsInfos, txHashes, network, txCount, startTime)
 
 		bundlerList := calBundlerStatisDay(client, bundlerMap, earnMap, totalBundleMap, startTime, network)
 		paymasterList := calPaymasterStatisDay(client, paymasterMap, startTime, network)
@@ -180,7 +182,7 @@ func saveWhaleStatisticDay(ctx context.Context, client *ent.Client, time time.Ti
 
 }
 
-func calDailyStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, txHashes map[string]bool, network string, startTime time.Time) *ent.DailyStatisticDayCreate {
+func calDailyStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, txHashes map[string]bool, network string, txCount int, startTime time.Time) *ent.DailyStatisticDayCreate {
 	if len(infos) == 0 {
 		return nil
 	}
@@ -229,7 +231,8 @@ func calDailyStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, txHashes 
 		SetBundlerGasProfitUsd(price.Mul(spentGas)).
 		SetPaymasterGasPaid(paymasterFee).
 		SetPaymasterGasPaidUsd(price.Mul(paymasterFee)).
-		SetTxNum(int64(len(txMap)))
+		SetAaTxNum(int64(len(txMap))).
+		SetTxNum(int64(txCount))
 
 	return dailyStatistic
 }
@@ -368,7 +371,7 @@ func calFactoryStatisDay(client *ent.Client, bundlerMap map[string][]*ent.AAUser
 		accountMap := make(map[string]bool)
 		for _, userOpsInfo := range userOpsInfoList {
 			accountMap[userOpsInfo.Sender] = true
-			if userOpsInfo.Factory != "" {
+			if len(userOpsInfo.Factory) > 0 {
 				accountDeployNum++
 			}
 		}

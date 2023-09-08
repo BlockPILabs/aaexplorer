@@ -39,6 +39,7 @@ func (UserOpTypeStatistic) Fields() []ent.Field {
 		field.Int64("op_num").
 			StructTag(`json:"opNum"`),
 		field.Time("create_time").
+			Default(time.Now()).
 			StructTag(`json:"createTime"`),
 	}
 }

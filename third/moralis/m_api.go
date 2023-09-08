@@ -65,7 +65,7 @@ type pricePayload struct {
 }
 
 func GetTokenBalance(address string, network string) []*TokenBalance {
-
+	network = strings.ToLower(network)
 	url := MoralisUrl + "/" + address + "/erc20?chain=" + network
 
 	req, _ := http.NewRequest("GET", url, nil)
@@ -139,7 +139,7 @@ func GetTokenPriceBatch(tokens []string) []*TokenPrice {
 }
 
 func GetTokenPrice(token string, network string) *TokenPrice {
-
+	network = strings.ToLower(network)
 	url := MoralisUrl + "/erc20/" + token + "/price?chain=" + network + "&include=percent_change"
 
 	req, _ := http.NewRequest("GET", url, nil)
@@ -168,6 +168,10 @@ func GetTokenPrice(token string, network string) *TokenPrice {
 }
 
 func GetNativeTokenBalance(accountAddress string, network string) decimal.Decimal {
+	if len(accountAddress) == 0 || len(network) == 0 {
+		return decimal.Zero
+	}
+	network = strings.ToLower(network)
 	url := MoralisUrl + "/" + accountAddress + "/balance?chain=" + network
 
 	req, _ := http.NewRequest("GET", url, nil)
@@ -176,7 +180,9 @@ func GetNativeTokenBalance(accountAddress string, network string) decimal.Decima
 	req.Header.Add("X-API-Key", ApiKey)
 
 	res, _ := http.DefaultClient.Do(req)
-
+	if res == nil {
+		return decimal.Zero
+	}
 	defer res.Body.Close()
 	body, _ := io.ReadAll(res.Body)
 

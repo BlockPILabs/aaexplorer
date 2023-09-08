@@ -15,6 +15,7 @@ type DailyStatisticDay struct {
 	Network             string
 	StatisticTime       int64
 	TxNum               int64
+	AATxNum             int64
 	UserOpsNum          int64
 	GasFee              decimal.Decimal
 	GasFeeUsd           decimal.Decimal
@@ -40,6 +41,8 @@ func (DailyStatisticDay) Fields() []ent.Field {
 			StructTag(`json:"statisticTime"`),
 		field.Int64("tx_num").
 			StructTag(`json:"txNum"`),
+		field.Int64("aa_tx_num").
+			StructTag(`json:"aaTxNum"`),
 		field.Int64("user_ops_num").
 			StructTag(`json:"userOpsNum"`),
 		field.Int64("gas_fee").

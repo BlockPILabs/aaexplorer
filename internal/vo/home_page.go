@@ -32,3 +32,24 @@ type DailyStatisticDetail struct {
 	BundlerGasProfit      decimal.Decimal `json:"bundlerGasProfit"`
 	BundlerGasProfitUsd   decimal.Decimal `json:"bundlerGasProfitUsd"`
 }
+
+type AATxnDominanceRequest struct {
+	Network   string `json:"network"`
+	TimeRange string `json:"timeRange"`
+}
+
+type AATxnDominanceResponse struct {
+	DominanceDetails []*AATxnDominanceDetail
+}
+
+type AATxnDominanceDetail struct {
+	Time      int64  `json:"time"`
+	Dominance string `json:"dominance"`
+}
+
+type LatestUserOpsRequest struct {
+	Network string `json:"network"`
+}
+
+type LatestUserOpsResponse struct {
+}
