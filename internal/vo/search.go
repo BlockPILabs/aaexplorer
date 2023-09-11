@@ -7,6 +7,8 @@ type SearchAllRequest struct {
 
 type SearchAllAccount struct {
 	Address string `json:"address"`
+	// AaType holds the value of the "aa_type" field.
+	AaType string `json:"aaType"`
 }
 
 type SearchAllTransaction struct {
@@ -14,7 +16,7 @@ type SearchAllTransaction struct {
 }
 
 type SearchAllBlock struct {
-	BlockNumber int64 `json:"blockHash"`
+	BlockNumber int64 `json:"blockNumber"`
 }
 
 type SearchAllResponse struct {

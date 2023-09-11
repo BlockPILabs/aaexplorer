@@ -2,12 +2,14 @@ package dao
 
 import (
 	"context"
+	"entgo.io/ent/dialect/sql"
 	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/blockdatadecode"
 	"github.com/BlockPILabs/aa-scan/internal/utils"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 	"strconv"
+	"strings"
 )
 
 type blockDao struct {
@@ -67,6 +69,17 @@ func (*blockDao) GetByBlockHash(ctx context.Context, tx *ent.Client, hash string
 	block, err = tx.BlockDataDecode.Query().Where(
 		blockdatadecode.Hash(hash),
 	).First(ctx)
+	return
+}
+
+func (*blockDao) Search(ctx context.Context, tx *ent.Client, hashPrefix string) (block ent.BlockDataDecodes, err error) {
+	hashPrefix = strings.ToLower(hashPrefix)
+	if !utils.Has0xPrefix(hashPrefix) {
+		hashPrefix = "0x" + hashPrefix
+	}
+	block, err = tx.BlockDataDecode.Query().Where(
+		blockdatadecode.HashHasPrefix(hashPrefix),
+	).Order(blockdatadecode.ByID(sql.OrderDesc())).Limit(10).All(ctx)
 	return
 }
 
