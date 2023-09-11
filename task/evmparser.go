@@ -48,6 +48,7 @@ const TransferEventSign = "0xe6497e3ee548a3372136af2fcb0696db31fc6cf202607076450
 const AccountDeploySign = "0xd51a9c61267aa6196961883ecf5ff2da6619c37dac0fa92122513fb32c032d2d"
 
 const ExecuteSign = "0xb61d27f6"
+const ExecuteSign1 = "0x51945447"
 const ExecuteCall = "0x9e5d4c49"
 const ExecuteBatchSign = "0x47e1da2a"
 const ExecuteBatchCallSign = "0x912ccaa3"
@@ -1007,10 +1008,7 @@ func (t *_evmParser) parseCallData(ctx context.Context, client *ent.Client, netw
 	var callDetails []*CallDetail
 	var source = ""
 	switch sign {
-	case ExecuteSign:
-		callDetails = t.parseExecute(ctx, paramData)
-		source = "execute"
-		break
+
 	case ExecuteCall:
 		callDetails = t.parseExecute(ctx, paramData)
 		source = "executeCall"
@@ -1022,6 +1020,10 @@ func (t *_evmParser) parseCallData(ctx context.Context, client *ent.Client, netw
 	case ExecuteBatchCallSign:
 		callDetails = t.parseExecuteBatchCall(ctx, paramData)
 		source = "executeBatchCall"
+		break
+	default:
+		callDetails = t.parseExecute(ctx, paramData)
+		source = "execute"
 		break
 	}
 
