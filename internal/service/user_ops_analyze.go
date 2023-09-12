@@ -18,7 +18,7 @@ func GetUserOpType(ctx context.Context, req vo.UserOpsTypeRequest) (*vo.UserOpsT
 		return nil, err
 	}
 	timeRange := req.TimeRange
-	var resp *vo.UserOpsTypeResponse
+	var resp = &vo.UserOpsTypeResponse{}
 
 	userOpTypes, err := client.UserOpTypeStatistic.Query().Where(useroptypestatistic.StatisticTypeEQ(timeRange), useroptypestatistic.NetworkEqualFold(network)).All(ctx)
 	if err != nil {
@@ -40,12 +40,12 @@ func getUserOpTypeResponse(types []*ent.UserOpTypeStatistic) *vo.UserOpsTypeResp
 		totalNum += opType.OpNum
 	}
 
-	var resp *vo.UserOpsTypeResponse
+	var resp = &vo.UserOpsTypeResponse{}
 	var userOpsInfos []*vo.UserOpsType
 	for _, opType := range types {
 		userOpType := &vo.UserOpsType{
 			UserOpType: opType.UserOpType,
-			Rate:       decimal.NewFromInt(opType.OpNum).DivRound(decimal.NewFromInt(totalNum), 4).Mul(decimal.NewFromInt(100)).String() + "%",
+			Rate:       decimal.NewFromInt(opType.OpNum).DivRound(decimal.NewFromInt(totalNum), 4),
 		}
 		userOpsInfos = append(userOpsInfos, userOpType)
 	}
@@ -60,7 +60,7 @@ func GetAAContractInteract(ctx context.Context, req vo.AAContractInteractRequest
 		return nil, err
 	}
 	timeRange := req.TimeRange
-	var resp *vo.AAContractInteractResponse
+	var resp = &vo.AAContractInteractResponse{}
 
 	contractInteract, err := client.AAContractInteract.Query().Where(aacontractinteract.StatisticTypeEQ(timeRange), aacontractinteract.NetworkEqualFold(network)).All(ctx)
 	if err != nil {
@@ -82,15 +82,17 @@ func getAAContractInteractResponse(interacts []*ent.AAContractInteract) *vo.AACo
 		totalNum += interact.InteractNum
 	}
 
-	var resp *vo.AAContractInteractResponse
+	var resp = &vo.AAContractInteractResponse{}
 	var contractInteractArr []*vo.AAContractInteract
 	for _, interact := range interacts {
 		contractInteract := &vo.AAContractInteract{
 			ContractAddress: interact.ContractAddress,
-			Rate:            decimal.NewFromInt(interact.InteractNum).DivRound(decimal.NewFromInt(totalNum), 4).Mul(decimal.NewFromInt(100)).String() + "%",
+			Rate:            decimal.NewFromInt(interact.InteractNum).DivRound(decimal.NewFromInt(totalNum), 4),
+			SingleNum:       interact.InteractNum,
 		}
 		contractInteractArr = append(contractInteractArr, contractInteract)
 	}
 	resp.AAContractInteract = contractInteractArr
+	resp.TotalNum = totalNum
 	return resp
 }

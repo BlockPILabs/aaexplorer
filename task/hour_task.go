@@ -50,7 +50,7 @@ func doHourStatistic() {
 		}
 
 		now := time.Now()
-		startTime := time.Date(now.Year(), now.Month(), now.Day()-50, now.Hour()-1, 0, 0, 0, now.Location())
+		startTime := time.Date(now.Year(), now.Month(), now.Day()-70, now.Hour()-1, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, now.Location())
 		opsInfos, err := client.AAUserOpsInfo.
 			Query().
@@ -67,9 +67,9 @@ func doHourStatistic() {
 
 		txCount, err := client.TransactionDecode.Query().Where(transactiondecode.TimeGTE(startTime), transactiondecode.TimeLT(endTime)).Count(context.Background())
 
-		bundlerMap := make(map[string][]*ent.AAUserOpsInfo)
-		paymasterMap := make(map[string][]*ent.AAUserOpsInfo)
-		factoryMap := make(map[string][]*ent.AAUserOpsInfo)
+		bundlerMap := make(map[string]map[string][]*ent.AAUserOpsInfo)
+		paymasterMap := make(map[string]map[string][]*ent.AAUserOpsInfo)
+		factoryMap := make(map[string]map[string][]*ent.AAUserOpsInfo)
 
 		receiveMap := make(map[string]decimal.Decimal)
 		totalBundleMap := make(map[string]map[string]int)
@@ -99,16 +99,16 @@ func doHourStatistic() {
 		costMap := getCostMap(receipts)
 		//receiptMap := getReceiptMap(receipts)
 		earnMap := getEarnMap(receiveMap, costMap)
-		txHashes := make(map[string]bool)
+		txHashes := make(map[string]map[string]bool)
 
 		for _, opsInfo := range opsInfos {
-			addOpsInfo(opsInfo.Bundler, opsInfo, bundlerMap)
-			addOpsInfo(opsInfo.Paymaster, opsInfo, paymasterMap)
-			addOpsInfo(opsInfo.Factory, opsInfo, factoryMap)
-			txHashes[opsInfo.TxHash] = true
+			addOpsInfo(opsInfo.Bundler, opsInfo, bundlerMap, "hour")
+			addOpsInfo(opsInfo.Paymaster, opsInfo, paymasterMap, "hour")
+			addOpsInfo(opsInfo.Factory, opsInfo, factoryMap, "hour")
+			addTxHash(opsInfo.TxHash, opsInfo, txHashes, "hour")
 		}
 
-		dailyStatisticHour := calHourStatistic(client, opsInfos, txHashes, network, txCount, startTime)
+		dailyStatisticHours := calHourStatistic(client, opsInfos, txHashes, network, txCount, startTime)
 
 		bundlerList := calBundlerStatis(client, bundlerMap, startTime, earnMap, totalBundleMap, network)
 		paymasterList := calPaymasterStatis(client, paymasterMap, startTime, network)
@@ -117,12 +117,33 @@ func doHourStatistic() {
 		bulkInsertBundlerStatsHour(context.Background(), client, bundlerList)
 		bulkInsertPaymasterStatsHour(context.Background(), client, paymasterList)
 		bulkInsertFactoryStatsHour(context.Background(), client, factoryList)
-		if dailyStatisticHour != nil {
-			dailyStatisticHour.Save(context.Background())
-		}
+		bulkInsertDailyStatisticHour(context.Background(), client, dailyStatisticHours)
 		//saveWhaleStatisticHour(context.Background(), client, startTime)
 	}
 
+}
+
+func bulkInsertDailyStatisticHour(ctx context.Context, client *ent.Client, data []*ent.DailyStatisticHourCreate) error {
+	if len(data) == 0 {
+		return nil
+	}
+
+	tx, err := client.Tx(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err := client.DailyStatisticHour.CreateBulk(data...).Save(ctx); err != nil {
+		tx.Rollback()
+		log.Fatal(err)
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func getBundleRateMap(bundleMap map[string]map[string]int) map[string]decimal.Decimal {
@@ -278,154 +299,198 @@ func saveWhaleStatisticHour(ctx context.Context, client *ent.Client, time time.T
 
 }
 
-func calHourStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, txHashes map[string]bool, network string, txCount int, startTime time.Time) *ent.DailyStatisticHourCreate {
+func calHourStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, allTxHashes map[string]map[string]bool, network string, txCount int, startTime time.Time) []*ent.DailyStatisticHourCreate {
 	if len(infos) == 0 {
 		return nil
 	}
 
-	var hashes []string
-	for key, _ := range txHashes {
-		hashes = append(hashes, key)
-	}
-	receipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(hashes[:]...)).All(context.Background())
-	if err != nil {
-		return nil
-	}
-
-	var spentGas = decimal.Zero
-	for _, receipt := range receipts {
-		spentGas = spentGas.Sub(getReceiptGas(receipt))
-	}
-
-	var totalGasFee = decimal.Zero
-	var txMap = make(map[string]bool)
-	var walletMap = make(map[string]bool)
-	var paymasterFee = decimal.Zero
-	for _, opsInfo := range infos {
-		fee := RayDiv(decimal.NewFromInt(opsInfo.ActualGasCost))
-		totalGasFee = totalGasFee.Add(fee)
-		txMap[opsInfo.TxHash] = true
-		walletMap[opsInfo.Sender] = true
-		if len(opsInfo.Paymaster) > 2 {
-			paymasterFee = paymasterFee.Add(fee)
+	var resp []*ent.DailyStatisticHourCreate
+	for statisticTime, txHashes := range allTxHashes {
+		sTime, err := time.Parse(TimeLayout, statisticTime)
+		if err != nil {
+			continue
 		}
-		spentGas = spentGas.Add(fee)
+		if len(txHashes) == 0 {
+			continue
+		}
+
+		var hashes []string
+		for key, _ := range txHashes {
+			hashes = append(hashes, key)
+		}
+		receipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(hashes[:]...)).All(context.Background())
+		if err != nil {
+			return nil
+		}
+
+		var spentGas = decimal.Zero
+		for _, receipt := range receipts {
+			spentGas = spentGas.Sub(getReceiptGas(receipt))
+		}
+
+		var totalGasFee = decimal.Zero
+		var txMap = make(map[string]bool)
+		var walletMap = make(map[string]bool)
+		var paymasterFee = decimal.Zero
+		for _, opsInfo := range infos {
+			fee := RayDiv(decimal.NewFromInt(opsInfo.ActualGasCost))
+			totalGasFee = totalGasFee.Add(fee)
+			txMap[opsInfo.TxHash] = true
+			walletMap[opsInfo.Sender] = true
+			if len(opsInfo.Paymaster) > 2 {
+				paymasterFee = paymasterFee.Add(fee)
+			}
+			spentGas = spentGas.Add(fee)
+		}
+
+		price := service.GetNativePrice(network)
+		if price == nil {
+			price = &decimal.Zero
+		}
+		dailyStatistic := client.DailyStatisticHour.Create().
+			SetNetwork(network).
+			SetUserOpsNum(int64(len(infos))).
+			SetStatisticTime(sTime.UnixMilli()).
+			SetActiveWallet(int64(len(walletMap))).
+			SetGasFee(totalGasFee).
+			SetGasFeeUsd(price.Mul(totalGasFee)).
+			SetBundlerGasProfit(spentGas).
+			SetBundlerGasProfitUsd(price.Mul(spentGas)).
+			SetPaymasterGasPaid(paymasterFee).
+			SetPaymasterGasPaidUsd(price.Mul(paymasterFee)).
+			SetAaTxNum(int64(len(txMap))).
+			SetTxNum(int64(txCount))
+
+		resp = append(resp, dailyStatistic)
 	}
 
-	price := service.GetNativePrice(network)
-	if price == nil {
-		price = &decimal.Zero
-	}
-	dailyStatistic := client.DailyStatisticHour.Create().
-		SetNetwork(network).
-		SetUserOpsNum(int64(len(infos))).
-		SetStatisticTime(startTime.UnixMilli()).
-		SetActiveWallet(int64(len(walletMap))).
-		SetGasFee(totalGasFee).
-		SetGasFeeUsd(price.Mul(totalGasFee)).
-		SetBundlerGasProfit(spentGas).
-		SetBundlerGasProfitUsd(price.Mul(spentGas)).
-		SetPaymasterGasPaid(paymasterFee).
-		SetPaymasterGasPaidUsd(price.Mul(paymasterFee)).
-		SetAaTxNum(int64(len(txMap))).
-		SetTxNum(int64(txCount))
-
-	return dailyStatistic
+	return resp
 }
 
 func RayDiv(gas decimal.Decimal) decimal.Decimal {
 	return gas.DivRound(decimal.NewFromFloat(math.Pow10(18)), 18)
 }
 
-func calBundlerStatis(client *ent.Client, bundlerMap map[string][]*ent.AAUserOpsInfo, startTime time.Time, earnMap map[string]decimal.Decimal, bundleMap map[string]map[string]int, network string) []*ent.BundlerStatisHourCreate {
+func calBundlerStatis(client *ent.Client, bundlerMap map[string]map[string][]*ent.AAUserOpsInfo, startTime time.Time, earnMap map[string]decimal.Decimal, bundleMap map[string]map[string]int, network string) []*ent.BundlerStatisHourCreate {
 
 	var bundlers []*ent.BundlerStatisHourCreate
-	for key, userOpsInfoList := range bundlerMap {
-		txHashMap := make(map[string]bool)
-		var successMum = 0
-		var failedNum = 0
-		var totalFee = decimal.Zero
-		for _, userOpsInfo := range userOpsInfoList {
-			totalFee = totalFee.Add(userOpsInfo.Fee)
-			if userOpsInfo.Status == 1 {
-				successMum += 1
-				txHashMap[userOpsInfo.TxHash] = true
-			} else {
-				failedNum += 1
-			}
+	for key, allTimeUserOpsInfoList := range bundlerMap {
+		if len(allTimeUserOpsInfoList) == 0 {
+			continue
 		}
-		//set properties
-		totalBundleNum := len(bundleMap[key])
-		earnFee := earnMap[key]
-		bundlers = append(bundlers, client.BundlerStatisHour.Create().
-			SetBundler(key).
-			SetNetwork(network).
-			SetBundlesNum(int64(len(txHashMap))).
-			SetGasCollected(totalFee).
-			SetTotalNum(int64(totalBundleNum)).
-			SetFeeEarned(earnFee).
-			SetUserOpsNum(int64(len(userOpsInfoList))).
-			SetStatisTime(startTime).
-			SetSuccessBundlesNum(int64(successMum)).
-			SetFailedBundlesNum(int64(failedNum)),
-		)
+		for statisticTime, userOpsInfoList := range allTimeUserOpsInfoList {
+			sTime, err := time.Parse(TimeLayout, statisticTime)
+			if err != nil {
+				log.Println(err)
+			}
+			txHashMap := make(map[string]bool)
+			var successMum = 0
+			var failedNum = 0
+			var totalFee = decimal.Zero
+			for _, userOpsInfo := range userOpsInfoList {
+				totalFee = totalFee.Add(userOpsInfo.Fee)
+				if userOpsInfo.Status == 1 {
+					successMum += 1
+					txHashMap[userOpsInfo.TxHash] = true
+				} else {
+					failedNum += 1
+				}
+			}
+			//set properties
+			totalBundleNum := len(bundleMap[key])
+			earnFee := earnMap[key]
+			bundlers = append(bundlers, client.BundlerStatisHour.Create().
+				SetBundler(key).
+				SetNetwork(network).
+				SetBundlesNum(int64(len(txHashMap))).
+				SetGasCollected(totalFee).
+				SetTotalNum(int64(totalBundleNum)).
+				SetFeeEarned(earnFee).
+				SetUserOpsNum(int64(len(userOpsInfoList))).
+				SetStatisTime(sTime).
+				SetSuccessBundlesNum(int64(successMum)).
+				SetFailedBundlesNum(int64(failedNum)),
+			)
+		}
+
 	}
 
 	return bundlers
 }
 
-func calPaymasterStatis(client *ent.Client, bundlerMap map[string][]*ent.AAUserOpsInfo, startTime time.Time, network string) []*ent.PaymasterStatisHourCreate {
+func calPaymasterStatis(client *ent.Client, bundlerMap map[string]map[string][]*ent.AAUserOpsInfo, startTime time.Time, network string) []*ent.PaymasterStatisHourCreate {
 
 	var paymasters []*ent.PaymasterStatisHourCreate
 	price := service.GetNativePrice(network)
 	if price == nil {
 		price = &decimal.Zero
 	}
-	for key, userOpsInfoList := range bundlerMap {
+	for key, allTimeUserOpsInfoList := range bundlerMap {
 		if len(key) <= 2 {
 			continue
 		}
-		var totalFee = decimal.Zero
-		for _, userOpsInfo := range userOpsInfoList {
-			totalFee = totalFee.Add(RayDiv(decimal.NewFromInt(userOpsInfo.ActualGasCost)))
+		if len(allTimeUserOpsInfoList) == 0 {
+			continue
 		}
-		nativeBalance := moralis.GetNativeTokenBalance(key, network)
-		paymasters = append(paymasters, client.PaymasterStatisHour.Create().
-			SetPaymaster(key).
-			SetNetwork(network).
-			SetUserOpsNum(int64(len(userOpsInfoList))).
-			SetGasSponsored(totalFee).
-			SetReserve(nativeBalance).
-			SetReserveUsd(price.Mul(nativeBalance)).
-			SetStatisTime(startTime),
-		)
+
+		for statisticTime, userOpsInfoList := range allTimeUserOpsInfoList {
+			sTime, err := time.Parse(TimeLayout, statisticTime)
+			if err != nil {
+				log.Println(err)
+			}
+			var totalFee = decimal.Zero
+			for _, userOpsInfo := range userOpsInfoList {
+				totalFee = totalFee.Add(RayDiv(decimal.NewFromInt(userOpsInfo.ActualGasCost)))
+			}
+			nativeBalance := moralis.GetNativeTokenBalance(key, network)
+			paymasters = append(paymasters, client.PaymasterStatisHour.Create().
+				SetPaymaster(key).
+				SetNetwork(network).
+				SetUserOpsNum(int64(len(userOpsInfoList))).
+				SetGasSponsored(totalFee).
+				SetReserve(nativeBalance).
+				SetReserveUsd(price.Mul(nativeBalance)).
+				SetStatisTime(sTime),
+			)
+		}
+
 	}
 
 	return paymasters
 }
 
-func calFactoryStatis(client *ent.Client, factoryMap map[string][]*ent.AAUserOpsInfo, startTime time.Time, network string) []*ent.FactoryStatisHourCreate {
+func calFactoryStatis(client *ent.Client, factoryMap map[string]map[string][]*ent.AAUserOpsInfo, startTime time.Time, network string) []*ent.FactoryStatisHourCreate {
 
 	var factories []*ent.FactoryStatisHourCreate
-	for key, userOpsInfoList := range factoryMap {
+	for key, allTimeUserOpsInfoList := range factoryMap {
 		if len(key) == 0 {
 			continue
 		}
-		accountDeployNum := 0
-		accountMap := make(map[string]bool)
-		for _, userOpsInfo := range userOpsInfoList {
-			accountMap[userOpsInfo.Sender] = true
-			if userOpsInfo.Factory != "" {
-				accountDeployNum++
-			}
+		if len(allTimeUserOpsInfoList) == 0 {
+			continue
 		}
-		factories = append(factories, client.FactoryStatisHour.Create().
-			SetFactory(key).
-			SetNetwork(network).
-			SetStatisTime(startTime).
-			SetAccountNum(int64(len(accountMap))).
-			SetAccountDeployNum(int64(accountDeployNum)),
-		)
+		for statisticTime, userOpsInfoList := range allTimeUserOpsInfoList {
+			sTime, err := time.Parse(TimeLayout, statisticTime)
+			if err != nil {
+				log.Println(err)
+			}
+			accountDeployNum := 0
+			accountMap := make(map[string]bool)
+			for _, userOpsInfo := range userOpsInfoList {
+				accountMap[userOpsInfo.Sender] = true
+				if userOpsInfo.Factory != "" {
+					accountDeployNum++
+				}
+			}
+			factories = append(factories, client.FactoryStatisHour.Create().
+				SetFactory(key).
+				SetNetwork(network).
+				SetStatisTime(sTime).
+				SetAccountNum(int64(len(accountMap))).
+				SetAccountDeployNum(int64(accountDeployNum)),
+			)
+		}
+
 	}
 
 	return factories
