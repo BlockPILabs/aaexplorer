@@ -81,7 +81,10 @@ func InitEvmParse(config *config.Config, logger log.Logger) error {
 				continue
 			}
 			t.startBlock[network] = latestBlock.ID - int64(math.Max(float64(config.EvmParser.Multi*config.EvmParser.Batch), 10))
+
 		}
+
+		log.Context(ctx).Info("start block", "blockNumber", t.startBlock[network])
 	}
 
 	jsonAbi, err := abi.JSON(bytes.NewBufferString(t.config.EvmParser.GetAbi()))
