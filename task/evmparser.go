@@ -505,7 +505,7 @@ func (t *_evmParser) insertBlockInfos(ctx context.Context, client *ent.Client, n
 		}).
 		Exec(context.Background())
 	if err != nil {
-		log.Context(ctx).Info("insert AaTransactionInfo error", "err", err)
+		log.Context(ctx).Info("insert AaBlockInfo error", "err", err)
 	}
 }
 func (t *_evmParser) insertuserOpsInfoCalldatas(ctx context.Context, client *ent.Client, network *ent.Network, infos ent.AAUserOpsCalldataSlice) {
