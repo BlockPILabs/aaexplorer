@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"entgo.io/ent/dialect/sql"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aablockinfo"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
@@ -31,4 +32,10 @@ func (dao *aaBlockDao) Pages(ctx context.Context, tx *ent.Client, page vo.Pagina
 	query = query.Limit(page.GetPerPage()).Offset(page.GetOffset())
 	a, err = query.All(ctx)
 	return
+}
+
+func (dao *aaBlockDao) GetLatestBlock(ctx context.Context, tx *ent.Client) (a *ent.AaBlockInfo, err error) {
+	query := tx.AaBlockInfo.Query()
+	query = query.Order(aablockinfo.ByID(sql.OrderDesc()))
+	return query.First(ctx)
 }

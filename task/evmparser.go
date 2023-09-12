@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/BlockPILabs/aa-scan/config"
+	"github.com/BlockPILabs/aa-scan/internal/dao"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aaaccountdata"
@@ -34,6 +35,7 @@ import (
 	"github.com/shopspring/decimal"
 	"golang.org/x/exp/maps"
 	"golang.org/x/sync/errgroup"
+	"math"
 	"math/big"
 	"strconv"
 	"strings"
@@ -63,8 +65,23 @@ func InitEvmParse(config *config.Config, logger log.Logger) error {
 		startBlock: map[string]int64{},
 	}
 
+	ctx := context.Background()
 	for network, blockNumber := range t.config.EvmParser.StartBlock {
 		t.startBlock[network] = blockNumber
+		if t.startBlock[network] == -1 {
+			t.startBlock[network] = 0
+			client, err := entity.Client(ctx, network)
+			if err != nil {
+				log.Context(ctx).Warn("client error", "err", err, "network", network)
+				continue
+			}
+			latestBlock, err := dao.AaBlockDao.GetLatestBlock(ctx, client)
+			if err != nil {
+				log.Context(ctx).Warn("GetLatestBlock error", "err", err, "network", network)
+				continue
+			}
+			t.startBlock[network] = latestBlock.ID - int64(math.Max(float64(config.EvmParser.Multi*config.EvmParser.Batch), 10))
+		}
 	}
 
 	jsonAbi, err := abi.JSON(bytes.NewBufferString(t.config.EvmParser.GetAbi()))
