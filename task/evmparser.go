@@ -56,7 +56,7 @@ const ExecuteBatchSign = "0x47e1da2a"
 const ExecuteBatchCallSign = "0x912ccaa3"
 const EmptyMethod = "00000000"
 
-func InitEvmParse(config *config.Config, logger log.Logger) error {
+func InitEvmParse(ctx context.Context, config *config.Config, logger log.Logger) error {
 	logger = logger.With("task", "evmparser")
 	dayScheduler := chrono.NewDefaultTaskScheduler()
 	t := _evmParser{
@@ -65,7 +65,6 @@ func InitEvmParse(config *config.Config, logger log.Logger) error {
 		startBlock: map[string]int64{},
 	}
 
-	ctx := context.Background()
 	for network, blockNumber := range t.config.EvmParser.StartBlock {
 		t.startBlock[network] = blockNumber
 		if t.startBlock[network] == -1 {
