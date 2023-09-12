@@ -8,9 +8,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/BlockPILabs/aa-scan/config"
+	"github.com/BlockPILabs/aa-scan/internal/dao"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aaaccountdata"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aablockinfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aablocksync"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aatransactioninfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropscalldata"
@@ -34,6 +36,7 @@ import (
 	"github.com/shopspring/decimal"
 	"golang.org/x/exp/maps"
 	"golang.org/x/sync/errgroup"
+	"math"
 	"math/big"
 	"strconv"
 	"strings"
@@ -54,7 +57,7 @@ const ExecuteBatchSign = "0x47e1da2a"
 const ExecuteBatchCallSign = "0x912ccaa3"
 const EmptyMethod = "00000000"
 
-func InitEvmParse(config *config.Config, logger log.Logger) error {
+func InitEvmParse(ctx context.Context, config *config.Config, logger log.Logger) error {
 	logger = logger.With("task", "evmparser")
 	dayScheduler := chrono.NewDefaultTaskScheduler()
 	t := _evmParser{
@@ -65,6 +68,23 @@ func InitEvmParse(config *config.Config, logger log.Logger) error {
 
 	for network, blockNumber := range t.config.EvmParser.StartBlock {
 		t.startBlock[network] = blockNumber
+		if t.startBlock[network] == -1 {
+			t.startBlock[network] = 0
+			client, err := entity.Client(ctx, network)
+			if err != nil {
+				log.Context(ctx).Warn("client error", "err", err, "network", network)
+				continue
+			}
+			latestBlock, err := dao.AaBlockDao.GetLatestBlock(ctx, client)
+			if err != nil {
+				log.Context(ctx).Warn("GetLatestBlock error", "err", err, "network", network)
+				continue
+			}
+			t.startBlock[network] = latestBlock.ID - int64(math.Max(float64(config.EvmParser.Multi*config.EvmParser.Batch), 10))
+
+		}
+
+		log.Context(ctx).Info("start block", "blockNumber", t.startBlock[network])
 	}
 
 	jsonAbi, err := abi.JSON(bytes.NewBufferString(t.config.EvmParser.GetAbi()))
@@ -240,6 +260,7 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 
 		t.insertUserOpsInfo(ctx, tx.Client(), network, aaUserOpsInfos)
 		t.insertTransactions(ctx, tx.Client(), network, aaTransactionInfos)
+		t.insertBlockInfos(ctx, tx.Client(), network, aaBlockInfos)
 		t.insertuserOpsInfoCalldatas(ctx, tx.Client(), network, userOpsInfoCalldatas)
 		t.insertAccounts(ctx, tx.Client(), network, aaAccountDataMap)
 		t.insertAaAccounts(ctx, tx.Client(), network, aaAccountDataMap)
@@ -447,6 +468,39 @@ func (t *_evmParser) insertTransactions(ctx context.Context, client *ent.Client,
 				UpdateBlockNumber().
 				UpdateUseropCount().
 				UpdateIsMev().
+				UpdateBundlerProfit()
+		}).
+		Exec(context.Background())
+	if err != nil {
+		log.Context(ctx).Info("insert AaTransactionInfo error", "err", err)
+	}
+}
+func (t *_evmParser) insertBlockInfos(ctx context.Context, client *ent.Client, network *ent.Network, infos ent.AaBlockInfos) {
+	if len(infos) < 1 {
+		return
+	}
+
+	var transactionInfoCreates []*ent.AaBlockInfoCreate
+	for _, tx := range infos {
+		txCreate := client.AaBlockInfo.Create().
+			SetTime(tx.Time).
+			SetHash(tx.Hash).
+			SetUseropCount(tx.UseropCount).
+			SetUseropMevCount(tx.UseropMevCount).
+			SetBundlerProfit(tx.BundlerProfit).
+			SetCreateTime(tx.CreateTime).
+			SetID(tx.ID)
+
+		transactionInfoCreates = append(transactionInfoCreates, txCreate)
+	}
+	err := client.AaBlockInfo.
+		CreateBulk(transactionInfoCreates...).
+		OnConflictColumns(aablockinfo.FieldTime, aablockinfo.FieldID).
+		Update(func(upsert *ent.AaBlockInfoUpsert) {
+			upsert.UpdateTime().
+				UpdateHash().
+				UpdateUseropCount().
+				UpdateUseropMevCount().
 				UpdateBundlerProfit()
 		}).
 		Exec(context.Background())

@@ -44,6 +44,7 @@ func GetNetworks(fcx *fiber.Ctx) error {
 			ScanTx:      network.ScanTx,
 			ScanBlock:   network.ScanBlock,
 			ScanAddress: network.ScanAddress,
+			ScanName:    network.ScanName,
 		}
 	}
 	log.Context(ctx).Debug("get networks success", "totalCount", res.TotalCount)
@@ -62,6 +63,7 @@ func GetNetwork(fcx *fiber.Ctx) error {
 		ScanTx:      network.ScanTx,
 		ScanBlock:   network.ScanBlock,
 		ScanAddress: network.ScanAddress,
+		ScanName:    network.ScanName,
 	}).JSON(fcx)
 }
 
