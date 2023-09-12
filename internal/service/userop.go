@@ -129,7 +129,7 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 			Network:     info.Network,
 			Sender:      info.Sender,
 			Target:      info.Target,
-			TxValue:     info.TxValue,
+			TxValue:     *info.TxValue,
 			Source:      info.Source,
 			Calldata:    info.Calldata,
 			TxTime:      info.TxTime,

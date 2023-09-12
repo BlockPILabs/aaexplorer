@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+const DaySecond = 24 * 3600
+
 func GetDailyStatistic(ctx context.Context, req vo.DailyStatisticRequest) (*vo.DailyStatisticResponse, error) {
 
 	network := req.Network
@@ -31,6 +33,7 @@ func GetDailyStatistic(ctx context.Context, req vo.DailyStatisticRequest) (*vo.D
 			return nil, err
 		}
 		resp = getResponseHour(dailyStatisticHours)
+		resp.Ups = decimal.NewFromInt(resp.UserOpsNum).DivRound(decimal.NewFromInt(DaySecond), 2)
 	} else if timeRange == config.RangeD7 {
 		startTime := time.Now().Add(-7 * 24 * time.Hour)
 		dailyStatisticDays, err := client.DailyStatisticDay.Query().Where(dailystatisticday.StatisticTimeGTE(startTime.UnixMilli()), dailystatisticday.NetworkEqualFold(network)).All(ctx)
@@ -39,6 +42,7 @@ func GetDailyStatistic(ctx context.Context, req vo.DailyStatisticRequest) (*vo.D
 			return nil, err
 		}
 		resp = getResponseDay(dailyStatisticDays)
+		resp.Ups = decimal.NewFromInt(resp.UserOpsNum).DivRound(decimal.NewFromInt(7*DaySecond), 2)
 	} else if timeRange == config.RangeD30 {
 		startTime := time.Now().Add(-150 * 24 * time.Hour)
 		dailyStatisticDays, err := client.DailyStatisticDay.Query().Where(dailystatisticday.StatisticTimeGTE(startTime.UnixMilli()), dailystatisticday.NetworkEqualFold(network)).All(ctx)
@@ -47,6 +51,7 @@ func GetDailyStatistic(ctx context.Context, req vo.DailyStatisticRequest) (*vo.D
 			return nil, err
 		}
 		resp = getResponseDay(dailyStatisticDays)
+		resp.Ups = decimal.NewFromInt(resp.UserOpsNum).DivRound(decimal.NewFromInt(30*DaySecond), 2)
 	}
 
 	return resp, nil
@@ -67,6 +72,7 @@ func getResponseDay(days []*ent.DailyStatisticDay) *vo.DailyStatisticResponse {
 		resp.PaymasterGasPaidUsd = resp.PaymasterGasPaidUsd.Add(statisticDay.PaymasterGasPaidUsd).Round(2)
 		resp.UserOpsNum = resp.UserOpsNum + statisticDay.UserOpsNum
 		resp.ActiveAAWallet = resp.ActiveAAWallet + statisticDay.ActiveWallet
+		resp.LastStatisticTime = statisticDay.CreateTime.UnixMilli()
 
 		detail := &vo.DailyStatisticDetail{
 			Time:                  statisticDay.StatisticTime,
@@ -163,7 +169,7 @@ func getDominanceResponseDay(days []*ent.DailyStatisticDay) *vo.AATxnDominanceRe
 	if len(days) == 0 {
 		return nil
 	}
-	var resp *vo.AATxnDominanceResponse
+	var resp = vo.AATxnDominanceResponse{}
 	var details []*vo.AATxnDominanceDetail
 	for _, statisticDay := range days {
 		rate := getRate(statisticDay.TxNum, statisticDay.AaTxNum)
@@ -175,14 +181,14 @@ func getDominanceResponseDay(days []*ent.DailyStatisticDay) *vo.AATxnDominanceRe
 	}
 
 	resp.DominanceDetails = details
-	return resp
+	return &resp
 }
 
 func getDominanceResponseHour(hours []*ent.DailyStatisticHour) *vo.AATxnDominanceResponse {
 	if len(hours) == 0 {
 		return nil
 	}
-	var resp *vo.AATxnDominanceResponse
+	var resp = vo.AATxnDominanceResponse{}
 	var details []*vo.AATxnDominanceDetail
 	for _, statisticHour := range hours {
 		rate := getRate(statisticHour.TxNum, statisticHour.AaTxNum)
@@ -194,7 +200,7 @@ func getDominanceResponseHour(hours []*ent.DailyStatisticHour) *vo.AATxnDominanc
 	}
 
 	resp.DominanceDetails = details
-	return resp
+	return &resp
 }
 
 func getRate(txNum int64, aaTxNum int64) string {

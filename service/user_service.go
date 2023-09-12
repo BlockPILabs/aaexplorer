@@ -43,26 +43,23 @@ func GetWalletBalanceDetail(accountAddress string, network string) []*WalletBala
 		if err != nil {
 			continue
 		}
-		var detail *WalletBalance
+		var detail = &WalletBalance{
+			Symbol:          asset.Symbol,
+			ContractAddress: asset.ContractAddress,
+			Amount:          asset.Amount,
+		}
 		if tokenPrice == nil || len(tokenPrice) == 0 {
 			onePrice := moralis.GetTokenPrice(asset.ContractAddress, network)
-			detail = &WalletBalance{
-				Symbol:          asset.Symbol,
-				ContractAddress: asset.ContractAddress,
-				Amount:          asset.Amount,
-				ValueUsd:        onePrice.UsdPrice.Mul(asset.Amount),
+			var usdPrice = decimal.Zero
+			if onePrice != nil {
+				usdPrice = onePrice.UsdPrice
 			}
+			detail.ValueUsd = usdPrice.Mul(asset.Amount)
 
 		} else {
 			onePrice := tokenPrice[0]
-			detail = &WalletBalance{
-				Symbol:          asset.Symbol,
-				ContractAddress: asset.ContractAddress,
-				Amount:          asset.Amount,
-				ValueUsd:        onePrice.TokenPrice.Mul(asset.Amount),
-			}
+			detail.ValueUsd = onePrice.TokenPrice.Mul(asset.Amount)
 		}
-
 		if detail.ValueUsd.Equal(decimal.Zero) {
 			continue
 		}

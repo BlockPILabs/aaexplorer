@@ -11,6 +11,7 @@ type DailyStatisticRequest struct {
 
 type DailyStatisticResponse struct {
 	UserOpsNum            int64           `json:"userOpsNum"`
+	Ups                   decimal.Decimal `json:"ups"`
 	ActiveAAWallet        int64           `json:"activeAAWallet"`
 	AccumulativeGasFee    decimal.Decimal `json:"accumulativeGasFee"`
 	AccumulativeGasFeeUsd decimal.Decimal `json:"accumulativeGasFeeUsd"`
@@ -18,6 +19,7 @@ type DailyStatisticResponse struct {
 	PaymasterGasPaidUsd   decimal.Decimal `json:"paymasterGasPaidUsd"`
 	BundlerGasProfit      decimal.Decimal `json:"bundlerGasProfit"`
 	BundlerGasProfitUsd   decimal.Decimal `json:"bundlerGasProfitUsd"`
+	LastStatisticTime     int64           `json:"lastStatisticTime"`
 	Details               []*DailyStatisticDetail
 }
 
