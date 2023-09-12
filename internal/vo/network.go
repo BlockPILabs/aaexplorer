@@ -18,6 +18,8 @@ type NetworkVo struct {
 	ScanBlock string `json:"scanBlock"`
 	// ScanAddress holds the value of the "scan_address" field.
 	ScanAddress string `json:"scanAddress"`
+	// ScanName holds the value of the "scan_name" field.
+	ScanName string `json:"scanName"`
 }
 type GetNetworksResponse struct {
 	Pagination
