@@ -11,6 +11,34 @@ func Has0xPrefix(input string) bool {
 	return len(input) >= 2 && input[0] == '0' && (input[1] == 'x' || input[1] == 'X')
 }
 
+// isHexCharacter returns bool of c being a valid hexadecimal.
+func isHexCharacter(c byte) bool {
+	return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F')
+}
+
+// IsHex validates whether each byte is valid hexadecimal string.
+func IsHex(str string) bool {
+	if len(str)%2 != 0 {
+		return false
+	}
+	for _, c := range []byte(str) {
+		if !isHexCharacter(c) {
+			return false
+		}
+	}
+	return true
+}
+
+// IsHexSting validates whether each byte is valid hexadecimal string.
+func IsHexSting(str string) bool {
+	for _, c := range []byte(str) {
+		if !isHexCharacter(c) {
+			return false
+		}
+	}
+	return true
+}
+
 func IsAddress(address string) bool {
 	if len(address) != 40 {
 		return false
@@ -21,6 +49,15 @@ func IsAddress(address string) bool {
 		}
 	}
 	return false
+}
+
+// IsHexAddress verifies whether a string can represent a valid hex-encoded
+// Ethereum address or not.
+func IsHexAddress(s string) bool {
+	if Has0xPrefix(s) {
+		s = s[2:]
+	}
+	return IsAddress(s)
 }
 
 func HexToDecimal(hexStr string) *big.Int {

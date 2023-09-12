@@ -8,7 +8,7 @@ import (
 var ERC_4337_ABI string
 
 type EvmParserConfig struct {
-	StartBlock map[string]int64 `mapstructure:"startBlock" toml:"startBlock"`
+	StartBlock map[string]int64 `mapstructure:"startBlock" toml:"startBlock"` // -1 start by latest , 0 start by first , >0 start by set
 	Multi      int              `mapstructure:"multi" toml:"multi"`
 	Batch      int              `mapstructure:"batch" toml:"batch"`
 	Abi        string           `mapstructure:"abi" toml:"abi"`

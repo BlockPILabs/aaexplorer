@@ -46,6 +46,17 @@ func (dao *userOpDao) Pagination(ctx context.Context, tx *ent.Client, req vo.Get
 			aauseropsinfo.BlockNumberGT(req.LatestBlockNumber),
 		)
 	}
+
+	if req.BlockNumber > 0 {
+		query = query.Where(
+			aauseropsinfo.BlockNumber(req.BlockNumber),
+		)
+	}
+	if len(req.TxHash) > 0 {
+		query = query.Where(
+			aauseropsinfo.TxHash(req.TxHash),
+		)
+	}
 	// sort
 	query = dao.Sort(ctx, query, req.Sort, req.Order)
 

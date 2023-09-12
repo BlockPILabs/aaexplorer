@@ -26,6 +26,11 @@ func (Network) Fields() []ent.Field {
 		field.Time("create_time").Default(time.Now).StructTag(`json:"createTime"`).Immutable(),
 		field.Time("update_time").Optional().Default(time.Now).UpdateDefault(time.Now).StructTag(`json:"updateTime"`),
 		field.Time("delete_time").Optional().StructTag(`json:"deleteTime"`),
+		field.String("scan").StructTag(`json:"scan"`),
+		field.String("scan_tx").StructTag(`json:"scanTx"`),
+		field.String("scan_block").StructTag(`json:"scanBlock"`),
+		field.String("scan_address").StructTag(`json:"scanAddress"`),
+		field.String("scan_name").StructTag(`json:"scanName"`),
 	}
 }
 

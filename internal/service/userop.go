@@ -66,7 +66,7 @@ func (*userOpService) GetUserOps(ctx context.Context, req vo.GetUserOpsRequest) 
 		//
 		for i, info := range list {
 			res.Records[i] = &vo.UserOpVo{
-				Time:              info.Time.Unix(),
+				Time:              info.Time.UnixMilli(),
 				UserOperationHash: info.ID,
 				TxHash:            info.TxHash,
 				BlockNumber:       info.BlockNumber,
