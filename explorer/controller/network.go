@@ -35,11 +35,15 @@ func GetNetworks(fcx *fiber.Ctx) error {
 
 	for i, network := range networks {
 		res.Records[i] = &vo.NetworkVo{
-			Name:      network.Name,
-			ChainName: network.ChainName,
-			Network:   network.ID,
-			IsTestnet: network.IsTestnet,
-			ChainID:   network.ChainID,
+			Name:        network.Name,
+			ChainName:   network.ChainName,
+			Network:     network.ID,
+			ChainID:     network.ChainID,
+			IsTestnet:   network.IsTestnet,
+			Scan:        network.Scan,
+			ScanTx:      network.ScanTx,
+			ScanBlock:   network.ScanBlock,
+			ScanAddress: network.ScanAddress,
 		}
 	}
 	log.Context(ctx).Debug("get networks success", "totalCount", res.TotalCount)
@@ -48,7 +52,17 @@ func GetNetworks(fcx *fiber.Ctx) error {
 func GetNetwork(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()
 	network, _ := dao.NetworkDao.ContextValue(ctx)
-	return vo.NewResultJsonResponse(network).JSON(fcx)
+	return vo.NewResultJsonResponse(vo.NetworkVo{
+		Name:        network.Name,
+		ChainName:   network.ChainName,
+		Network:     network.ID,
+		ChainID:     network.ChainID,
+		IsTestnet:   network.IsTestnet,
+		Scan:        network.Scan,
+		ScanTx:      network.ScanTx,
+		ScanBlock:   network.ScanBlock,
+		ScanAddress: network.ScanAddress,
+	}).JSON(fcx)
 }
 
 // NetworkMiddleware check network params
