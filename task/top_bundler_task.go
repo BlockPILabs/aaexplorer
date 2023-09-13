@@ -180,7 +180,7 @@ func doTopBundlersDay() {
 				bundlerInfo.FeeEarnedUsd = bundlerInfo.FeeEarnedUsd.Add(feeEarnUsd)
 			}
 
-			bundlerInfo.Bundler = bundlerStatisDay.Bundler
+			bundlerInfo.ID = bundlerStatisDay.Bundler
 			bundlerInfo.Network = bundlerStatisDay.Network
 			bundlerInfo.SuccessRate = getSingleRate(bundlerInfo.SuccessBundlesNum, bundlerInfo.BundlesNum)
 			bundlerInfoMap[bundler] = bundlerInfo
@@ -205,14 +205,14 @@ func getSingleRate(num int64, num2 int64) decimal.Decimal {
 func saveOrUpdateBundlerDay(client *ent.Client, bundler string, info *ent.BundlerInfo) {
 	bundlerInfos, err := client.BundlerInfo.
 		Query().
-		Where(bundlerinfo.BundlerEQ(bundler)).
+		Where(bundlerinfo.IDEQ(bundler)).
 		All(context.Background())
 	if err != nil {
 		log.Fatalf("saveOrUpdateBundler day err, %s, msg:{%s}\n", bundler, err)
 	}
 	if len(bundlerInfos) == 0 {
 		_, err := client.BundlerInfo.Create().
-			SetBundler(info.Bundler).
+			SetID(info.ID).
 			SetNetwork(info.Network).
 			SetUserOpsNum(info.UserOpsNum).
 			SetBundlesNum(info.BundlesNum).
@@ -373,7 +373,7 @@ func doTopBundlersHour(timeRange int) {
 
 			}
 
-			bundlerInfo.Bundler = bundlerStatisHour.Bundler
+			bundlerInfo.ID = bundlerStatisHour.Bundler
 			bundlerInfo.Network = bundlerStatisHour.Network
 			bundlerInfoMap[bundler] = bundlerInfo
 
@@ -413,14 +413,14 @@ func getRate(num int64, bundleNumMap map[string]int64, totalNumMap map[string]in
 func saveOrUpdateBundler(client *ent.Client, bundler string, info *ent.BundlerInfo, timeRange int) {
 	bundlerInfos, err := client.BundlerInfo.
 		Query().
-		Where(bundlerinfo.BundlerEQ(bundler)).
+		Where(bundlerinfo.IDEQ(bundler)).
 		All(context.Background())
 	if err != nil {
 		log.Fatalf("saveOrUpdateBundler err, %s, msg:{%s}\n", bundler, err)
 	}
 	if len(bundlerInfos) == 0 {
 		_, err := client.BundlerInfo.Create().
-			SetBundler(info.Bundler).
+			SetID(info.ID).
 			SetNetwork(info.Network).
 			SetGasCollectedD1(info.GasCollectedD1).
 			SetUserOpsNum(info.UserOpsNum).

@@ -23,7 +23,7 @@ func GetTopBundler(ctx context.Context, req vo.TopBundlerRequest) (*vo.TopBundle
 			Page:       req.GetPage(),
 		},
 	}
-
+	total, err := client.BundlerInfo.Query().Count(ctx)
 	bundlerInfos, err := client.BundlerInfo.Query().Order(bundlerinfo.ByFeeEarnedUsdD1(sql.OrderDesc())).Offset(req.GetOffset()).Limit(req.GetPerPage()).All(ctx)
 	if len(bundlerInfos) == 0 {
 		return nil, nil
@@ -31,7 +31,7 @@ func GetTopBundler(ctx context.Context, req vo.TopBundlerRequest) (*vo.TopBundle
 	var bundlerDetails []*vo.BundlerDetail
 	for _, info := range bundlerInfos {
 		detail := &vo.BundlerDetail{
-			Address:         info.Bundler,
+			Address:         info.ID,
 			Bundles:         info.BundlesNumD1,
 			Success24H:      info.SuccessRateD1,
 			FeeEarned24H:    info.FeeEarnedD1.Round(2),
@@ -40,6 +40,7 @@ func GetTopBundler(ctx context.Context, req vo.TopBundlerRequest) (*vo.TopBundle
 		bundlerDetails = append(bundlerDetails, detail)
 	}
 	resp.BundlerDetails = bundlerDetails
+	resp.TotalCount = total
 
 	return resp, nil
 }
@@ -57,7 +58,7 @@ func GetTopPaymaster(ctx context.Context, req vo.TopPaymasterRequest) (*vo.TopPa
 			Page:       req.GetPage(),
 		},
 	}
-
+	total, err := client.PaymasterInfo.Query().Count(ctx)
 	paymasterInfos, err := client.PaymasterInfo.Query().Order(paymasterinfo.ByGasSponsoredUsdD1(sql.OrderDesc())).Offset(req.GetOffset()).Limit(req.GetPerPage()).All(ctx)
 	if len(paymasterInfos) == 0 {
 		return nil, nil
@@ -65,7 +66,7 @@ func GetTopPaymaster(ctx context.Context, req vo.TopPaymasterRequest) (*vo.TopPa
 	var paymasterDetails []*vo.PaymasterDetail
 	for _, info := range paymasterInfos {
 		detail := &vo.PaymasterDetail{
-			Address:         info.Paymaster,
+			Address:         info.ID,
 			ReserveUsd:      info.ReserveUsd,
 			GasSponsored:    info.GasSponsoredD1.Round(2),
 			GasSponsoredUsd: info.GasSponsoredUsdD1.Round(2),
@@ -73,7 +74,7 @@ func GetTopPaymaster(ctx context.Context, req vo.TopPaymasterRequest) (*vo.TopPa
 		paymasterDetails = append(paymasterDetails, detail)
 	}
 	resp.PaymasterDetails = paymasterDetails
-
+	resp.TotalCount = total
 	return resp, nil
 }
 
@@ -91,6 +92,7 @@ func GetTopFactory(ctx context.Context, req vo.TopFactoryRequest) (*vo.TopFactor
 		},
 	}
 
+	total, err := client.FactoryInfo.Query().Count(ctx)
 	factoryInfos, err := client.FactoryInfo.Query().Order(factoryinfo.ByAccountNumD1(sql.OrderDesc())).Offset(req.GetOffset()).Limit(req.GetPerPage()).All(ctx)
 	if len(factoryInfos) == 0 {
 		return nil, nil
@@ -98,13 +100,14 @@ func GetTopFactory(ctx context.Context, req vo.TopFactoryRequest) (*vo.TopFactor
 	var factoryDetails []*vo.FactoryDetail
 	for _, info := range factoryInfos {
 		detail := &vo.FactoryDetail{
-			Address:       info.Factory,
+			Address:       info.ID,
 			ActiveAccount: int64(info.AccountDeployNumD1),
 			TotalAccount:  int64(info.AccountDeployNumD1),
 		}
 		factoryDetails = append(factoryDetails, detail)
 	}
 	resp.FactoryDetails = factoryDetails
+	resp.TotalCount = total
 
 	return resp, nil
 }

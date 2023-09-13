@@ -188,25 +188,13 @@ func addNativeToken(balances []*moralis.TokenBalance, native decimal.Decimal, ad
 		balances = []*moralis.TokenBalance{}
 	}
 	userAssetCreate := &moralis.TokenBalance{
-		Balance:  native,
-		Name:     getNativeName(network),
-		Decimals: config.EvmDecimal,
+		Balance:      native,
+		TokenAddress: config.ZeroAddress,
+		Name:         moralis.GetNativeName(network),
+		Decimals:     config.EvmDecimal,
 	}
 	balances = append(balances, userAssetCreate)
 	return balances
-}
-
-func getNativeName(network string) string {
-
-	if network == config.EthNetwork {
-		return config.EthNative
-	} else if network == config.BscNetwork {
-		return config.BscNative
-	} else if network == config.PolygonNetwork {
-		return config.PolygonNative
-	}
-
-	return ""
 }
 
 func GetWToken(network string) string {

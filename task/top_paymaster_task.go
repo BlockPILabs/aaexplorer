@@ -91,7 +91,7 @@ func doTopPaymasterDay() {
 					GasSponsoredUsd: paymasterStatisHour.GasSponsored.Mul(*price),
 				}
 			}
-			paymasterInfo.Paymaster = paymasterStatisHour.Paymaster
+			paymasterInfo.ID = paymasterStatisHour.Paymaster
 			paymasterInfo.Network = paymasterStatisHour.Network
 			paymasterInfo.Reserve = paymasterStatisHour.Reserve
 			//paymasterInfo.ReserveUsd = paymasterStatisHour.ReserveUsd
@@ -115,7 +115,7 @@ func doTopPaymasterDay() {
 func saveOrUpdatePaymasterDay(client *ent.Client, paymaster string, info *ent.PaymasterInfo) {
 	paymasterInfos, err := client.PaymasterInfo.
 		Query().
-		Where(paymasterinfo.PaymasterEQ(paymaster)).
+		Where(paymasterinfo.IDEQ(paymaster)).
 		All(context.Background())
 	if err != nil {
 		log.Fatalf("saveOrUpdatePaymaster day err, %s, msg:{%s}\n", paymaster, err)
@@ -123,7 +123,7 @@ func saveOrUpdatePaymasterDay(client *ent.Client, paymaster string, info *ent.Pa
 	if paymasterInfos == nil || len(paymasterInfos) == 0 {
 
 		_, err := client.PaymasterInfo.Create().
-			SetPaymaster(info.Paymaster).
+			SetID(info.ID).
 			SetNetwork(info.Network).
 			SetUserOpsNum(info.UserOpsNum).
 			SetGasSponsored(info.GasSponsored).
@@ -214,7 +214,7 @@ func doTopPaymasterHour(timeRange int) {
 					GasSponsoredUsdD30: paymasterStatisHour.GasSponsored.Mul(*price),
 				}
 			}
-			paymasterInfo.Paymaster = paymasterStatisHour.Paymaster
+			paymasterInfo.ID = paymasterStatisHour.Paymaster
 			paymasterInfo.Network = paymasterStatisHour.Network
 			paymasterInfo.Reserve = paymasterStatisHour.Reserve
 			paymasterInfo.ReserveUsd = paymasterStatisHour.ReserveUsd
@@ -238,7 +238,7 @@ func doTopPaymasterHour(timeRange int) {
 func saveOrUpdatePaymaster(client *ent.Client, paymaster string, info *ent.PaymasterInfo, timeRange int) {
 	paymasterInfos, err := client.PaymasterInfo.
 		Query().
-		Where(paymasterinfo.PaymasterEQ(paymaster)).
+		Where(paymasterinfo.IDEQ(paymaster)).
 		All(context.Background())
 	if err != nil {
 		log.Fatalf("saveOrUpdatePaymaster err, %s, msg:{%s}\n", paymaster, err)
@@ -246,7 +246,7 @@ func saveOrUpdatePaymaster(client *ent.Client, paymaster string, info *ent.Payma
 	if paymasterInfos == nil || len(paymasterInfos) == 0 {
 
 		_, err := client.PaymasterInfo.Create().
-			SetPaymaster(info.Paymaster).
+			SetID(info.ID).
 			SetNetwork(info.Network).
 			SetUserOpsNumD1(info.UserOpsNumD1).
 			SetGasSponsoredD1(info.GasSponsoredD1).

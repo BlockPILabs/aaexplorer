@@ -43,7 +43,7 @@ func (*bundlerService) GetBundlers(ctx context.Context, req vo.GetBundlersReques
 	res.Records = make([]*vo.BundlersVo, len(list))
 	for i, info := range list {
 		res.Records[i] = &vo.BundlersVo{
-			Bundler:      info.Bundler,
+			Bundler:      info.ID,
 			Network:      info.Network,
 			UserOpsNum:   info.UserOpsNum,
 			BundlesNum:   info.BundlesNum,

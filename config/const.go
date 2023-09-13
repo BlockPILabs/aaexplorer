@@ -30,6 +30,8 @@ const (
 	RangeH24 = "h24"
 	RangeD7  = "d7"
 	RangeD30 = "d30"
+
+	AssetExpireTime = 2 * 3600 * 1000
 )
 
 const (

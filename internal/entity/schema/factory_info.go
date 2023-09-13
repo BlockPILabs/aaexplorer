@@ -14,12 +14,9 @@ type FactoryInfo struct {
 
 func (FactoryInfo) Fields() []ent.Field {
 	return []ent.Field{
-		field.Int64("id").
-			Positive().
-			Unique().
-			StructTag(`json:"id"`),
-		field.String("factory").
+		field.String("id").
 			MaxLen(255).
+			StorageKey("factory").
 			StructTag(`json:"factory"`),
 		field.String("network").
 			MaxLen(255).

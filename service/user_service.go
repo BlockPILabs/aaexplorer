@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/tokenpriceinfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/userassetinfo"
 	"github.com/BlockPILabs/aa-scan/third/moralis"
@@ -20,11 +21,11 @@ type WalletBalance struct {
 }
 
 func GetWalletBalanceDetail(accountAddress string, network string) []*WalletBalance {
-	client, err := entity.Client(context.Background())
+	client, err := entity.Client(context.Background(), network)
 	if err != nil {
 		return nil
 	}
-	userAssetInfos, err := client.UserAssetInfo.Query().Where(userassetinfo.AccountAddressEqualFold(accountAddress)).All(context.Background())
+	userAssetInfos, err := client.UserAssetInfo.Query().Where(userassetinfo.AccountAddressEqualFold(accountAddress), userassetinfo.NetworkEqualFold(network)).All(context.Background())
 	if err != nil {
 		return nil
 	}
@@ -53,6 +54,7 @@ func GetWalletBalanceDetail(accountAddress string, network string) []*WalletBala
 			var usdPrice = decimal.Zero
 			if onePrice != nil {
 				usdPrice = onePrice.UsdPrice
+				saveTokenPrice(onePrice, client, asset.Network)
 			}
 			detail.ValueUsd = usdPrice.Mul(asset.Amount)
 
@@ -72,6 +74,15 @@ func GetWalletBalanceDetail(accountAddress string, network string) []*WalletBala
 	}
 
 	return details
+}
+
+func saveTokenPrice(price *moralis.TokenPrice, client *ent.Client, network string) {
+	client.TokenPriceInfo.Create().
+		SetTokenPrice(price.UsdPrice).
+		SetNetwork(network).
+		SetContractAddress(price.TokenAddress).
+		SetSymbol(price.TokenSymbol).
+		SetLastTime(time.Now().UnixMilli()).Save(context.Background())
 }
 
 func GetNativePrice(network string) *decimal.Decimal {

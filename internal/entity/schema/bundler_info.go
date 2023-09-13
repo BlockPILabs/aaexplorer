@@ -16,11 +16,7 @@ type BundlerInfo struct {
 
 func (BundlerInfo) Fields() []ent.Field {
 	return []ent.Field{
-		field.Int64("id").
-			Positive().
-			Unique().
-			StructTag(`json:"id"`),
-		field.String("bundler").StructTag(`json:"bundler"`).MaxLen(255),
+		field.String("id").StructTag(`json:"bundler"`).StorageKey("bundler").MaxLen(255),
 		field.String("network").StructTag(`json:"network"`).MaxLen(255),
 		field.Int64("user_ops_num").StructTag(`json:"userOpsNum"`).Optional(),
 		field.Int64("bundles_num").StructTag(`json:"bundlesNum"`).Optional(),

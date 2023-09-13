@@ -14,7 +14,8 @@ func GetUserBalance(ctx context.Context, req vo.UserBalanceRequest) (*vo.UserBal
 	account := req.AccountAddress
 	balanceDetails := service.GetWalletBalanceDetail(account, network)
 	if balanceDetails == nil {
-		return nil, nil
+		resp.TotalUsd = decimal.Zero
+		return resp, nil
 	}
 	var totalUsd = decimal.Zero
 	var details []*vo.BalanceDetail

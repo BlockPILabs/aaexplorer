@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"entgo.io/ent/dialect/sql"
 	"fmt"
+	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/predicate"
@@ -155,6 +156,7 @@ func GetTokenPrice(token string, network string) *TokenPrice {
 	res, _ := http.DefaultClient.Do(req)
 	if res == nil {
 		log.Printf("GetTokenPrice err, token: %s, network: %s", token, network)
+		return nil
 	}
 
 	defer res.Body.Close()
@@ -261,19 +263,33 @@ func GetUserAsset(accountAddress string, network string) []*ent.UserAssetInfo {
 	if err != nil {
 		return nil
 	}
-	if len(userAssetInfos) == 0 {
-		return nil
+	curTime := time.Now().UnixMilli()
+	if len(userAssetInfos) != 0 {
+		lastTime := userAssetInfos[0].LastTime
+		if curTime-lastTime < config.AssetExpireTime {
+			return userAssetInfos
+		}
 	}
 
-	lastTime := userAssetInfos[0].LastTime
-	curTime := time.Now().UnixNano() / 1e6
-	if curTime-lastTime < 5*60*1000 {
-		return userAssetInfos
-	}
-
+	native := GetNativeTokenBalance(accountAddress, network)
 	tokenBalances := GetTokenBalance(accountAddress, network)
-	if len(tokenBalances) == 0 {
+	if len(tokenBalances) == 0 && native == decimal.Zero {
 		return userAssetInfos
+	}
+	if native != decimal.Zero {
+		nativeToken := &TokenBalance{
+			TokenAddress: config.ZeroAddress,
+			Symbol:       GetNativeName(network),
+			Name:         GetNativeName(network),
+			Logo:         "",
+			Thumbnail:    "",
+			Decimals:     config.EvmDecimal,
+			Balance:      native.DivRound(decimal.NewFromFloat(math.Pow10(18)), 18),
+		}
+		if tokenBalances == nil {
+			tokenBalances = []*TokenBalance{}
+		}
+		tokenBalances = append(tokenBalances, nativeToken)
 	}
 	var userAssetInfoCreates []*ent.UserAssetInfoCreate
 	if err != nil {
@@ -299,4 +315,17 @@ func GetUserAsset(accountAddress string, network string) []*ent.UserAssetInfo {
 	}
 	return userAssetInfos
 
+}
+
+func GetNativeName(network string) string {
+
+	if network == config.EthNetwork {
+		return config.EthNative
+	} else if network == config.BscNetwork {
+		return config.BscNative
+	} else if network == config.PolygonNetwork {
+		return config.PolygonNative
+	}
+
+	return ""
 }

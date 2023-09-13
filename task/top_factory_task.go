@@ -84,7 +84,7 @@ func doTopFactoryDay() {
 					AccountNum:       int(factory.AccountNum),
 				}
 			}
-			factoryInfo.Factory = factory.Factory
+			factoryInfo.ID = factory.Factory
 			factoryInfo.Network = factory.Network
 			factoryInfoMap[factoryAddr] = factoryInfo
 
@@ -103,7 +103,7 @@ func doTopFactoryDay() {
 func saveOrUpdateFactoryDay(client *ent.Client, factory string, info *ent.FactoryInfo) {
 	factoryInfos, err := client.FactoryInfo.
 		Query().
-		Where(factoryinfo.FactoryEQ(factory)).
+		Where(factoryinfo.IDEQ(factory)).
 		All(context.Background())
 	if err != nil {
 		log.Fatalf("saveOrUpdateFactory day err, %s, msg:{%s}\n", factory, err)
@@ -111,7 +111,7 @@ func saveOrUpdateFactoryDay(client *ent.Client, factory string, info *ent.Factor
 	if len(factoryInfos) == 0 {
 
 		_, err := client.FactoryInfo.Create().
-			SetFactory(info.Factory).
+			SetID(info.ID).
 			SetNetwork(info.Network).
 			SetAccountNum(info.AccountNum).
 			SetAccountDeployNum(info.AccountDeployNum).
@@ -191,7 +191,7 @@ func doTopFactoryHour(timeRange int) {
 					AccountDeployNumD30: int(factory.AccountDeployNum),
 				}
 			}
-			factoryInfo.Factory = factory.Factory
+			factoryInfo.ID = factory.Factory
 			factoryInfo.Network = factory.Network
 			factoryInfoMap[factoryAddr] = factoryInfo
 
@@ -210,7 +210,7 @@ func doTopFactoryHour(timeRange int) {
 func saveOrUpdateFactory(client *ent.Client, factory string, info *ent.FactoryInfo, timeRange int) {
 	factoryInfos, err := client.FactoryInfo.
 		Query().
-		Where(factoryinfo.FactoryEQ(factory)).
+		Where(factoryinfo.IDEQ(factory)).
 		All(context.Background())
 	if err != nil {
 		log.Fatalf("saveOrUpdateFactory err, %s, msg:{%s}\n", factory, err)
@@ -218,7 +218,7 @@ func saveOrUpdateFactory(client *ent.Client, factory string, info *ent.FactoryIn
 	if len(factoryInfos) == 0 {
 
 		_, err := client.FactoryInfo.Create().
-			SetFactory(info.Factory).
+			SetID(info.ID).
 			SetNetwork(info.Network).
 			SetAccountNumD1(info.AccountNumD1).
 			SetAccountDeployNumD1(info.AccountDeployNumD1).

@@ -17,12 +17,9 @@ type PaymasterInfo struct {
 // Fields of the FactoryInfo.
 func (PaymasterInfo) Fields() []ent.Field {
 	return []ent.Field{
-		field.Int64("id").
-			Positive().
-			Unique().
-			StructTag(`json:"id"`),
-		field.String("paymaster").
+		field.String("id").
 			MaxLen(255).
+			StorageKey("paymaster").
 			StructTag(`json:"paymaster"`),
 		field.String("network").
 			MaxLen(255).
