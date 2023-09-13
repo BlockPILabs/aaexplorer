@@ -46,7 +46,8 @@ var ScanCmd = &cobra.Command{
 		if err == nil {
 			log.Print("Task: scan block has been scheduled successfully.")
 		}
-
+		task.UserOpTypeTask()
+		task.AAContractInteractTask()
 		task.InitDayStatis()
 		task.InitHourStatis()
 		task.TopBundlers()
