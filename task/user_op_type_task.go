@@ -48,12 +48,12 @@ func doTaskDay(days int) {
 	if err != nil {
 		return
 	}
-	records, err := cli.BlockScanRecord.Query().All(context.Background())
+	records, err := cli.Network.Query().All(context.Background())
 	if len(records) == 0 {
 		return
 	}
 	for _, record := range records {
-		network := record.Network
+		network := record.ID
 		client, err := entity.Client(context.Background())
 		if err != nil {
 			return

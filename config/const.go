@@ -14,9 +14,9 @@ const (
 	EvmDecimal     = 18
 	BscNative      = "bnb"
 	PolygonNative  = "matic"
-	EthNetwork     = "Eth"
-	BscNetwork     = "Bsc"
-	PolygonNetwork = "Polygon"
+	EthNetwork     = "eth"
+	BscNetwork     = "bsc"
+	PolygonNetwork = "polygon"
 
 	WETH   = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
 	WMATIC = "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"

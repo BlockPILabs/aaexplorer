@@ -9,7 +9,7 @@ import (
 
 func GetUserBalance(ctx context.Context, req vo.UserBalanceRequest) (*vo.UserBalanceResponse, error) {
 	network := req.Network
-	var resp *vo.UserBalanceResponse
+	var resp = &vo.UserBalanceResponse{}
 
 	account := req.AccountAddress
 	balanceDetails := service.GetWalletBalanceDetail(account, network)
@@ -25,7 +25,7 @@ func GetUserBalance(ctx context.Context, req vo.UserBalanceRequest) (*vo.UserBal
 			TokenValueUsd: detail.ValueUsd,
 		}
 		details = append(details, balance)
-		totalUsd.Add(detail.ValueUsd)
+		totalUsd = totalUsd.Add(detail.ValueUsd)
 	}
 	resp.BalanceDetails = details
 	resp.TotalUsd = totalUsd

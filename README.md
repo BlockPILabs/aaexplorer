@@ -5,6 +5,8 @@
 
 ```shell
 go generate ./internal/entity
+```
+```shell
 go run ./cmd/aim/ --home ./.aim 
 ```
 

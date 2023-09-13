@@ -46,16 +46,13 @@ var ScanCmd = &cobra.Command{
 		if err == nil {
 			log.Print("Task: scan block has been scheduled successfully.")
 		}
-		//test1()
-		//testSubscribe()
-		//getAbi()
-		//moralis.TestToken("0x3a55815977ab0e12E4Fcf1a66165142C41dbda26")
-		//test2()
-		//task.AssetSync()
-		//service.ScanBlock()
-		task.TopFactories()
+
+		task.InitDayStatis()
+		task.InitHourStatis()
 		task.TopBundlers()
+		task.TopFactories()
 		task.TopPaymaster()
+
 		//task.AssetSync()
 		//service.GetWalletBalanceDetail("0x6b1b831718d0faf86cfe790fb59a8dfe077db71b", interConfig.PolygonNetwork)
 		task.InitEvmParse(cmd.Context(), config, logger.With("module", "task"))

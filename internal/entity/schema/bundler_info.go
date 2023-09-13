@@ -29,6 +29,10 @@ func (BundlerInfo) Fields() []ent.Field {
 		field.Int64("fee_earned_usd").StructTag(`json:"feeEarnedUsd"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}).Optional(),
 		field.Int64("success_rate").StructTag(`json:"successRate"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 4)"}).Optional(),
 		field.Int64("bundle_rate").StructTag(`json:"bundleRate"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 4)"}).Optional(),
+		field.Int64("success_bundles_num").
+			StructTag(`json:"successBundlesNum"`).Optional(),
+		field.Int64("failed_bundles_num").
+			StructTag(`json:"failedBundlesNum"`).Optional(),
 
 		field.Int64("user_ops_num_d1").StructTag(`json:"userOpsNumD1"`).Optional(),
 		field.Int64("bundles_num_d1").StructTag(`json:"bundlesNumD1"`).Optional(),

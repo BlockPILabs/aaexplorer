@@ -16,7 +16,7 @@ func GetTopBundler(ctx context.Context, req vo.TopBundlerRequest) (*vo.TopBundle
 	if err != nil {
 		return nil, err
 	}
-	var resp *vo.TopBundlerResponse
+	var resp = &vo.TopBundlerResponse{}
 
 	bundlerInfos, err := client.BundlerInfo.Query().Order(bundlerinfo.ByFeeEarnedUsdD1(sql.OrderDesc())).Limit(10).All(ctx)
 	if len(bundlerInfos) == 0 {
@@ -28,8 +28,8 @@ func GetTopBundler(ctx context.Context, req vo.TopBundlerRequest) (*vo.TopBundle
 			Address:         info.Bundler,
 			Bundles:         info.BundlesNumD1,
 			Success24H:      info.SuccessRateD1,
-			FeeEarned24H:    info.FeeEarnedD1,
-			FeeEarnedUsd24H: info.FeeEarnedUsdD1,
+			FeeEarned24H:    info.FeeEarnedD1.Round(2),
+			FeeEarnedUsd24H: info.FeeEarnedUsdD1.Round(2),
 		}
 		bundlerDetails = append(bundlerDetails, detail)
 	}
@@ -44,7 +44,7 @@ func GetTopPaymaster(ctx context.Context, req vo.TopPaymasterRequest) (*vo.TopPa
 	if err != nil {
 		return nil, err
 	}
-	var resp *vo.TopPaymasterResponse
+	var resp = &vo.TopPaymasterResponse{}
 
 	paymasterInfos, err := client.PaymasterInfo.Query().Order(paymasterinfo.ByGasSponsoredUsdD1(sql.OrderDesc())).Limit(10).All(ctx)
 	if len(paymasterInfos) == 0 {
@@ -55,8 +55,8 @@ func GetTopPaymaster(ctx context.Context, req vo.TopPaymasterRequest) (*vo.TopPa
 		detail := &vo.PaymasterDetail{
 			Address:         info.Paymaster,
 			ReserveUsd:      info.ReserveUsd,
-			GasSponsored:    info.GasSponsoredD1,
-			GasSponsoredUsd: info.GasSponsoredUsdD1,
+			GasSponsored:    info.GasSponsoredD1.Round(2),
+			GasSponsoredUsd: info.GasSponsoredUsdD1.Round(2),
 		}
 		paymasterDetails = append(paymasterDetails, detail)
 	}
@@ -71,7 +71,7 @@ func GetTopFactory(ctx context.Context, req vo.TopFactoryRequest) (*vo.TopFactor
 	if err != nil {
 		return nil, err
 	}
-	var resp *vo.TopFactoryResponse
+	var resp = &vo.TopFactoryResponse{}
 
 	factoryInfos, err := client.FactoryInfo.Query().Order(factoryinfo.ByAccountNumD1(sql.OrderDesc())).Limit(10).All(ctx)
 	if len(factoryInfos) == 0 {

@@ -74,6 +74,10 @@ func GetTokenBalance(address string, network string) []*TokenBalance {
 	req.Header.Add("X-API-Key", ApiKey)
 
 	res, _ := http.DefaultClient.Do(req)
+	if res == nil {
+		log.Printf("GetTokenBalance err, address: %s, network: %s", address, network)
+
+	}
 
 	defer res.Body.Close()
 	body, _ := io.ReadAll(res.Body)
@@ -149,6 +153,9 @@ func GetTokenPrice(token string, network string) *TokenPrice {
 	req.Header.Add("X-API-Key", ApiKey)
 
 	res, _ := http.DefaultClient.Do(req)
+	if res == nil {
+		log.Printf("GetTokenPrice err, token: %s, network: %s", token, network)
+	}
 
 	defer res.Body.Close()
 	body, _ := io.ReadAll(res.Body)
@@ -181,6 +188,7 @@ func GetNativeTokenBalance(accountAddress string, network string) decimal.Decima
 
 	res, _ := http.DefaultClient.Do(req)
 	if res == nil {
+		log.Printf("GetNativeTokenBalance err, accountAddress: %s, network: %s", accountAddress, network)
 		return decimal.Zero
 	}
 	defer res.Body.Close()
@@ -290,9 +298,5 @@ func GetUserAsset(accountAddress string, network string) []*ent.UserAssetInfo {
 		log.Println(err)
 	}
 	return userAssetInfos
-
-}
-
-func getMEV() {
 
 }
