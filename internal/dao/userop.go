@@ -2,6 +2,8 @@ package dao
 
 import (
 	"context"
+	"entgo.io/ent/dialect/sql"
+	"fmt"
 	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropsinfo"
@@ -58,19 +60,30 @@ func (dao *userOpDao) Pagination(ctx context.Context, tx *ent.Client, req vo.Get
 			aauseropsinfo.TxHash(req.TxHash),
 		)
 	}
-	if len(req.Bundler) > 0 && utils.IsAddress(req.Bundler) {
+	if len(req.Bundler) > 0 && utils.IsHexAddress(req.Bundler) {
 		query = query.Where(
 			aauseropsinfo.Bundler(req.Bundler),
 		)
 	}
-	if len(req.Paymaster) > 0 && utils.IsAddress(req.Paymaster) {
+	if len(req.Paymaster) > 0 && utils.IsHexAddress(req.Paymaster) {
 		query = query.Where(
 			aauseropsinfo.Paymaster(req.Paymaster),
 		)
 	}
-	if len(req.Factory) > 0 && utils.IsAddress(req.Factory) {
+	if len(req.Factory) > 0 && utils.IsHexAddress(req.Factory) {
 		query = query.Where(
 			aauseropsinfo.Factory(req.Factory),
+		)
+	}
+	if len(req.Account) > 0 && utils.IsHexAddress(req.Account) {
+		query = query.Where(
+			aauseropsinfo.Or(
+				sql.FieldEQ(aauseropsinfo.FieldSender, req.Account),
+				func(s *sql.Selector) {
+					//s.Builder.Arg(req.Account).WriteOp(sql.OpEQ).WriteString("ANY(").Ident( aauseropsinfo.FieldTargets).WriteString(")")
+					s.Where(sql.ExprP(fmt.Sprintf(`'%s' = ANY(%s)`, req.Account, aauseropsinfo.FieldTargets)))
+				},
+			),
 		)
 	}
 	// sort

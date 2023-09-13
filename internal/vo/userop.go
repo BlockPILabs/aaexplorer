@@ -46,6 +46,7 @@ type GetUserOpsRequest struct {
 	Bundler           string `json:"bundler" params:"bundler"`
 	Paymaster         string `json:"paymaster" params:"paymaster"`
 	Factory           string `json:"factory" params:"factory"`
+	Account           string `json:"account" params:"account"`
 }
 
 type GetUserOpsResponse struct {
