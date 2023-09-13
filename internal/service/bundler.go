@@ -33,7 +33,7 @@ func (*bundlerService) GetBundlers(ctx context.Context, req vo.GetBundlersReques
 		return nil, err
 	}
 	//
-	list, total, err := dao.BundlerDao.Pagination(ctx, client, req.Network, req.PaginationRequest)
+	list, total, err := dao.BundlerDao.Pagination(ctx, client, req)
 	if err != nil {
 		return nil, err
 	}
@@ -42,13 +42,25 @@ func (*bundlerService) GetBundlers(ctx context.Context, req vo.GetBundlersReques
 	//
 	res.Records = make([]*vo.BundlersVo, len(list))
 	for i, info := range list {
+
 		res.Records[i] = &vo.BundlersVo{
-			Bundler:      info.ID,
-			Network:      info.Network,
-			UserOpsNum:   info.UserOpsNum,
-			BundlesNum:   info.BundlesNum,
-			GasCollected: info.GasCollected,
+			Bundler:        info.ID,
+			BundlesNum:     info.BundlesNum,
+			UserOpsNum:     info.UserOpsNum,
+			SuccessRate:    info.SuccessRate,
+			SuccessRateD1:  info.SuccessRateD1,
+			BundlesNumD1:   info.BundlesNumD1,
+			FeeEarnedD1:    info.FeeEarnedD1,
+			FeeEarnedUsdD1: info.FeeEarnedUsdD1,
 		}
+		//account, err := dao.AccountDao.GetAbiByAddressWithMemo(ctx, client, info.Bundler)
+		//if err == nil && account != nil && account.Label != nil {
+		//	labels := []string{}
+		//	account.Label.Scan(&labels)
+		//	if len(labels) > 0 {
+		//		res.Records[i].BundlerLabel = labels[0]
+		//	}
+		//}
 	}
 
 	return &res, nil

@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"entgo.io/ent/dialect/sql"
 	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/bundlerinfo"
@@ -17,51 +18,45 @@ var BundlerDao = &bundlerDao{}
 func (*bundlerDao) GetSortFields(ctx context.Context) []string {
 	return []string{
 		config.Default,
-		bundlerinfo.FieldID,
 		bundlerinfo.FieldBundlesNum,
+		bundlerinfo.FieldSuccessRate,
+		bundlerinfo.FieldBundleRateD1,
+		bundlerinfo.FieldUserOpsNum,
 		bundlerinfo.FieldBundlesNumD1,
-		bundlerinfo.FieldBundlesNumD7,
-		bundlerinfo.FieldBundlesNumD30,
+		bundlerinfo.FieldFeeEarnedD1,
 	}
 }
 func (dao *bundlerDao) Sort(ctx context.Context, query *ent.BundlerInfoQuery, sort int, order int) *ent.BundlerInfoQuery {
 	opts := dao.orderOptions(ctx, order)
 	if len(opts) > 0 {
-		switch dao.sortField(ctx, dao.GetSortFields(ctx), sort) {
-		case bundlerinfo.FieldID:
-			query.Order(bundlerinfo.ByID(opts...))
-		//case bundlerinfo.FieldBundlesNum:
-		//	query.Order(bundlerinfo.ByBundlesNum(opts...))
-		case bundlerinfo.FieldBundlesNumD1:
-			query.Order(bundlerinfo.ByBundlesNumD1(opts...))
-		case bundlerinfo.FieldBundlesNumD7:
-			query.Order(bundlerinfo.ByBundlesNumD7(opts...))
-		case bundlerinfo.FieldBundlesNumD30:
-			query.Order(bundlerinfo.ByBundlesNumD30(opts...))
-		default:
+		f := dao.sortField(ctx, dao.GetSortFields(ctx), sort)
+		switch f {
+		case "", config.Default:
 			query.Order(bundlerinfo.ByBundlesNum(opts...))
+		default:
+			query.Order(sql.OrderByField(f, opts...).ToFunc())
 		}
 	}
 	return query
 }
 
-func (dao *bundlerDao) Pagination(ctx context.Context, tx *ent.Client, network string, page vo.PaginationRequest) (list ent.BundlerInfos, total int, err error) {
+func (dao *bundlerDao) Pagination(ctx context.Context, tx *ent.Client, req vo.GetBundlersRequest) (list ent.BundlerInfos, total int, err error) {
 	query := tx.BundlerInfo.Query().Where(
-		bundlerinfo.NetworkEQ(network),
+		bundlerinfo.NetworkEQ(req.Network),
 	)
 	// sort
-	query = dao.Sort(ctx, query, page.Sort, page.Order)
+	query = dao.Sort(ctx, query, req.Sort, req.Order)
 
 	total = query.CountX(ctx)
 
-	if total < 1 || page.GetOffset() > total {
+	if total < 1 || req.GetOffset() > total {
 		return
 	}
 
 	// limit
 	query = query.
-		Offset(page.GetOffset()).
-		Limit(page.PerPage)
+		Offset(req.GetOffset()).
+		Limit(req.PerPage)
 
 	list, err = query.All(ctx)
 	return
