@@ -4,6 +4,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/explorer"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/log"
+	"github.com/BlockPILabs/aa-scan/internal/memo"
 	"github.com/BlockPILabs/aa-scan/internal/middleware"
 	aimos "github.com/BlockPILabs/aa-scan/internal/os"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
@@ -43,6 +44,11 @@ func NewStartCmd() *cobra.Command {
 			)
 			// db start
 			err := entity.Start(logger.With("lib", "ent"), config)
+			if err != nil {
+				return err
+			}
+
+			err = memo.Start(logger.With("lib", "memo"), config)
 			if err != nil {
 				return err
 			}
