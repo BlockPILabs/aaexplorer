@@ -16,9 +16,15 @@ func GetTopBundler(ctx context.Context, req vo.TopBundlerRequest) (*vo.TopBundle
 	if err != nil {
 		return nil, err
 	}
-	var resp = &vo.TopBundlerResponse{}
+	var resp = &vo.TopBundlerResponse{
+		Pagination: vo.Pagination{
+			TotalCount: 0,
+			PerPage:    req.GetPerPage(),
+			Page:       req.GetPage(),
+		},
+	}
 
-	bundlerInfos, err := client.BundlerInfo.Query().Order(bundlerinfo.ByFeeEarnedUsdD1(sql.OrderDesc())).Limit(10).All(ctx)
+	bundlerInfos, err := client.BundlerInfo.Query().Order(bundlerinfo.ByFeeEarnedUsdD1(sql.OrderDesc())).Offset(req.GetOffset()).Limit(req.GetPerPage()).All(ctx)
 	if len(bundlerInfos) == 0 {
 		return nil, nil
 	}
@@ -44,9 +50,15 @@ func GetTopPaymaster(ctx context.Context, req vo.TopPaymasterRequest) (*vo.TopPa
 	if err != nil {
 		return nil, err
 	}
-	var resp = &vo.TopPaymasterResponse{}
+	var resp = &vo.TopPaymasterResponse{
+		Pagination: vo.Pagination{
+			TotalCount: 0,
+			PerPage:    req.GetPerPage(),
+			Page:       req.GetPage(),
+		},
+	}
 
-	paymasterInfos, err := client.PaymasterInfo.Query().Order(paymasterinfo.ByGasSponsoredUsdD1(sql.OrderDesc())).Limit(10).All(ctx)
+	paymasterInfos, err := client.PaymasterInfo.Query().Order(paymasterinfo.ByGasSponsoredUsdD1(sql.OrderDesc())).Offset(req.GetOffset()).Limit(req.GetPerPage()).All(ctx)
 	if len(paymasterInfos) == 0 {
 		return nil, nil
 	}
@@ -71,9 +83,15 @@ func GetTopFactory(ctx context.Context, req vo.TopFactoryRequest) (*vo.TopFactor
 	if err != nil {
 		return nil, err
 	}
-	var resp = &vo.TopFactoryResponse{}
+	var resp = &vo.TopFactoryResponse{
+		Pagination: vo.Pagination{
+			TotalCount: 0,
+			PerPage:    req.GetPerPage(),
+			Page:       req.GetPage(),
+		},
+	}
 
-	factoryInfos, err := client.FactoryInfo.Query().Order(factoryinfo.ByAccountNumD1(sql.OrderDesc())).Limit(10).All(ctx)
+	factoryInfos, err := client.FactoryInfo.Query().Order(factoryinfo.ByAccountNumD1(sql.OrderDesc())).Offset(req.GetOffset()).Limit(req.GetPerPage()).All(ctx)
 	if len(factoryInfos) == 0 {
 		return nil, nil
 	}

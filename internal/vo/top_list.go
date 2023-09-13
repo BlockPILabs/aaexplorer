@@ -7,18 +7,22 @@ type TopRequest struct {
 }
 
 type TopBundlerRequest struct {
+	PaginationRequest
 	Network string `json:"network"`
 }
 
 type TopPaymasterRequest struct {
+	PaginationRequest
 	Network string `json:"network"`
 }
 
 type TopFactoryRequest struct {
+	PaginationRequest
 	Network string `json:"network"`
 }
 
 type TopBundlerResponse struct {
+	Pagination
 	BundlerDetails []*BundlerDetail
 }
 
@@ -31,6 +35,7 @@ type BundlerDetail struct {
 }
 
 type TopPaymasterResponse struct {
+	Pagination
 	PaymasterDetails []*PaymasterDetail
 }
 
@@ -42,6 +47,7 @@ type PaymasterDetail struct {
 }
 
 type TopFactoryResponse struct {
+	Pagination
 	FactoryDetails []*FactoryDetail
 }
 

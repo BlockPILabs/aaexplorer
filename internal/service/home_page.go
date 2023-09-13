@@ -10,6 +10,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 	"github.com/shopspring/decimal"
 	"log"
+	"sort"
 	"time"
 )
 
@@ -87,7 +88,7 @@ func getResponseDay(days []*ent.DailyStatisticDay) *vo.DailyStatisticResponse {
 		}
 		details = append(details, detail)
 	}
-
+	sort.Sort(vo.ByDailyStatisticTime(details))
 	resp.Details = details
 	return &resp
 }
@@ -121,7 +122,7 @@ func getResponseHour(hours []*ent.DailyStatisticHour) *vo.DailyStatisticResponse
 		}
 		details = append(details, detail)
 	}
-
+	sort.Sort(vo.ByDailyStatisticTime(details))
 	resp.Details = details
 	return resp
 }
@@ -179,7 +180,7 @@ func getDominanceResponseDay(days []*ent.DailyStatisticDay) *vo.AATxnDominanceRe
 		}
 		details = append(details, detail)
 	}
-
+	sort.Sort(vo.ByDominanceTime(details))
 	resp.DominanceDetails = details
 	return &resp
 }
@@ -198,15 +199,15 @@ func getDominanceResponseHour(hours []*ent.DailyStatisticHour) *vo.AATxnDominanc
 		}
 		details = append(details, detail)
 	}
-
+	sort.Sort(vo.ByDominanceTime(details))
 	resp.DominanceDetails = details
 	return &resp
 }
 
-func getRate(txNum int64, aaTxNum int64) string {
+func getRate(txNum int64, aaTxNum int64) decimal.Decimal {
 	if txNum == 0 {
-		return "100" + "%"
+		return decimal.Zero
 	}
 
-	return decimal.NewFromInt(aaTxNum).DivRound(decimal.NewFromInt(txNum), 4).Mul(decimal.NewFromInt(100)).String() + "%"
+	return decimal.NewFromInt(aaTxNum).DivRound(decimal.NewFromInt(txNum), 4)
 }

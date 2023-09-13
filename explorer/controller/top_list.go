@@ -18,7 +18,9 @@ func GetTopBundler(fcx *fiber.Ctx) error {
 	logger := log.Context(fcx.UserContext())
 
 	logger.Debug("start get top bundler")
-	req := vo.TopBundlerRequest{}
+	req := vo.TopBundlerRequest{
+		PaginationRequest: vo.NewDefaultPaginationRequest(),
+	}
 	err := fcx.ParamsParser(&req)
 	if err != nil {
 		logger.Warn("params parse error", "err", err)
@@ -40,7 +42,9 @@ func GetTopPaymaster(fcx *fiber.Ctx) error {
 	logger := log.Context(fcx.UserContext())
 
 	logger.Debug("start get top paymaster")
-	req := vo.TopPaymasterRequest{}
+	req := vo.TopPaymasterRequest{
+		PaginationRequest: vo.NewDefaultPaginationRequest(),
+	}
 	err := fcx.ParamsParser(&req)
 	if err != nil {
 		logger.Warn("params parse error", "err", err)
@@ -62,7 +66,9 @@ func GetTopFactory(fcx *fiber.Ctx) error {
 	logger := log.Context(fcx.UserContext())
 
 	logger.Debug("start get top factory")
-	req := vo.TopFactoryRequest{}
+	req := vo.TopFactoryRequest{
+		PaginationRequest: vo.NewDefaultPaginationRequest(),
+	}
 	err := fcx.ParamsParser(&req)
 	if err != nil {
 		logger.Warn("params parse error", "err", err)

@@ -35,6 +35,12 @@ type DailyStatisticDetail struct {
 	BundlerGasProfitUsd   decimal.Decimal `json:"bundlerGasProfitUsd"`
 }
 
+type ByDailyStatisticTime []*DailyStatisticDetail
+
+func (b ByDailyStatisticTime) Len() int           { return len(b) }
+func (b ByDailyStatisticTime) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+func (b ByDailyStatisticTime) Less(i, j int) bool { return b[i].Time < b[j].Time }
+
 type AATxnDominanceRequest struct {
 	Network   string `json:"network"`
 	TimeRange string `json:"timeRange"`
@@ -45,8 +51,8 @@ type AATxnDominanceResponse struct {
 }
 
 type AATxnDominanceDetail struct {
-	Time      int64  `json:"time"`
-	Dominance string `json:"dominance"`
+	Time      int64           `json:"time"`
+	Dominance decimal.Decimal `json:"dominance"`
 }
 
 type LatestUserOpsRequest struct {
@@ -55,3 +61,9 @@ type LatestUserOpsRequest struct {
 
 type LatestUserOpsResponse struct {
 }
+
+type ByDominanceTime []*AATxnDominanceDetail
+
+func (b ByDominanceTime) Len() int           { return len(b) }
+func (b ByDominanceTime) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+func (b ByDominanceTime) Less(i, j int) bool { return b[i].Time < b[j].Time }
