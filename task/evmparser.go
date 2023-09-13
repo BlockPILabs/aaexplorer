@@ -207,7 +207,6 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 
 	err = pool.Submit(func() {
 
-		logger.Debug("pre parse , get parse data")
 		ctx = log.WithContext(context.Background(), logger)
 		defer func() {
 			err := tx.Commit()
@@ -217,6 +216,8 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 			}
 			wg.Done()
 		}()
+		client, err = entity.Client(ctx, network.ID)
+		logger.Debug("pre parse , get parse data")
 		blockDataDecodes, transactionDecodes, receiptDecodes, blocksMap, transactionMap, err := t.getParseData(ctx, client, blockIds...)
 		_ = (blockDataDecodes)
 		_ = (transactionDecodes)
@@ -336,6 +337,8 @@ func (t *_evmParser) getParseData(ctx context.Context, client *ent.Client, block
 			).All(timeoutCtx)
 		if err != nil {
 			log.Context(ctx).Error("not find BlockDataDecode", "err", err)
+		} else {
+			log.Context(ctx).Debug("find BlockDataDecode", "count", len(blockDataDecodes))
 		}
 		return err
 	})
@@ -349,6 +352,8 @@ func (t *_evmParser) getParseData(ctx context.Context, client *ent.Client, block
 			).All(timeoutCtx)
 		if err != nil {
 			log.Context(ctx).Error("not find TransactionDecode", "err", err)
+		} else {
+			log.Context(ctx).Debug("find transactionDecodes", "count", len(transactionDecodes))
 		}
 		return err
 	})
@@ -361,6 +366,8 @@ func (t *_evmParser) getParseData(ctx context.Context, client *ent.Client, block
 			).All(timeoutCtx)
 		if err != nil {
 			log.Context(ctx).Error("not find TransactionReceiptDecode", "err", err)
+		} else {
+			log.Context(ctx).Debug("find transactionReceiptDecodes", "count", len(transactionReceiptDecodes))
 		}
 		return err
 	})
@@ -708,7 +715,8 @@ func (t *_evmParser) insertAccounts(ctx context.Context, client *ent.Client, net
 				SetID(aaAccount.ID).
 				SetAbi("").
 				SetLabel(&emptyArray).
-				SetTag(&emptyArray)
+				SetTag(&emptyArray).
+				SetUpdateTime(time.Now())
 
 			if len(aaAccount.AaType) > 0 {
 				tags := []string{aaAccount.AaType}
@@ -759,7 +767,12 @@ func (t *_evmParser) insertAccounts(ctx context.Context, client *ent.Client, net
 		}
 	}
 	if len(insertAccounts) > 0 {
-		err := client.Account.CreateBulk(insertAccounts...).Exec(ctx)
+		err := client.Account.
+			CreateBulk(insertAccounts...).
+			OnConflictColumns(account.FieldID).
+			Update(func(upsert *ent.AccountUpsert) {
+				upsert.UpdateUpdateTime()
+			}).Exec(ctx)
 		if err != nil {
 			log.Context(ctx).Error("account create error", "err", err)
 		}
@@ -805,7 +818,8 @@ func (t *_evmParser) insertAaAccounts(ctx context.Context, client *ent.Client, n
 				SetID(aaAccount.ID).
 				SetAaType(aaAccount.AaType).
 				SetFactory(aaAccount.Factory).
-				SetFactoryTime(aaAccount.FactoryTime)
+				SetFactoryTime(aaAccount.FactoryTime).
+				SetUpdateTime(time.Now())
 			insertAccounts = append(insertAccounts, create)
 		}
 	}
@@ -834,7 +848,11 @@ func (t *_evmParser) insertAaAccounts(ctx context.Context, client *ent.Client, n
 		}
 	}
 	if len(insertAccounts) > 0 {
-		err := client.AaAccountData.CreateBulk(insertAccounts...).Exec(ctx)
+		err := client.AaAccountData.CreateBulk(insertAccounts...).
+			OnConflictColumns(aaaccountdata.FieldID).
+			Update(func(upsert *ent.AaAccountDataUpsert) {
+				upsert.UpdateUpdateTime()
+			}).Exec(ctx)
 		if err != nil {
 			log.Context(ctx).Error("account create error", "err", err)
 		}
