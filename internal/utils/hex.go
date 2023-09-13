@@ -79,19 +79,19 @@ func TruncateString(s string, length int) string {
 	return s[:length]
 }
 
-func HexToDecimalInt(hexStr string) *int {
+func HexToDecimalInt(hexStr string) int {
 	hexStr = strings.TrimPrefix(hexStr, "0x")
 
 	decimal := new(big.Int)
 	_, success := decimal.SetString(hexStr, 16)
 	if !success {
-		return nil
+		return 0
 	}
 	res, err := strconv.Atoi(decimal.String())
 	if err != nil {
-		return nil
+		return 0
 	}
-	return &res
+	return res
 }
 
 func HexToAddress(hexStr string) string {

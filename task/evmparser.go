@@ -32,6 +32,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jackc/pgtype"
+	"github.com/panjf2000/ants/v2"
 	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
 	"golang.org/x/exp/maps"
@@ -114,31 +115,36 @@ func InitEvmParse(ctx context.Context, config *config.Config, logger log.Logger)
 
 func (t *_evmParser) ScanBlock(ctx context.Context) {
 	fiend := true
-
+	logger := log.Context(ctx)
+	pool, err := ants.NewPool(t.config.EvmParser.Batch)
+	if err != nil {
+		logger.Error("network find error", "err", err)
+		return
+	}
+	wg := &sync.WaitGroup{}
 	for fiend {
 		fiend = false
 		networks, err := service.NetworkService.GetNetworks(context.Background())
 		if err != nil {
-			t.logger.Error("network find error", "err", err)
+			logger.Error("network find error", "err", err)
 			return
 		}
-
-		wg := &sync.WaitGroup{}
+		logger.Debug("waiting scans", "num", pool.Waiting())
 		for _, network := range networks {
 			if _, ok := t.startBlock[network.ID]; !ok {
 				t.startBlock[network.ID] = 0
 			}
 			wg.Add(1)
-			ctx := log.WithContext(ctx, t.logger.With("network", network.ID))
-			if t.ScanBlockByNetwork(ctx, network, wg) {
+			ctx := log.WithContext(ctx, logger.With("network", network.ID))
+			if t.ScanBlockByNetwork(ctx, network, wg, pool) {
 				fiend = true
 			}
 		}
-		wg.Wait()
 	}
+	wg.Wait()
 
 }
-func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Network, wg *sync.WaitGroup) (fiend bool) {
+func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Network, wg *sync.WaitGroup, pool *ants.Pool) (fiend bool) {
 	defer func() {
 		if !fiend {
 			wg.Done()
@@ -196,10 +202,14 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 		t.startBlock[network.ID] = blockSync.ID
 	}
 
-	ctx = log.WithContext(context.Background(), logger)
-	go func() {
+	err = pool.Submit(func() {
+		ctx = log.WithContext(context.Background(), logger)
 		defer func() {
-			tx.Commit()
+			err := tx.Commit()
+			if err != nil {
+
+				log.Context(ctx).Warn("commit error", "err", err)
+			}
 			wg.Done()
 		}()
 		blockDataDecodes, transactionDecodes, receiptDecodes, blocksMap, transactionMap, err := t.getParseData(ctx, client, blockIds...)
@@ -280,7 +290,11 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 			}
 		}
 
-	}()
+	})
+	if err != nil {
+		logger.Warn("block scanned error", "err", err)
+		return false
+	}
 
 	return fiend
 }
@@ -1014,7 +1028,7 @@ func (t *_evmParser) parseLogs(ctx context.Context, logs []*aa.Log) (map[string]
 				Sender:        strings.ToLower(utils.HexToAddress(topics[2])),
 				Paymaster:     strings.ToLower(utils.HexToAddress(topics[3])),
 				Nonce:         utils.HexToDecimal(utils.Substring(data, 0, 64*1)).Int64(),
-				Success:       *utils.HexToDecimalInt(utils.Substring(data, 64*1, 64*2)),
+				Success:       utils.HexToDecimalInt(utils.Substring(data, 64*1, 64*2)),
 				ActualGasCost: utils.HexToDecimal(utils.Substring(data, 64*2, 64*3)).Int64(),
 				ActualGasUsed: utils.HexToDecimal(utils.Substring(data, 64*3, 64*4)).Int64(),
 			}
@@ -1114,15 +1128,15 @@ func (t *_evmParser) parseExecuteBatchCall(ctx context.Context, paramData string
 	offset1 := utils.HexToDecimalInt(utils.Substring(paramData, 0, 64*1))
 	offset2 := utils.HexToDecimalInt(utils.Substring(paramData, 64*1, 64*2))
 	offset3 := utils.HexToDecimalInt(utils.Substring(paramData, 64*2, 64*3))
-	num1 := utils.HexToDecimalInt(utils.Substring(paramData, *offset1*2, *offset1*2+64*1))
+	num1 := utils.HexToDecimalInt(utils.Substring(paramData, offset1*2, offset1*2+64*1))
 	var callDetails []*CallDetail
-	for i := 1; i <= *num1; i++ {
-		target := utils.HexToAddress(utils.Substring(paramData, *offset1*2+64*i, *offset1*2+64*(i+1)))
+	for i := 1; i <= num1; i++ {
+		target := utils.HexToAddress(utils.Substring(paramData, offset1*2+64*i, offset1*2+64*(i+1)))
 		if len(target) < 1 {
 			continue
 		}
-		value := utils.DivRav(utils.HexToDecimal(utils.Substring(paramData, *offset2*2+64*i, *offset2*2+64*(i+1))).Int64())
-		data := utils.Substring(paramData, *offset3*2+64*i, *offset3*2+64*(i+1))
+		value := utils.DivRav(utils.HexToDecimal(utils.Substring(paramData, offset2*2+64*i, offset2*2+64*(i+1))).Int64())
+		data := utils.Substring(paramData, offset3*2+64*i, offset3*2+64*(i+1))
 		callDetails = append(callDetails, &CallDetail{
 			target: target,
 			value:  &value,
@@ -1136,17 +1150,17 @@ func (t *_evmParser) parseExecuteBatch(ctx context.Context, paramData string) []
 	offset1 := utils.HexToDecimalInt(utils.Substring(paramData, 0, 64*1))
 	offset2 := utils.HexToDecimalInt(utils.Substring(paramData, 64*1, 64*2))
 	offset3 := utils.HexToDecimalInt(utils.Substring(paramData, 64*2, 64*3))
-	num1 := utils.HexToDecimalInt(utils.Substring(paramData, *offset1*2, *offset1*2+64*1))
-	//num2 := utils.HexToDecimalInt(utils.Substring(paramData, *offset2*2, *offset2*2+64*1))
+	num1 := utils.HexToDecimalInt(utils.Substring(paramData, offset1*2, offset1*2+64*1))
+	//num2 := utils.HexToDecimalInt(utils.Substring(paramData, offset2*2, offset2*2+64*1))
 	//num3 := utils.HexToDecimalInt(utils.Substring(paramData, *offset3*2, *offset3*2+64*1))
 	var callDetails []*CallDetail
-	for i := 1; i <= *num1; i++ {
-		target := utils.HexToAddress(utils.Substring(paramData, *offset1*2+64*i, *offset1*2+64*(i+1)))
+	for i := 1; i <= num1; i++ {
+		target := utils.HexToAddress(utils.Substring(paramData, offset1*2+64*i, offset1*2+64*(i+1)))
 		if len(target) < 1 {
 			continue
 		}
-		value := utils.DivRav(utils.HexToDecimal(utils.Substring(paramData, *offset2*2+64*i, *offset2*2+64*(i+1))).Int64())
-		data := utils.Substring(paramData, *offset3*2+64*i, *offset3*2+64*(i+1))
+		value := utils.DivRav(utils.HexToDecimal(utils.Substring(paramData, offset2*2+64*i, offset2*2+64*(i+1))).Int64())
+		data := utils.Substring(paramData, offset3*2+64*i, offset3*2+64*(i+1))
 		callDetails = append(callDetails, &CallDetail{
 			target: target,
 			value:  &value,
@@ -1157,11 +1171,15 @@ func (t *_evmParser) parseExecuteBatch(ctx context.Context, paramData string) []
 }
 
 func (t *_evmParser) parseExecute(ctx context.Context, paramData string) []*CallDetail {
+
 	target := strings.ToLower(utils.HexToAddress(utils.Substring(paramData, 0, 64*1)))
+	if len(target) < 1 {
+		return nil
+	}
 	value := utils.DivRav(utils.HexToDecimal(utils.Substring(paramData, 64*1, 64*2)).Int64())
 	offset := utils.HexToDecimalInt(utils.Substring(paramData, 64*2, 64*3))
-	len := utils.HexToDecimalInt(utils.Substring(paramData, *offset*2, *offset*2+64*1))
-	data := utils.Substring(paramData, *offset*2+64*1, *offset*2+64*1+*len*2)
+	len := utils.HexToDecimalInt(utils.Substring(paramData, offset*2, offset*2+64*1))
+	data := utils.Substring(paramData, offset*2+64*1, offset*2+64*1+len*2)
 	var details []*CallDetail
 	details = append(details, &CallDetail{
 		target: target,
