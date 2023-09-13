@@ -18,9 +18,11 @@ type UserOpVo struct {
 	// Network holds the value of the "network" field.
 	Network string `json:"network"`
 	// Sender holds the value of the "sender" field.
-	Sender string `json:"sender"`
+	Sender      string `json:"sender"`
+	SenderLabel string `json:"senderLabel"`
 	// Target holds the value of the "target" field.
-	Target string `json:"target"`
+	Target      string `json:"target"`
+	TargetLabel string `json:"targetLabel"`
 	// TxValue holds the value of the "tx_value" field.
 	TxValue decimal.Decimal `json:"txValue"`
 	// Fee holds the value of the "fee" field.
