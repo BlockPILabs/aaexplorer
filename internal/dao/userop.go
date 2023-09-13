@@ -58,17 +58,17 @@ func (dao *userOpDao) Pagination(ctx context.Context, tx *ent.Client, req vo.Get
 			aauseropsinfo.TxHash(req.TxHash),
 		)
 	}
-	if len(req.Bundler) > 0 && utils.IsHex(req.Bundler) {
+	if len(req.Bundler) > 0 && utils.IsAddress(req.Bundler) {
 		query = query.Where(
 			aauseropsinfo.Bundler(req.Bundler),
 		)
 	}
-	if len(req.Paymaster) > 0 && utils.IsHex(req.Paymaster) {
+	if len(req.Paymaster) > 0 && utils.IsAddress(req.Paymaster) {
 		query = query.Where(
 			aauseropsinfo.Paymaster(req.Paymaster),
 		)
 	}
-	if len(req.Factory) > 0 && utils.IsHex(req.Factory) {
+	if len(req.Factory) > 0 && utils.IsAddress(req.Factory) {
 		query = query.Where(
 			aauseropsinfo.Factory(req.Factory),
 		)
