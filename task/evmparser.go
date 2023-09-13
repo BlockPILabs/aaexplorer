@@ -135,7 +135,7 @@ func (t *_evmParser) ScanBlock(ctx context.Context) {
 				t.startBlock[network.ID] = 0
 			}
 			wg.Add(1)
-			ctx := log.WithContext(ctx, logger.With("network", network.ID))
+			ctx := log.WithContext(context.Background(), logger.With("network", network.ID))
 			if t.ScanBlockByNetwork(ctx, network, wg, pool) {
 				fiend = true
 			}
@@ -150,6 +150,7 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 			wg.Done()
 		}
 	}()
+
 	logger := log.Context(ctx)
 	logger.Info("start block", "net", network)
 	client, err := entity.Client(ctx, network.ID)
@@ -308,7 +309,8 @@ func (t *_evmParser) getParseData(ctx context.Context, client *ent.Client, block
 	retErr error,
 ) {
 
-	timeoutCtx, _ := context.WithTimeout(ctx, time.Minute)
+	//timeoutCtx, _ := context.WithTimeout(ctx, time.Minute)
+	timeoutCtx := ctx
 
 	g, _ := errgroup.WithContext(timeoutCtx)
 	g.Go(func() error {
