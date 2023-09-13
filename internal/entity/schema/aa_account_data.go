@@ -17,6 +17,7 @@ func (AaAccountData) Fields() []ent.Field {
 		field.String("aa_type").StructTag(`json:"aaType"`),
 		field.String("factory").StructTag(`json:"factory"`),
 		field.Time("factory_time").StructTag(`json:"factoryTime"`),
+		field.Time("update_time").StructTag(`json:"updateTime"`).Optional(),
 	}
 }
 

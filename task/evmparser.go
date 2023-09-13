@@ -32,6 +32,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jackc/pgtype"
+	"github.com/panjf2000/ants/v2"
 	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
 	"golang.org/x/exp/maps"
@@ -114,36 +115,43 @@ func InitEvmParse(ctx context.Context, config *config.Config, logger log.Logger)
 
 func (t *_evmParser) ScanBlock(ctx context.Context) {
 	fiend := true
-
+	logger := log.Context(ctx)
+	pool, err := ants.NewPool(t.config.EvmParser.Batch)
+	if err != nil {
+		logger.Error("network find error", "err", err)
+		return
+	}
+	defer pool.Release()
+	wg := &sync.WaitGroup{}
 	for fiend {
 		fiend = false
 		networks, err := service.NetworkService.GetNetworks(context.Background())
 		if err != nil {
-			t.logger.Error("network find error", "err", err)
+			logger.Error("network find error", "err", err)
 			return
 		}
-
-		wg := &sync.WaitGroup{}
+		logger.Debug("waiting scans", "num", pool.Running())
 		for _, network := range networks {
 			if _, ok := t.startBlock[network.ID]; !ok {
 				t.startBlock[network.ID] = 0
 			}
 			wg.Add(1)
-			ctx := log.WithContext(ctx, t.logger.With("network", network.ID))
-			if t.ScanBlockByNetwork(ctx, network, wg) {
+			ctx := log.WithContext(context.Background(), logger.With("network", network.ID))
+			if t.ScanBlockByNetwork(ctx, network, wg, pool) {
 				fiend = true
 			}
 		}
-		wg.Wait()
 	}
+	wg.Wait()
 
 }
-func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Network, wg *sync.WaitGroup) (fiend bool) {
+func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Network, wg *sync.WaitGroup, pool *ants.Pool) (fiend bool) {
 	defer func() {
 		if !fiend {
 			wg.Done()
 		}
 	}()
+
 	logger := log.Context(ctx)
 	logger.Info("start block", "net", network)
 	client, err := entity.Client(ctx, network.ID)
@@ -184,6 +192,7 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 		logger.Error("find AaBlockSync  tx", "err", err)
 		return false
 	}
+	logger.Debug("queried aaBlockSyncs", "count", len(aaBlockSyncs))
 	if len(aaBlockSyncs) < 1 {
 		logger.Debug("not find AaBlockSync")
 		return false
@@ -196,18 +205,33 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 		t.startBlock[network.ID] = blockSync.ID
 	}
 
-	ctx = log.WithContext(context.Background(), logger)
-	go func() {
+	err = pool.Submit(func() {
+
+		ctx = log.WithContext(context.Background(), logger)
 		defer func() {
-			tx.Commit()
+			err := tx.Commit()
+			if err != nil {
+
+				log.Context(ctx).Warn("commit error", "err", err)
+			}
 			wg.Done()
 		}()
+		client, err = entity.Client(ctx, network.ID)
+		logger.Debug("pre parse , get parse data")
 		blockDataDecodes, transactionDecodes, receiptDecodes, blocksMap, transactionMap, err := t.getParseData(ctx, client, blockIds...)
 		_ = (blockDataDecodes)
 		_ = (transactionDecodes)
 		_ = (receiptDecodes)
 		_ = (blocksMap)
 		_ = (transactionMap)
+
+		logger.Debug("complete get parse data", "err", err,
+			"blockDataDecodes", len(blockDataDecodes),
+			"transactionDecodes", len(transactionDecodes),
+			"receiptDecodes", len(receiptDecodes),
+			"blocksMap", len(blocksMap),
+			"transactionMap", len(transactionMap),
+		)
 		if err != nil {
 			logger.Error("get parse data error", "err", err)
 			return
@@ -220,7 +244,7 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 		var setBlockSyncedId []int64
 		var aaAccountDataMap = map[string]*ent.AaAccountData{}
 		for _, block := range blocksMap {
-			t.doParse(ctx, tx.Client(), network, block)
+			t.doParse(ctx, client, network, block)
 
 			if block.userOpInfo == nil || block.userOpInfo.UseropCount < 1 {
 				setBlockSyncedId = append(setBlockSyncedId, block.block.ID)
@@ -258,12 +282,12 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 			}
 		}
 
-		t.insertUserOpsInfo(ctx, tx.Client(), network, aaUserOpsInfos)
-		t.insertTransactions(ctx, tx.Client(), network, aaTransactionInfos)
-		t.insertBlockInfos(ctx, tx.Client(), network, aaBlockInfos)
-		t.insertuserOpsInfoCalldatas(ctx, tx.Client(), network, userOpsInfoCalldatas)
-		t.insertAccounts(ctx, tx.Client(), network, aaAccountDataMap)
-		t.insertAaAccounts(ctx, tx.Client(), network, aaAccountDataMap)
+		t.insertUserOpsInfo(ctx, client, network, aaUserOpsInfos)
+		t.insertTransactions(ctx, client, network, aaTransactionInfos)
+		t.insertBlockInfos(ctx, client, network, aaBlockInfos)
+		t.insertuserOpsInfoCalldatas(ctx, client, network, userOpsInfoCalldatas)
+		t.insertAccounts(ctx, client, network, aaAccountDataMap)
+		t.insertAaAccounts(ctx, client, network, aaAccountDataMap)
 
 		// set sync status
 		if len(setBlockSyncedId) > 0 {
@@ -280,8 +304,12 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 			}
 		}
 
-	}()
-
+	})
+	if err != nil {
+		logger.Warn("block scanned error", "err", err)
+		return false
+	}
+	logger.Debug("block success")
 	return fiend
 }
 
@@ -294,7 +322,8 @@ func (t *_evmParser) getParseData(ctx context.Context, client *ent.Client, block
 	retErr error,
 ) {
 
-	timeoutCtx, _ := context.WithTimeout(ctx, time.Minute)
+	//timeoutCtx, _ := context.WithTimeout(ctx, time.Minute)
+	timeoutCtx := ctx
 
 	g, _ := errgroup.WithContext(timeoutCtx)
 	g.Go(func() error {
@@ -308,6 +337,8 @@ func (t *_evmParser) getParseData(ctx context.Context, client *ent.Client, block
 			).All(timeoutCtx)
 		if err != nil {
 			log.Context(ctx).Error("not find BlockDataDecode", "err", err)
+		} else {
+			log.Context(ctx).Debug("find BlockDataDecode", "count", len(blockDataDecodes))
 		}
 		return err
 	})
@@ -321,6 +352,8 @@ func (t *_evmParser) getParseData(ctx context.Context, client *ent.Client, block
 			).All(timeoutCtx)
 		if err != nil {
 			log.Context(ctx).Error("not find TransactionDecode", "err", err)
+		} else {
+			log.Context(ctx).Debug("find transactionDecodes", "count", len(transactionDecodes))
 		}
 		return err
 	})
@@ -333,6 +366,8 @@ func (t *_evmParser) getParseData(ctx context.Context, client *ent.Client, block
 			).All(timeoutCtx)
 		if err != nil {
 			log.Context(ctx).Error("not find TransactionReceiptDecode", "err", err)
+		} else {
+			log.Context(ctx).Debug("find transactionReceiptDecodes", "count", len(transactionReceiptDecodes))
 		}
 		return err
 	})
@@ -396,6 +431,9 @@ func (t *_evmParser) getCurrentTimestampMillis() int64 {
 
 func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *ent.Network, block *parserBlock) {
 
+	ctx, logger := log.With(ctx, "blockNumber", block.block.ID)
+
+	logger.Debug("start parse")
 	parserTransactions := block.transitions
 
 	block.userOpInfo = &ent.AaBlockInfo{
@@ -418,6 +456,7 @@ func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *e
 		if sign != HandleOpsSign {
 			continue
 		}
+
 		t.parseUserOps(ctx, client, network, block, parserTx)
 
 		block.userOpInfo.BundlerProfit = block.userOpInfo.BundlerProfit.Add(parserTx.userOpInfo.BundlerProfit)
@@ -505,7 +544,7 @@ func (t *_evmParser) insertBlockInfos(ctx context.Context, client *ent.Client, n
 		}).
 		Exec(context.Background())
 	if err != nil {
-		log.Context(ctx).Info("insert AaTransactionInfo error", "err", err)
+		log.Context(ctx).Info("insert AaBlockInfo error", "err", err)
 	}
 }
 func (t *_evmParser) insertuserOpsInfoCalldatas(ctx context.Context, client *ent.Client, network *ent.Network, infos ent.AAUserOpsCalldataSlice) {
@@ -676,7 +715,8 @@ func (t *_evmParser) insertAccounts(ctx context.Context, client *ent.Client, net
 				SetID(aaAccount.ID).
 				SetAbi("").
 				SetLabel(&emptyArray).
-				SetTag(&emptyArray)
+				SetTag(&emptyArray).
+				SetUpdateTime(time.Now())
 
 			if len(aaAccount.AaType) > 0 {
 				tags := []string{aaAccount.AaType}
@@ -727,7 +767,12 @@ func (t *_evmParser) insertAccounts(ctx context.Context, client *ent.Client, net
 		}
 	}
 	if len(insertAccounts) > 0 {
-		err := client.Account.CreateBulk(insertAccounts...).Exec(ctx)
+		err := client.Account.
+			CreateBulk(insertAccounts...).
+			OnConflictColumns(account.FieldID).
+			Update(func(upsert *ent.AccountUpsert) {
+				upsert.UpdateUpdateTime()
+			}).Exec(ctx)
 		if err != nil {
 			log.Context(ctx).Error("account create error", "err", err)
 		}
@@ -773,7 +818,8 @@ func (t *_evmParser) insertAaAccounts(ctx context.Context, client *ent.Client, n
 				SetID(aaAccount.ID).
 				SetAaType(aaAccount.AaType).
 				SetFactory(aaAccount.Factory).
-				SetFactoryTime(aaAccount.FactoryTime)
+				SetFactoryTime(aaAccount.FactoryTime).
+				SetUpdateTime(time.Now())
 			insertAccounts = append(insertAccounts, create)
 		}
 	}
@@ -802,7 +848,11 @@ func (t *_evmParser) insertAaAccounts(ctx context.Context, client *ent.Client, n
 		}
 	}
 	if len(insertAccounts) > 0 {
-		err := client.AaAccountData.CreateBulk(insertAccounts...).Exec(ctx)
+		err := client.AaAccountData.CreateBulk(insertAccounts...).
+			OnConflictColumns(aaaccountdata.FieldID).
+			Update(func(upsert *ent.AaAccountDataUpsert) {
+				upsert.UpdateUpdateTime()
+			}).Exec(ctx)
 		if err != nil {
 			log.Context(ctx).Error("account create error", "err", err)
 		}
@@ -811,20 +861,24 @@ func (t *_evmParser) insertAaAccounts(ctx context.Context, client *ent.Client, n
 }
 
 func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, network *ent.Network, block *parserBlock, parserTx *parserTransaction) error {
-
+	ctx, logger := log.With(ctx, "transaction", parserTx.transaction.ID)
+	logger.Debug("start parse transaction")
 	data, err := hexutil.Decode(parserTx.transaction.Input)
 	if err != nil {
+		logger.Warn("decode input error", "err", err)
 		return err
 	}
 
 	unpack, err := t.handleOpsMethod.Inputs.UnpackValues(data[4:])
 	if err != nil {
+		logger.Warn("abi unpack input error", "err", err)
 		return err
 	}
 	if len(unpack) < 2 {
+		logger.Warn("abi unpack data error", "err", err)
 		return errors.New("abi unpack error")
 	}
-
+	logger.Debug("abi packed")
 	//beneficiary := parserTx.transaction.FromAddr
 	//if beneficiaryAddr, ok := unpack[1].(common.Address); ok {
 	//	beneficiary = strings.ToLower(beneficiaryAddr.Hex())
@@ -835,6 +889,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 	_ = json.Unmarshal(opsBytes, &ops)
 	err = json.Unmarshal([]byte(parserTx.receipt.Logs), &parserTx.logs)
 	if err != nil {
+		logger.Warn("abi  Unmarshal success", "err", err)
 		return err
 	}
 
@@ -989,6 +1044,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 
 	}
 	parserTx.userOpInfo.BundlerProfit = parserTx.receipt.GasUsed.Sub(parserTx.transaction.Gas)
+	logger.Info("parse success")
 	return nil
 }
 
@@ -1014,7 +1070,7 @@ func (t *_evmParser) parseLogs(ctx context.Context, logs []*aa.Log) (map[string]
 				Sender:        strings.ToLower(utils.HexToAddress(topics[2])),
 				Paymaster:     strings.ToLower(utils.HexToAddress(topics[3])),
 				Nonce:         utils.HexToDecimal(utils.Substring(data, 0, 64*1)).Int64(),
-				Success:       *utils.HexToDecimalInt(utils.Substring(data, 64*1, 64*2)),
+				Success:       utils.HexToDecimalInt(utils.Substring(data, 64*1, 64*2)),
 				ActualGasCost: utils.HexToDecimal(utils.Substring(data, 64*2, 64*3)).Int64(),
 				ActualGasUsed: utils.HexToDecimal(utils.Substring(data, 64*3, 64*4)).Int64(),
 			}
@@ -1114,15 +1170,15 @@ func (t *_evmParser) parseExecuteBatchCall(ctx context.Context, paramData string
 	offset1 := utils.HexToDecimalInt(utils.Substring(paramData, 0, 64*1))
 	offset2 := utils.HexToDecimalInt(utils.Substring(paramData, 64*1, 64*2))
 	offset3 := utils.HexToDecimalInt(utils.Substring(paramData, 64*2, 64*3))
-	num1 := utils.HexToDecimalInt(utils.Substring(paramData, *offset1*2, *offset1*2+64*1))
+	num1 := utils.HexToDecimalInt(utils.Substring(paramData, offset1*2, offset1*2+64*1))
 	var callDetails []*CallDetail
-	for i := 1; i <= *num1; i++ {
-		target := utils.HexToAddress(utils.Substring(paramData, *offset1*2+64*i, *offset1*2+64*(i+1)))
+	for i := 1; i <= num1; i++ {
+		target := utils.HexToAddress(utils.Substring(paramData, offset1*2+64*i, offset1*2+64*(i+1)))
 		if len(target) < 1 {
 			continue
 		}
-		value := utils.DivRav(utils.HexToDecimal(utils.Substring(paramData, *offset2*2+64*i, *offset2*2+64*(i+1))).Int64())
-		data := utils.Substring(paramData, *offset3*2+64*i, *offset3*2+64*(i+1))
+		value := utils.DivRav(utils.HexToDecimal(utils.Substring(paramData, offset2*2+64*i, offset2*2+64*(i+1))).Int64())
+		data := utils.Substring(paramData, offset3*2+64*i, offset3*2+64*(i+1))
 		callDetails = append(callDetails, &CallDetail{
 			target: target,
 			value:  &value,
@@ -1136,17 +1192,17 @@ func (t *_evmParser) parseExecuteBatch(ctx context.Context, paramData string) []
 	offset1 := utils.HexToDecimalInt(utils.Substring(paramData, 0, 64*1))
 	offset2 := utils.HexToDecimalInt(utils.Substring(paramData, 64*1, 64*2))
 	offset3 := utils.HexToDecimalInt(utils.Substring(paramData, 64*2, 64*3))
-	num1 := utils.HexToDecimalInt(utils.Substring(paramData, *offset1*2, *offset1*2+64*1))
-	//num2 := utils.HexToDecimalInt(utils.Substring(paramData, *offset2*2, *offset2*2+64*1))
+	num1 := utils.HexToDecimalInt(utils.Substring(paramData, offset1*2, offset1*2+64*1))
+	//num2 := utils.HexToDecimalInt(utils.Substring(paramData, offset2*2, offset2*2+64*1))
 	//num3 := utils.HexToDecimalInt(utils.Substring(paramData, *offset3*2, *offset3*2+64*1))
 	var callDetails []*CallDetail
-	for i := 1; i <= *num1; i++ {
-		target := utils.HexToAddress(utils.Substring(paramData, *offset1*2+64*i, *offset1*2+64*(i+1)))
+	for i := 1; i <= num1; i++ {
+		target := utils.HexToAddress(utils.Substring(paramData, offset1*2+64*i, offset1*2+64*(i+1)))
 		if len(target) < 1 {
 			continue
 		}
-		value := utils.DivRav(utils.HexToDecimal(utils.Substring(paramData, *offset2*2+64*i, *offset2*2+64*(i+1))).Int64())
-		data := utils.Substring(paramData, *offset3*2+64*i, *offset3*2+64*(i+1))
+		value := utils.DivRav(utils.HexToDecimal(utils.Substring(paramData, offset2*2+64*i, offset2*2+64*(i+1))).Int64())
+		data := utils.Substring(paramData, offset3*2+64*i, offset3*2+64*(i+1))
 		callDetails = append(callDetails, &CallDetail{
 			target: target,
 			value:  &value,
@@ -1157,11 +1213,15 @@ func (t *_evmParser) parseExecuteBatch(ctx context.Context, paramData string) []
 }
 
 func (t *_evmParser) parseExecute(ctx context.Context, paramData string) []*CallDetail {
+
 	target := strings.ToLower(utils.HexToAddress(utils.Substring(paramData, 0, 64*1)))
+	if len(target) < 1 {
+		return nil
+	}
 	value := utils.DivRav(utils.HexToDecimal(utils.Substring(paramData, 64*1, 64*2)).Int64())
 	offset := utils.HexToDecimalInt(utils.Substring(paramData, 64*2, 64*3))
-	len := utils.HexToDecimalInt(utils.Substring(paramData, *offset*2, *offset*2+64*1))
-	data := utils.Substring(paramData, *offset*2+64*1, *offset*2+64*1+*len*2)
+	len := utils.HexToDecimalInt(utils.Substring(paramData, offset*2, offset*2+64*1))
+	data := utils.Substring(paramData, offset*2+64*1, offset*2+64*1+len*2)
 	var details []*CallDetail
 	details = append(details, &CallDetail{
 		target: target,

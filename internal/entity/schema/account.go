@@ -24,6 +24,7 @@ func (Account) Fields() []ent.Field {
 			dialect.Postgres: "text[]",
 		}),
 		field.String("abi").StructTag(`json:"abi"`).Optional(),
+		field.Time("update_time").StructTag(`json:"updateTime"`).Optional(),
 	}
 }
 
