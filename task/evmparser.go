@@ -129,7 +129,7 @@ func (t *_evmParser) ScanBlock(ctx context.Context) {
 			logger.Error("network find error", "err", err)
 			return
 		}
-		logger.Debug("waiting scans", "num", pool.Waiting())
+		logger.Debug("waiting scans", "num", pool.Running())
 		for _, network := range networks {
 			if _, ok := t.startBlock[network.ID]; !ok {
 				t.startBlock[network.ID] = 0
