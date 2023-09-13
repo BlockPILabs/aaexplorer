@@ -43,7 +43,7 @@ func (*paymasterService) GetPaymasters(ctx context.Context, req vo.GetPaymasters
 	res.Records = make([]*vo.PaymastersVo, len(list))
 	for i, info := range list {
 		res.Records[i] = &vo.PaymastersVo{
-			Paymaster:       info.Paymaster,
+			Paymaster:       info.ID,
 			UserOpsNum:      info.UserOpsNum,
 			UserOpsNumD1:    info.UserOpsNumD1,
 			Reserve:         info.Reserve,
