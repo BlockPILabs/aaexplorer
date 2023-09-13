@@ -34,23 +34,23 @@ func (dao *paymasterDao) Sort(ctx context.Context, query *ent.PaymasterInfoQuery
 	return query
 }
 
-func (dao *paymasterDao) Pagination(ctx context.Context, tx *ent.Client, network string, page vo.PaginationRequest) (list ent.PaymasterInfos, total int, err error) {
+func (dao *paymasterDao) Pagination(ctx context.Context, tx *ent.Client, req vo.GetPaymastersRequest) (list ent.PaymasterInfos, total int, err error) {
 	query := tx.PaymasterInfo.Query().Where(
-		paymasterinfo.NetworkEQ(network),
+		paymasterinfo.NetworkEQ(req.Network),
 	)
 	// sort
-	query = dao.Sort(ctx, query, page.Sort, page.Order)
+	query = dao.Sort(ctx, query, req.Sort, req.Order)
 
 	total = query.CountX(ctx)
 
-	if total < 1 || page.GetOffset() > total {
+	if total < 1 || req.GetOffset() > total {
 		return
 	}
 
 	// limit
 	query = query.
-		Offset(page.GetOffset()).
-		Limit(page.PerPage)
+		Offset(req.GetOffset()).
+		Limit(req.PerPage)
 
 	list, err = query.All(ctx)
 	return

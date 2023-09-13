@@ -28,12 +28,12 @@ func (*paymasterService) GetPaymasters(ctx context.Context, req vo.GetPaymasters
 		return &res, vo.ErrParams.SetData(err)
 	}
 
-	client, err := entity.Client(ctx)
+	client, err := entity.Client(ctx, req.Network)
 	if err != nil {
 		return nil, err
 	}
 
-	list, total, err := dao.PaymasterDao.Pagination(ctx, client, req.Network, req.PaginationRequest)
+	list, total, err := dao.PaymasterDao.Pagination(ctx, client, req)
 	if err != nil {
 		return nil, err
 	}
@@ -42,8 +42,14 @@ func (*paymasterService) GetPaymasters(ctx context.Context, req vo.GetPaymasters
 	//
 	res.Records = make([]*vo.PaymastersVo, len(list))
 	for i, info := range list {
-		_ = info
-		res.Records[i] = &vo.PaymastersVo{}
+		res.Records[i] = &vo.PaymastersVo{
+			Paymaster:       info.Paymaster,
+			UserOpsNum:      info.UserOpsNum,
+			UserOpsNumD1:    info.UserOpsNumD1,
+			Reserve:         info.Reserve,
+			GasSponsored:    info.GasSponsored,
+			GasSponsoredUsd: info.GasSponsoredUsd,
+		}
 	}
 
 	return &res, nil

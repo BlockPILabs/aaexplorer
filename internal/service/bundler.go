@@ -53,14 +53,14 @@ func (*bundlerService) GetBundlers(ctx context.Context, req vo.GetBundlersReques
 			FeeEarnedD1:    info.FeeEarnedD1,
 			FeeEarnedUsdD1: info.FeeEarnedUsdD1,
 		}
-		account, err := dao.AccountDao.GetAbiByAddressWithMemo(ctx, client, info.Bundler)
-		if err == nil && account != nil && account.Label != nil {
-			labels := []string{}
-			account.Label.Scan(&labels)
-			if len(labels) > 0 {
-				res.Records[i].BundlerLabel = labels[0]
-			}
-		}
+		//account, err := dao.AccountDao.GetAbiByAddressWithMemo(ctx, client, info.Bundler)
+		//if err == nil && account != nil && account.Label != nil {
+		//	labels := []string{}
+		//	account.Label.Scan(&labels)
+		//	if len(labels) > 0 {
+		//		res.Records[i].BundlerLabel = labels[0]
+		//	}
+		//}
 	}
 
 	return &res, nil
