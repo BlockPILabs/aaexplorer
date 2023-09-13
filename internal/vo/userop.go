@@ -43,6 +43,9 @@ type GetUserOpsRequest struct {
 	LatestBlockNumber int64  `json:"latestBlockNumber" params:"latestBlockNumber" validate:"min=0"`
 	BlockNumber       int64  `json:"blockNumber" params:"blockNumber" validate:"min=0"`
 	TxHash            string `json:"txHash" params:"txHash"`
+	Bundler           string `json:"bundler" params:"bundler"`
+	Paymaster         string `json:"paymaster" params:"paymaster"`
+	Factory           string `json:"factory" params:"factory"`
 }
 
 type GetUserOpsResponse struct {
