@@ -19,11 +19,12 @@ var SearchService = &searchService{}
 
 func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) (*vo.SearchAllResponse, error) {
 	res := &vo.SearchAllResponse{
-		WalletAccounts: []*vo.SearchAllAccount{},
-		Paymasters:     []*vo.SearchAllAccount{},
-		Bundlers:       []*vo.SearchAllAccount{},
-		Transactions:   []*vo.SearchAllTransaction{},
-		Blocks:         []*vo.SearchAllBlock{},
+		//WalletAccounts: []*vo.SearchAllAccount{},
+		//Paymasters:     []*vo.SearchAllAccount{},
+		//Bundlers:       []*vo.SearchAllAccount{},
+		//Transactions:   []*vo.SearchAllTransaction{},
+		//Blocks:         []*vo.SearchAllBlock{},
+		Data: make([]*vo.SearchAllResponseData, 0),
 	}
 
 	client, err := entity.Client(ctx, req.Network)
@@ -37,6 +38,10 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 	maxResult := 10
 	wg, ctx := errgroup.WithContext(ctx)
 
+	var paymasters []*vo.SearchAllAccount
+	var bundlers []*vo.SearchAllAccount
+	var walletAccounts []*vo.SearchAllAccount
+	var blocks []*vo.SearchAllBlock
 	if utils.IsHexSting(term) {
 		wg.Go(func() error {
 			accounts, err := dao.AaAccountDao.Search(ctx, client, req)
@@ -48,16 +53,16 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 				sa := &vo.SearchAllAccount{Address: account.ID, AaType: account.AaType}
 				switch account.AaType {
 				case config.AaAccountTypePaymaster:
-					if len(res.Paymasters) < maxResult {
-						res.Paymasters = append(res.Paymasters, sa)
+					if len(paymasters) < maxResult {
+						paymasters = append(paymasters, sa)
 					}
 				case config.AaAccountTypeBundler:
-					if len(res.Paymasters) < maxResult {
-						res.Bundlers = append(res.Bundlers, sa)
+					if len(bundlers) < maxResult {
+						bundlers = append(bundlers, sa)
 					}
 				default:
-					if len(res.Paymasters) < maxResult {
-						res.WalletAccounts = append(res.WalletAccounts, sa)
+					if len(walletAccounts) < maxResult {
+						walletAccounts = append(walletAccounts, sa)
 					}
 				}
 			}
@@ -65,13 +70,13 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 		})
 
 		wg.Go(func() error {
-			blocks, err := dao.BlockDao.Search(ctx, client, req.Term)
+			_blocks, err := dao.BlockDao.Search(ctx, client, req.Term)
 			if err != nil {
 				log.Context(ctx).Warn("search block error", "err", err, "req.Term", req.Term)
 				return nil
 			}
-			for _, block := range blocks {
-				res.Blocks = append(res.Blocks, &vo.SearchAllBlock{BlockNumber: block.ID})
+			for _, block := range _blocks {
+				blocks = append(blocks, &vo.SearchAllBlock{BlockNumber: block.ID, BlockHash: block.Hash})
 			}
 			return nil
 		})
@@ -86,13 +91,50 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 					log.Context(ctx).Warn("get block by number error", "err", err, "req.Term", req.Term, "number", parseInt)
 					return nil
 				}
-				res.Blocks = append(res.Blocks, &vo.SearchAllBlock{BlockNumber: block.ID})
+				blocks = append(blocks, &vo.SearchAllBlock{BlockNumber: block.ID, BlockHash: block.Hash})
 				return nil
 			})
 		}
 	}
 
 	err = wg.Wait()
+
+	if len(walletAccounts) > 0 {
+		res.Data = append(res.Data,
+			&vo.SearchAllResponseData{
+				Type:    "Wallet account",
+				Records: walletAccounts,
+			},
+		)
+	}
+
+	if len(paymasters) > 0 {
+		res.Data = append(res.Data,
+			&vo.SearchAllResponseData{
+				Type:    "Paymaster",
+				Records: paymasters,
+			},
+		)
+	}
+
+	if len(bundlers) > 0 {
+		res.Data = append(res.Data,
+			&vo.SearchAllResponseData{
+				Type:    "Bundler",
+				Records: bundlers,
+			},
+		)
+	}
+
+	if len(blocks) > 0 {
+		res.Data = append(res.Data,
+			&vo.SearchAllResponseData{
+				Type:    "Block",
+				Records: blocks,
+			},
+		)
+	}
+
 	if err != nil {
 		return nil, err
 	}
