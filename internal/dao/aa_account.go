@@ -35,7 +35,7 @@ func (dao *aaAccountDao) Search(ctx context.Context, tx *ent.Client, req vo.Sear
 		)
 	}
 
-	return query.Limit(100).All(ctx)
+	return query.Limit(50).All(ctx)
 }
 
 func (dao *aaAccountDao) GetAaAccountRecord(ctx context.Context, tx *ent.Client, address string) (*vo.AaAccountRecord, error) {

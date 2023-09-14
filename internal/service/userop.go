@@ -16,7 +16,7 @@ type userOpService struct {
 var UserOpService = &userOpService{}
 
 func (*userOpService) GetUserOps(ctx context.Context, req vo.GetUserOpsRequest) (*vo.GetUserOpsResponse, error) {
-	ctx, logger := log.With(ctx, "service", "GetUserOps")
+	ctx, logger := log.With(ctx, "service", "GetFactories")
 	err := vo.ValidateStruct(req)
 	res := vo.GetUserOpsResponse{
 		Pagination: vo.Pagination{
