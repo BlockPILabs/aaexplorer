@@ -33,3 +33,7 @@ func (Account) Annotations() []schema.Annotation {
 		entsql.Annotation{Table: "account"},
 	}
 }
+
+func (Account) Edges() []ent.Edge {
+	return nil
+}

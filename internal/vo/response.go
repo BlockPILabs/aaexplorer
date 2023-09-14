@@ -31,9 +31,19 @@ func SetResponseResult(result any) SetResponseOption {
 	}
 }
 
-func SetResponseError(error *Error) SetResponseOption {
+func SetResponseError(err error) SetResponseOption {
 	return func(r *JsonResponse) *JsonResponse {
-		r.Error = error
+		if err == nil {
+			switch e := err.(type) {
+			case *Error:
+				r.Error = e
+			default:
+				r.Error = ErrSystem.SetMessage(err.Error())
+			}
+		} else {
+			r.Error = nil
+		}
+
 		return r
 	}
 }

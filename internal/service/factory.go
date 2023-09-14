@@ -30,12 +30,12 @@ func (*factoryService) GetFactories(ctx context.Context, req vo.GetFactoriesRequ
 
 	client, err := entity.Client(ctx, req.Network)
 	if err != nil {
-		return nil, err
+		return &res, err
 	}
 	//
 	list, total, err := dao.FactoryDao.Pagination(ctx, client, req)
 	if err != nil {
-		return nil, err
+		return &res, err
 	}
 	res.TotalCount = total
 	res.Records = make([]*vo.FactoryVo, len(list))

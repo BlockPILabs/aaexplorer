@@ -17,17 +17,21 @@ func GetPaymasters(fcx *fiber.Ctx) error {
 	req := vo.GetPaymastersRequest{
 		PaginationRequest: vo.NewDefaultPaginationRequest(),
 	}
+	res := &vo.GetPaymastersResponse{}
 	err := fcx.ParamsParser(&req)
 	if err != nil {
 		logger.Warn("params parse error", "err", err)
+
+		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
 	}
 	err = fcx.QueryParser(&req)
 	if err != nil {
 		logger.Warn("query params parse error", "err", err, "network", req.Network)
+		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
 	}
-	res, err := service.PaymasterService.GetPaymasters(ctx, req)
+	res, err = service.PaymasterService.GetPaymasters(ctx, req)
 	if err != nil {
 		logger.Error("get paymasters error", "err", err)
 	}
-	return vo.NewResultJsonResponse(res).JSON(fcx)
+	return vo.NewResultJsonResponse(res, vo.SetResponseError(err)).JSON(fcx)
 }
