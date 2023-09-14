@@ -8,6 +8,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+const NameGetTransaction = "GetTransaction"
+
 func GetTransaction(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()
 	logger := log.Context(fcx.UserContext())
@@ -33,6 +35,8 @@ func GetTransaction(fcx *fiber.Ctx) error {
 	}
 	return vo.NewResultJsonResponse(res).JSON(fcx)
 }
+
+const NameGetTransactionList = "GetTransactionList"
 
 func GetTransactionList(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()

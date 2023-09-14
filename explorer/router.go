@@ -30,13 +30,22 @@ func Resister(router fiber.Router) {
 
 	// userops
 	networksV1.Get("/userops", controller.GetUserOps).Name(controller.NameGetUserOps)
-	networksV1.Get("/userops", controller.GetUserOps).Name(controller.NameGetUserOps)
+	networksV1.Get("/useropsAnalysis", controller.GetUserOpsAnalysis).Name(controller.NameGetUserOpsAnalysis)
+	networksV1.Get("/useropsAnalysisList", controller.GetUserOpsAnalysisList).Name(controller.NameGetUserOpsAnalysisList)
 
 	// paymasters
 	networksV1.Get("/paymasters", controller.GetPaymasters).Name(controller.NameGetPaymasters)
 	// blocks
 	networksV1.Get("/blocks", controller.GetBlocks).Name(controller.NameGetBlocks)
+	networksV1.Get("/aaBlocks", controller.GetAABlocksPage).Name(controller.NameGetAABlocksPage)
 	networksV1.Get("/block/:block<regex((^0x[a-z0-9]{64}$|^\\d+$))}>", controller.GetBlock).Name(controller.NameGetBlock)
+
+	//transaction
+	networksV1.Get("/transaction", controller.GetTransaction).Name(controller.NameGetTransaction)
+	networksV1.Get("/transactionList", controller.GetTransactionList).Name(controller.NameGetTransactionList)
+
+	//aaAccount
+	networksV1.Get("/aaAccountInfo", controller.GetAaAccountInfo).Name(controller.NameGetAaAcountInfo)
 
 	//user
 	//networksV1.Get("/user")

@@ -8,16 +8,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-const NameGetAABlocksPage = "GetAABlocksPage"
+const NameGetAaAcountInfo = "GetAaAccountInfo"
 
-func GetAABlocksPage(fcx *fiber.Ctx) error {
+func GetAaAccountInfo(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()
 	logger := log.Context(fcx.UserContext())
 
-	logger.Debug("start GetAABlocks")
-	req := vo.GetAaBlocksRequest{
-		PaginationRequest: vo.NewDefaultPaginationRequest(),
-	}
+	logger.Debug("start GetAaAccountInfo")
+	req := vo.AaAccountRequestVo{}
 	err := fcx.ParamsParser(&req)
 	if err != nil {
 		logger.Warn("params parse error", "err", err)
@@ -30,9 +28,10 @@ func GetAABlocksPage(fcx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	res, err := service.AaBlockService.GetAaBlockInfo(ctx, client, req)
+	res, err := service.AaAccountService.GetAaAccountRecord(ctx, client, req)
 	if err != nil {
-		logger.Error("GetAABlocks error", "err", err)
+		logger.Error("GetAaAccountInfo error", "err", err)
 	}
 	return vo.NewResultJsonResponse(res).JSON(fcx)
+
 }
