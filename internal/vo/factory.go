@@ -5,8 +5,8 @@ type FactoryVo struct {
 	ID string `json:"factory"`
 	// AccountNum holds the value of the "account_num" field.
 	AccountNum int `json:"accountNum"`
-	// AccountDeployNum holds the value of the "account_deploy_num" field.
-	AccountDeployNum int `json:"accountDeployNum"`
+	// AccountNumD1 holds the value of the "account_num_d1" field.
+	AccountNumD1 int `json:"accountNumD1"`
 }
 type GetFactoriesRequest struct {
 	PaginationRequest

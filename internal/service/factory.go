@@ -44,9 +44,9 @@ func (*factoryService) GetFactories(ctx context.Context, req vo.GetFactoriesRequ
 		for i, info := range list {
 			_ = info
 			factoryVo := &vo.FactoryVo{
-				ID:               info.ID,
-				AccountNum:       info.AccountNum,
-				AccountDeployNum: info.AccountDeployNum,
+				ID:           info.ID,
+				AccountNum:   info.AccountNum,
+				AccountNumD1: info.AccountNumD1,
 			}
 			res.Records[i] = factoryVo
 		}
