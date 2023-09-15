@@ -533,6 +533,7 @@ func (t *_evmParser) insertBlockInfos(ctx context.Context, client *ent.Client, n
 			SetUseropCount(tx.UseropCount).
 			SetUseropMevCount(tx.UseropMevCount).
 			SetBundlerProfit(tx.BundlerProfit).
+			SetBundlerProfitUsd(tx.BundlerProfitUsd).
 			SetCreateTime(tx.CreateTime).
 			SetID(tx.ID)
 
@@ -546,7 +547,8 @@ func (t *_evmParser) insertBlockInfos(ctx context.Context, client *ent.Client, n
 				UpdateHash().
 				UpdateUseropCount().
 				UpdateUseropMevCount().
-				UpdateBundlerProfit()
+				UpdateBundlerProfit().
+				UpdateBundlerProfitUsd()
 		}).
 		Exec(context.Background())
 	if err != nil {
