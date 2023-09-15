@@ -105,7 +105,7 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 				PerPage:    10,
 				Page:       1,
 				TotalCount: 1,
-			}, dao.AATransactionCondition{TxHashTerm: req.Term})
+			}, dao.AaTransactionCondition{TxHashTerm: req.Term})
 			if err != nil {
 				return nil
 			}

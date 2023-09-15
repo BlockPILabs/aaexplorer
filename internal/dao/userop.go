@@ -129,15 +129,14 @@ func (dao *userOpDao) Pages(ctx context.Context, tx *ent.Client, page vo.Paginat
 		query = query.Where(aauseropsinfo.TxHash(*condition.TxHash))
 	}
 
-	if page.Sort > 0 {
-		query = query.Order(dao.orderPage(ctx, aauseropsinfo.Columns, page))
-	}
-
 	count = query.CountX(ctx)
 	if count < 1 || page.GetOffset() > count {
 		return
 	}
 
+	if page.Sort > 0 {
+		query = query.Order(dao.orderPage(ctx, aauseropsinfo.Columns, page))
+	}
 	query = query.Limit(page.GetPerPage()).Offset(page.GetOffset())
 	a, err = query.All(ctx)
 	return

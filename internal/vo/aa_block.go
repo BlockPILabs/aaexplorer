@@ -7,7 +7,8 @@ import (
 
 type GetAaBlocksRequest struct {
 	PaginationRequest
-	Network string `json:"network" params:"network" validate:"required,min=3"`
+	Network           string `json:"network" params:"network" validate:"required,min=3"`
+	LatestBlockNumber int64  `json:"latestBlockNumber" params:"latestBlockNumber" validate:"min=0"`
 }
 
 type GetAaBlocksResponse struct {
