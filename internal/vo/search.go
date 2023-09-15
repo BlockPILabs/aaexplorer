@@ -2,7 +2,7 @@ package vo
 
 type SearchAllRequest struct {
 	Network string `json:"network" params:"network" validate:"required,min=3"`
-	Term    string `json:"term" params:"term" validate:"required,min=1"`
+	Term    string `json:"term" params:"term" validate:"required,min=4"`
 }
 
 type SearchAllAccount struct {
@@ -12,7 +12,7 @@ type SearchAllAccount struct {
 }
 
 type SearchAllTransaction struct {
-	TxHash string `json:"txHash"`
+	Hash string `json:"txHash"`
 }
 
 type SearchAllBlock struct {

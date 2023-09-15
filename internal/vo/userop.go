@@ -54,6 +54,7 @@ type GetUserOpsRequest struct {
 	Paymaster         string `json:"paymaster" params:"paymaster"`
 	Factory           string `json:"factory" params:"factory"`
 	Account           string `json:"account" params:"account"`
+	HashTerm          string `json:"hashTerm" params:"hashTerm"`
 }
 
 type GetUserOpsResponse struct {
