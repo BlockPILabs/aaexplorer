@@ -24,6 +24,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/log"
 	"github.com/BlockPILabs/aa-scan/internal/service"
 	"github.com/BlockPILabs/aa-scan/internal/utils"
+	ser "github.com/BlockPILabs/aa-scan/service"
 	"github.com/BlockPILabs/aa-scan/task/aa"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -462,7 +463,7 @@ func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *e
 		block.userOpInfo.BundlerProfit = block.userOpInfo.BundlerProfit.Add(parserTx.userOpInfo.BundlerProfit)
 		block.userOpInfo.UseropCount += len(parserTx.userops)
 	}
-
+	block.userOpInfo.BundlerProfitUsd = block.userOpInfo.BundlerProfit.Mul(ser.GetNativePrice(network.Name))
 }
 
 func (t *_evmParser) getFrom(tx *types.Transaction, client *ethclient.Client) string {
