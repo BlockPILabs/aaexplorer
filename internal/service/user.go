@@ -21,12 +21,13 @@ func GetUserBalance(ctx context.Context, req vo.UserBalanceRequest) (*vo.UserBal
 	var details []*vo.BalanceDetail
 	for _, detail := range balanceDetails {
 		balance := &vo.BalanceDetail{
+			TokenAddress:  detail.ContractAddress,
 			TokenAmount:   detail.Amount,
-			Percentage:    detail.Percent.Mul(decimal.NewFromInt(100)).String() + "%",
-			TokenValueUsd: detail.ValueUsd,
+			Percentage:    detail.Percent,
+			TokenValueUsd: detail.ValueUsd.RoundDown(4),
 		}
 		details = append(details, balance)
-		totalUsd = totalUsd.Add(detail.ValueUsd)
+		totalUsd = totalUsd.Add(detail.ValueUsd).RoundDown(4)
 	}
 	resp.BalanceDetails = details
 	resp.TotalUsd = totalUsd

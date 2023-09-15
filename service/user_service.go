@@ -9,6 +9,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/userassetinfo"
 	"github.com/BlockPILabs/aa-scan/third/moralis"
 	"github.com/shopspring/decimal"
+	"log"
 	"time"
 )
 
@@ -38,8 +39,15 @@ func GetWalletBalanceDetail(accountAddress string, network string) []*WalletBala
 
 	var totalBalance = decimal.Zero
 	var details []*WalletBalance
+	var hasNative = false
 
 	for _, asset := range userAssetInfos {
+		if asset.ContractAddress == config.ZeroAddress {
+			hasNative = true
+		}
+		if asset.Amount.Cmp(decimal.Zero) == 0 {
+			continue
+		}
 		tokenPrice, err := client.TokenPriceInfo.Query().Where(tokenpriceinfo.ContractAddressEqualFold(asset.ContractAddress)).Limit(1).All(context.Background())
 		if err != nil {
 			continue
@@ -54,8 +62,8 @@ func GetWalletBalanceDetail(accountAddress string, network string) []*WalletBala
 			var usdPrice = decimal.Zero
 			if onePrice != nil {
 				usdPrice = onePrice.UsdPrice
-				saveTokenPrice(onePrice, client, asset.Network)
 			}
+			saveTokenPrice(asset.ContractAddress, asset.Symbol, usdPrice, client, asset.Network)
 			detail.ValueUsd = usdPrice.Mul(asset.Amount)
 
 		} else {
@@ -68,6 +76,21 @@ func GetWalletBalanceDetail(accountAddress string, network string) []*WalletBala
 		details = append(details, detail)
 		totalBalance = totalBalance.Add(detail.ValueUsd)
 	}
+	if !hasNative {
+		nativeBalance := moralis.GetNativeTokenBalance(accountAddress, network)
+		nativePrice := GetNativePrice(network)
+		nativeUsd := nativePrice.Mul(nativeBalance)
+		totalBalance = totalBalance.Add(nativeUsd)
+		var detail = &WalletBalance{
+			Symbol:          moralis.GetNativeName(network),
+			ContractAddress: config.ZeroAddress,
+			Amount:          nativeBalance,
+			ValueUsd:        nativeUsd,
+			Percent:         nativeUsd.DivRound(totalBalance, 4),
+		}
+		details = append(details, detail)
+		client.UserAssetInfo.Create().SetSymbol(detail.Symbol).SetNetwork(network).SetContractAddress(detail.ContractAddress).SetAccountAddress(accountAddress).SetLastTime(time.Now().UnixMilli()).Save(context.Background())
+	}
 
 	for _, one := range details {
 		one.Percent = one.ValueUsd.DivRound(totalBalance, 4)
@@ -76,19 +99,22 @@ func GetWalletBalanceDetail(accountAddress string, network string) []*WalletBala
 	return details
 }
 
-func saveTokenPrice(price *moralis.TokenPrice, client *ent.Client, network string) {
-	client.TokenPriceInfo.Create().
-		SetTokenPrice(price.UsdPrice).
+func saveTokenPrice(contractAddress string, symbol string, usdPrice decimal.Decimal, client *ent.Client, network string) {
+	_, err := client.TokenPriceInfo.Create().
+		SetTokenPrice(usdPrice).
 		SetNetwork(network).
-		SetContractAddress(price.TokenAddress).
-		SetSymbol(price.TokenSymbol).
+		SetContractAddress(contractAddress).
+		SetSymbol(symbol).
 		SetLastTime(time.Now().UnixMilli()).Save(context.Background())
+	if err != nil {
+		log.Println(err)
+	}
 }
 
-func GetNativePrice(network string) *decimal.Decimal {
+func GetNativePrice(network string) decimal.Decimal {
 	client, err := entity.Client(context.Background(), network)
 	if err != nil {
-		return nil
+		return decimal.Zero
 	}
 	var contract string
 	if network == config.EthNetwork {
@@ -100,12 +126,12 @@ func GetNativePrice(network string) *decimal.Decimal {
 	}
 	prices, err := client.TokenPriceInfo.Query().Where(tokenpriceinfo.ContractAddressEqualFold(contract), tokenpriceinfo.NetworkEqualFold(network)).All(context.Background())
 	if err != nil {
-		return nil
+		return decimal.Zero
 	}
 	if len(prices) == 0 {
 		token := moralis.GetTokenPrice(contract, network)
 		if token == nil {
-			return nil
+			return decimal.Zero
 		}
 		client.TokenPriceInfo.Create().
 			SetTokenPrice(token.UsdPrice).
@@ -114,10 +140,33 @@ func GetNativePrice(network string) *decimal.Decimal {
 			SetLastTime(time.Now().UnixMilli()).
 			SetSymbol(token.TokenSymbol).Save(context.Background())
 
-		return &token.UsdPrice
+		return token.UsdPrice
 	}
 
-	return &prices[0].TokenPrice
+	return prices[0].TokenPrice
+}
+
+func GetTokenPrice(tokenAddress string, network string) decimal.Decimal {
+	client, err := entity.Client(context.Background(), network)
+	if err != nil {
+		return decimal.Zero
+	}
+	prices, err := client.TokenPriceInfo.Query().Where(tokenpriceinfo.ContractAddressEqualFold(tokenAddress), tokenpriceinfo.NetworkEqualFold(network)).All(context.Background())
+	if err != nil {
+		return decimal.Zero
+	}
+	if len(prices) == 0 {
+		token := moralis.GetTokenPrice(tokenAddress, network)
+		if token == nil {
+			saveTokenPrice(tokenAddress, "", decimal.Zero, client, network)
+			return decimal.Zero
+		}
+		saveTokenPrice(tokenAddress, token.TokenSymbol, token.UsdPrice, client, network)
+
+		return token.UsdPrice
+	}
+
+	return prices[0].TokenPrice
 }
 
 type WhaleOverview struct {

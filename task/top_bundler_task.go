@@ -156,9 +156,6 @@ func doTopBundlersDay() {
 			totalNumMap[bundlerStatisDay.Bundler] = totalNum + bundlerStatisDay.TotalNum
 		}
 		price := service.GetNativePrice(network)
-		if price == nil {
-			price = &decimal.Zero
-		}
 		bundlerInfoMap := make(map[string]*ent.BundlerInfo)
 		for _, bundlerStatisDay := range bundlerStatisDays {
 			bundler := bundlerStatisDay.Bundler

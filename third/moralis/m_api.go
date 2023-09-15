@@ -20,7 +20,7 @@ import (
 )
 
 const ApiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjIxZTBkZmU5LTlkNTItNGQ5ZC05YmQzLTdhZjBhYjAyNDFhYiIsIm9yZ0lkIjoiMzUwOTE1IiwidXNlcklkIjoiMzYwNjcwIiwidHlwZUlkIjoiY2VhNjZmN2MtNTYwMi00NGQzLWE5YzUtNDhjMjA5MmQzNzU5IiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE2OTA3ODgyMDEsImV4cCI6NDg0NjU0ODIwMX0.VxVXZ6z9y3QY9_JfEsQvxBcs2SmFk05OObAptKofGxc"
-const MoralisUrl = "https://deep-index.moralis.io/api/v2"
+const MoralisUrl = "https://deep-index.moralis.io/api/v2.2"
 
 type TokenBalance struct {
 	TokenAddress string          `json:"token_address"`
@@ -75,6 +75,7 @@ func GetTokenBalance(address string, network string) []*TokenBalance {
 	req.Header.Add("X-API-Key", ApiKey)
 
 	res, _ := http.DefaultClient.Do(req)
+	checkStatus(res)
 	if res == nil {
 		log.Printf("GetTokenBalance err, address: %s, network: %s", address, network)
 
@@ -124,7 +125,7 @@ func GetTokenPriceBatch(tokens []string) []*TokenPrice {
 	req.Header.Add("X-API-Key", ApiKey)
 
 	res, _ := http.DefaultClient.Do(req)
-
+	checkStatus(res)
 	defer res.Body.Close()
 	body, _ := io.ReadAll(res.Body)
 
@@ -154,8 +155,13 @@ func GetTokenPrice(token string, network string) *TokenPrice {
 	req.Header.Add("X-API-Key", ApiKey)
 
 	res, _ := http.DefaultClient.Do(req)
+	checkStatus(res)
 	if res == nil {
 		log.Printf("GetTokenPrice err, token: %s, network: %s", token, network)
+		return nil
+	}
+
+	if res.StatusCode != 200 {
 		return nil
 	}
 
@@ -189,6 +195,7 @@ func GetNativeTokenBalance(accountAddress string, network string) decimal.Decima
 	req.Header.Add("X-API-Key", ApiKey)
 
 	res, _ := http.DefaultClient.Do(req)
+	checkStatus(res)
 	if res == nil {
 		log.Printf("GetNativeTokenBalance err, accountAddress: %s, network: %s", accountAddress, network)
 		return decimal.Zero
@@ -206,6 +213,18 @@ func GetNativeTokenBalance(accountAddress string, network string) decimal.Decima
 	}
 
 	return nativeTokenBalance.Balance.DivRound(decimal.New(int64(math.Pow10(18)), 0), 18)
+}
+
+func checkStatus(res *http.Response) {
+	if res == nil {
+		log.Printf("call morialis err")
+		return
+	}
+	code := res.StatusCode
+	status := res.Status
+	if code != 200 {
+		log.Printf("call morialis failed, %s, %s", status, res.Request.URL)
+	}
 }
 
 type TokenPriceInfo struct {

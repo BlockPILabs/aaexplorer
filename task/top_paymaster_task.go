@@ -9,7 +9,6 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/paymasterstatishour"
 	"github.com/BlockPILabs/aa-scan/service"
 	"github.com/procyon-projects/chrono"
-	"github.com/shopspring/decimal"
 	"log"
 	"time"
 )
@@ -73,9 +72,6 @@ func doTopPaymasterDay() {
 			continue
 		}
 		price := service.GetNativePrice(network)
-		if price == nil {
-			price = &decimal.Zero
-		}
 		paymasterInfoMap := make(map[string]*ent.PaymasterInfo)
 		var repeatMap = make(map[string]bool)
 		for _, paymasterStatisDay := range paymasterStatisDays {
@@ -90,13 +86,13 @@ func doTopPaymasterDay() {
 			if paymasterInfoOk {
 				paymasterInfo.UserOpsNum = paymasterInfo.UserOpsNum + paymasterStatisDay.UserOpsNum
 				paymasterInfo.GasSponsored = paymasterInfo.GasSponsored.Add(paymasterStatisDay.GasSponsored)
-				paymasterInfo.GasSponsoredUsd = paymasterInfo.GasSponsoredUsd.Add(paymasterStatisDay.GasSponsored.Mul(*price))
+				paymasterInfo.GasSponsoredUsd = paymasterInfo.GasSponsoredUsd.Add(paymasterStatisDay.GasSponsored.Mul(price))
 
 			} else {
 				paymasterInfo = &ent.PaymasterInfo{
 					UserOpsNum:      paymasterStatisDay.UserOpsNum,
 					GasSponsored:    paymasterStatisDay.GasSponsored,
-					GasSponsoredUsd: paymasterStatisDay.GasSponsored.Mul(*price),
+					GasSponsoredUsd: paymasterStatisDay.GasSponsored.Mul(price),
 				}
 			}
 			paymasterInfo.ID = paymasterStatisDay.Paymaster
@@ -188,9 +184,6 @@ func doTopPaymasterHour(timeRange int) {
 			continue
 		}
 		price := service.GetNativePrice(network)
-		if price == nil {
-			price = &decimal.Zero
-		}
 		paymasterInfoMap := make(map[string]*ent.PaymasterInfo)
 		var repeatMap = make(map[string]bool)
 		for _, paymasterStatisHour := range paymasterStatisHours {
@@ -206,30 +199,30 @@ func doTopPaymasterHour(timeRange int) {
 				if timeRange == 1 {
 					paymasterInfo.UserOpsNumD1 = paymasterInfo.UserOpsNumD1 + paymasterStatisHour.UserOpsNum
 					paymasterInfo.GasSponsoredD1 = paymasterInfo.GasSponsoredD1.Add(paymasterStatisHour.GasSponsored)
-					paymasterInfo.GasSponsoredUsdD1 = paymasterInfo.GasSponsoredUsdD1.Add(paymasterStatisHour.GasSponsored.Mul(*price))
+					paymasterInfo.GasSponsoredUsdD1 = paymasterInfo.GasSponsoredUsdD1.Add(paymasterStatisHour.GasSponsored.Mul(price))
 				} else if timeRange == 7 {
 					paymasterInfo.UserOpsNumD7 = paymasterInfo.UserOpsNumD7 + paymasterStatisHour.UserOpsNum
 					paymasterInfo.GasSponsoredD7 = paymasterInfo.GasSponsoredD7.Add(paymasterStatisHour.GasSponsored)
-					paymasterInfo.GasSponsoredUsdD7 = paymasterInfo.GasSponsoredUsdD7.Add(paymasterStatisHour.GasSponsored.Mul(*price))
+					paymasterInfo.GasSponsoredUsdD7 = paymasterInfo.GasSponsoredUsdD7.Add(paymasterStatisHour.GasSponsored.Mul(price))
 				} else if timeRange == 30 {
 					paymasterInfo.UserOpsNumD30 = paymasterInfo.UserOpsNumD30 + paymasterStatisHour.UserOpsNum
 					paymasterInfo.GasSponsoredD30 = paymasterInfo.GasSponsoredD30.Add(paymasterStatisHour.GasSponsored)
-					paymasterInfo.GasSponsoredUsdD30 = paymasterInfo.GasSponsoredUsdD30.Add(paymasterStatisHour.GasSponsored.Mul(*price))
+					paymasterInfo.GasSponsoredUsdD30 = paymasterInfo.GasSponsoredUsdD30.Add(paymasterStatisHour.GasSponsored.Mul(price))
 				}
 			} else {
 				paymasterInfo = &ent.PaymasterInfo{}
 				if timeRange == 1 {
 					paymasterInfo.UserOpsNumD1 = paymasterStatisHour.UserOpsNum
 					paymasterInfo.GasSponsoredD1 = paymasterStatisHour.GasSponsored
-					paymasterInfo.GasSponsoredUsdD1 = paymasterStatisHour.GasSponsored.Mul(*price)
+					paymasterInfo.GasSponsoredUsdD1 = paymasterStatisHour.GasSponsored.Mul(price)
 				} else if timeRange == 7 {
 					paymasterInfo.UserOpsNumD7 = paymasterStatisHour.UserOpsNum
 					paymasterInfo.GasSponsoredD7 = paymasterStatisHour.GasSponsored
-					paymasterInfo.GasSponsoredUsdD7 = paymasterStatisHour.GasSponsored.Mul(*price)
+					paymasterInfo.GasSponsoredUsdD7 = paymasterStatisHour.GasSponsored.Mul(price)
 				} else if timeRange == 30 {
 					paymasterInfo.UserOpsNumD30 = paymasterStatisHour.UserOpsNum
 					paymasterInfo.GasSponsoredD30 = paymasterStatisHour.GasSponsored
-					paymasterInfo.GasSponsoredUsdD30 = paymasterStatisHour.GasSponsored.Mul(*price)
+					paymasterInfo.GasSponsoredUsdD30 = paymasterStatisHour.GasSponsored.Mul(price)
 				}
 			}
 			paymasterInfo.ID = paymasterStatisHour.Paymaster

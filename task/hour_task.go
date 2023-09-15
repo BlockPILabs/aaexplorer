@@ -344,9 +344,6 @@ func calHourStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, allTxHashe
 		}
 
 		price := service.GetNativePrice(network)
-		if price == nil {
-			price = &decimal.Zero
-		}
 		dailyStatistic := client.DailyStatisticHour.Create().
 			SetNetwork(network).
 			SetUserOpsNum(int64(len(infos))).
@@ -422,9 +419,6 @@ func calPaymasterStatis(client *ent.Client, bundlerMap map[string]map[string][]*
 
 	var paymasters []*ent.PaymasterStatisHourCreate
 	price := service.GetNativePrice(network)
-	if price == nil {
-		price = &decimal.Zero
-	}
 	for key, allTimeUserOpsInfoList := range bundlerMap {
 		if len(key) <= 2 {
 			continue
