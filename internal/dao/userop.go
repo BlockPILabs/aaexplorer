@@ -75,6 +75,11 @@ func (dao *userOpDao) Pagination(ctx context.Context, tx *ent.Client, req vo.Get
 			aauseropsinfo.Factory(req.Factory),
 		)
 	}
+	if len(req.HashTerm) > 0 && utils.IsHexSting(req.HashTerm) {
+		query = query.Where(
+			sql.FieldHasPrefix(aauseropsinfo.FieldID, utils.Fix0x(req.HashTerm)),
+		)
+	}
 	if len(req.Account) > 0 && utils.IsHexAddress(req.Account) {
 		query = query.Where(
 			aauseropsinfo.Or(
@@ -88,7 +93,11 @@ func (dao *userOpDao) Pagination(ctx context.Context, tx *ent.Client, req vo.Get
 	}
 	// sort
 	query = dao.Sort(ctx, query, req.Sort, req.Order)
-
+	if req.PaginationRequest.TotalCount > 0 {
+		total = req.PaginationRequest.TotalCount
+	} else {
+		total = query.CountX(ctx)
+	}
 	total = query.CountX(ctx)
 
 	if total < 1 || req.GetOffset() > total {

@@ -2,6 +2,7 @@ package entity
 
 import (
 	"context"
+	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	"errors"
 	"fmt"
@@ -19,8 +20,9 @@ import (
 )
 
 type client struct {
-	Client *ent.Client
-	Config *config.DbConfig
+	Client  *ent.Client
+	Config  *config.DbConfig
+	Dialect string
 }
 
 var clients = &sync.Map{}
@@ -78,8 +80,9 @@ func Start(logger log.Logger, cfg *config.Config) error {
 		}
 
 		_c := &client{
-			Client: c,
-			Config: database,
+			Client:  c,
+			Config:  database,
+			Dialect: database.Type,
 		}
 		if i == 0 {
 			clients.Store(config.Default, _c)
@@ -114,4 +117,32 @@ func Client(ctx context.Context, group ...string) (*ent.Client, error) {
 		return nil, errors.New(fmt.Sprintf("group connect error %s", g))
 	}
 	return cc.Client, nil
+}
+
+func SetDialect(ctx context.Context, f func(string), group ...string) {
+	g := config.Default
+	if len(group) > 0 && len(group[0]) > 0 {
+		g = group[0]
+	}
+	c, ok := clients.Load(g)
+	if !ok {
+		if li := strings.LastIndexByte(g, ':'); li >= 0 {
+			SetDialect(ctx, f, g[0:li])
+			return
+		}
+		if g != config.Default {
+			SetDialect(ctx, f)
+			return
+		}
+		log.Context(ctx).Error("not found group")
+		f(dialect.Postgres)
+		return
+	}
+	cc, ok := c.(*client)
+	if !ok {
+		log.Context(ctx).Error("group error")
+		f(dialect.Postgres)
+		return
+	}
+	f(cc.Dialect)
 }

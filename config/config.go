@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	aimos "github.com/BlockPILabs/aa-scan/internal/os"
-	"github.com/dgraph-io/ristretto"
 	"github.com/pelletier/go-toml"
 	"github.com/pkg/errors"
 	"path/filepath"
@@ -82,10 +81,10 @@ type Config struct {
 	BaseConfig `mapstructure:",squash" toml:",squash"`
 
 	// Options for services
-	Api       *ApiConfig        `mapstructure:"api" toml:"api"`
-	Databases []*DbConfig       `mapstructure:"databases" toml:"databases"`
-	EvmParser *EvmParserConfig  `mapstructure:"evmparser" toml:"evmparser"`
-	MemoCache *ristretto.Config `mapstructure:"memoCache" toml:"memoCache"`
+	Api       *ApiConfig       `mapstructure:"api" toml:"api"`
+	Databases []*DbConfig      `mapstructure:"databases" toml:"databases"`
+	EvmParser *EvmParserConfig `mapstructure:"evmparser" toml:"evmparser"`
+	MemoCache *MemoConfig      `mapstructure:"memoCache" toml:"memoCache"`
 }
 
 // DefaultConfig returns a default configuration

@@ -37,23 +37,21 @@ func (dao *factoryDao) Sort(ctx context.Context, query *ent.FactoryInfoQuery, so
 }
 
 func (dao *factoryDao) Pagination(ctx context.Context, tx *ent.Client, req vo.GetFactoriesRequest) (list ent.FactoryInfos, total int, err error) {
+
 	query := tx.FactoryInfo.Query().Where(
 		factoryinfo.NetworkEQ(req.Network),
 	)
-	// sort
-	query = dao.Sort(ctx, query, req.Sort, req.Order)
 
 	total = query.CountX(ctx)
 
 	if total < 1 || req.GetOffset() > total {
 		return
 	}
+	// sort
+	query = dao.Sort(ctx, query, req.Sort, req.Order)
 
-	// limit
-	query = query.
+	list, err = query.WithAccount().
 		Offset(req.GetOffset()).
-		Limit(req.PerPage)
-
-	list, err = query.All(ctx)
+		Limit(req.PerPage).All(ctx)
 	return
 }

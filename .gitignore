@@ -33,3 +33,4 @@ gen
 internal/entity/ent
 
 dist
+.config

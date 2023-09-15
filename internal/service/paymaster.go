@@ -42,6 +42,14 @@ func (*paymasterService) GetPaymasters(ctx context.Context, req vo.GetPaymasters
 	//
 	res.Records = make([]*vo.PaymastersVo, len(list))
 	for i, info := range list {
+		label := ""
+		if info.Edges.Account != nil && info.Edges.Account.Label != nil {
+			labels := []string{}
+			info.Edges.Account.Label.Scan(&labels)
+			if len(labels) > 0 {
+				label = labels[0]
+			}
+		}
 		res.Records[i] = &vo.PaymastersVo{
 			Paymaster:       info.ID,
 			UserOpsNum:      info.UserOpsNum,
@@ -49,6 +57,7 @@ func (*paymasterService) GetPaymasters(ctx context.Context, req vo.GetPaymasters
 			Reserve:         info.Reserve,
 			GasSponsored:    info.GasSponsored,
 			GasSponsoredUsd: info.GasSponsoredUsd,
+			PaymasterLabel:  label,
 		}
 	}
 

@@ -17,18 +17,21 @@ func GetFactories(fcx *fiber.Ctx) error {
 	req := vo.GetFactoriesRequest{
 		PaginationRequest: vo.NewDefaultPaginationRequest(),
 	}
+	res := &vo.GetFactoriesResponse{}
 	err := fcx.ParamsParser(&req)
 	if err != nil {
 		logger.Warn("params parse error", "err", err)
+		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
 	}
 	err = fcx.QueryParser(&req)
 	if err != nil {
 		logger.Warn("query params parse error", "err", err, "network", req.Network)
+		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
 	}
 
-	res, err := service.FactoryService.GetFactories(ctx, req)
+	res, err = service.FactoryService.GetFactories(ctx, req)
 	if err != nil {
-		logger.Error("get userops error", "err", err)
+		logger.Error("get factories error", "err", err)
 	}
-	return vo.NewResultJsonResponse(res).JSON(fcx)
+	return vo.NewResultJsonResponse(res, vo.SetResponseError(err)).JSON(fcx)
 }

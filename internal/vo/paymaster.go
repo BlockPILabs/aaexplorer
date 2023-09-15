@@ -4,7 +4,8 @@ import "github.com/shopspring/decimal"
 
 type PaymastersVo struct {
 	// Paymaster holds the value of the "paymaster" field.
-	Paymaster string `json:"paymaster"`
+	Paymaster      string `json:"paymaster"`
+	PaymasterLabel string `json:"paymasterLabel"`
 	// UserOpsNum holds the value of the "user_ops_num" field.
 	UserOpsNum int64 `json:"userOpsNum"`
 	// UserOpsNumD1 holds the value of the "user_ops_num_d1" field.
