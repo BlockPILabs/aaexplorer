@@ -24,7 +24,7 @@ type UserOperationEvent struct {
 
 type CallDetail struct {
 	target string
-	value  *decimal.Decimal
+	value  decimal.Decimal
 	data   string
 	source string
 }

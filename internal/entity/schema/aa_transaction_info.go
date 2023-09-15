@@ -22,6 +22,7 @@ func (AaTransactionInfo) Fields() []ent.Field {
 		field.Bool("is_mev").StructTag(`json:"isMev"`),
 		field.Int64("bundler_profit").StructTag(`json:"bundlerProfit"`).GoType(decimal.Decimal{}),
 		field.Time("create_time").StructTag(`json:"createTime"`),
+		field.Int64("bundler_profit_usd").GoType(decimal.Decimal{}).Optional(),
 	}
 }
 
