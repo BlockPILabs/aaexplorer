@@ -31,3 +31,19 @@ type AAContractInteract struct {
 	Rate            decimal.Decimal `json:"rate"`
 	SingleNum       int64           `json:"singleNum"`
 }
+
+type ByContractNum []*AAContractInteract
+
+func (b ByContractNum) Len() int      { return len(b) }
+func (b ByContractNum) Swap(i, j int) { b[i], b[j] = b[j], b[i] }
+func (b ByContractNum) Less(i, j int) bool {
+	return b[i].Rate.Cmp(b[j].Rate) > 0
+}
+
+type ByUserOpsTypeNum []*UserOpsType
+
+func (b ByUserOpsTypeNum) Len() int      { return len(b) }
+func (b ByUserOpsTypeNum) Swap(i, j int) { b[i], b[j] = b[j], b[i] }
+func (b ByUserOpsTypeNum) Less(i, j int) bool {
+	return b[i].Rate.Cmp(b[j].Rate) > 0
+}

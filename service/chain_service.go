@@ -108,7 +108,6 @@ func parseReceipt(network string, receipts []*ent.TransactionReceiptDecode, cli 
 			topic0 := topics[0]
 			sender := hexToAddress(topics[1])
 			target := hexToAddress(topics[2])
-			fmt.Println(topic0)
 			if topic0 == Transfer {
 				if sender != config.ZeroAddress {
 					accountMap[sender] = 1
@@ -118,7 +117,7 @@ func parseReceipt(network string, receipts []*ent.TransactionReceiptDecode, cli 
 				}
 				if change {
 					tokenMap[address] = 1
-					saveTrace(network, address, config.AddressTypeToken, receipt, cli)
+					//saveTrace(network, address, config.AddressTypeToken, receipt, cli)
 				}
 			}
 		}

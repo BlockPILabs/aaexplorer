@@ -59,7 +59,7 @@ func InsertBlockScanRecord(record *BlockScanRecord) error {
 	connStr := "user=postgres password=root dbname=postgres host=127.0.0.1 port=5432 sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 	defer db.Close()
@@ -79,7 +79,7 @@ func UpdateBlockScanRecordByID(id int64, record *BlockScanRecord) error {
 	connStr := "user=postgres password=root dbname=postgres host=127.0.0.1 port=5432 sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 	defer db.Close()
@@ -100,7 +100,7 @@ func GetBlockScanRecordsByNetwork(network string) (*BlockScanRecord, error) {
 	connStr := "user=postgres password=root dbname=postgres host=127.0.0.1 port=5432 sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return nil, err
 	}
 	defer db.Close()

@@ -69,7 +69,7 @@ func doInteractTaskDay(days int) {
 			All(context.Background())
 
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 		if len(opsCalldatas) == 0 {
 			return
@@ -136,7 +136,7 @@ func day1InteractTask() {
 			All(context.Background())
 
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 		if len(opsCalldatas) == 0 {
 			return

@@ -1,0 +1,19 @@
+package vo
+
+import (
+	"github.com/shopspring/decimal"
+	"time"
+)
+
+type AaAccountRequestVo struct {
+	Network string `json:"network" params:"network" validate:"required,min=3"`
+	Address string `json:"address" params:"address" validate:"required,min=3"`
+}
+
+type AaAccountRecord struct {
+	Address     *string          `json:"address"`
+	AaType      *string          `json:"aaType"`
+	Factory     *string          `json:"factory"`
+	FactoryTime *time.Time       `json:"factoryTime"`
+	TotalAmount *decimal.Decimal `json:"totalAmount"`
+}

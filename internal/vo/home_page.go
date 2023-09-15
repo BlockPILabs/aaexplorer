@@ -60,6 +60,9 @@ type LatestUserOpsRequest struct {
 }
 
 type LatestUserOpsResponse struct {
+	AverageProcessTime24h decimal.Decimal `json:"averageProcessTime24h"`
+	AverageGasCost24h     decimal.Decimal `json:"averageGasCost24h"`
+	PendingTransactionNum int64           `json:"pendingTransactionNum"`
 }
 
 type ByDominanceTime []*AATxnDominanceDetail

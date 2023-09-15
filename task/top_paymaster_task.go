@@ -5,6 +5,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/paymasterinfo"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/paymasterstatisday"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/paymasterstatishour"
 	"github.com/BlockPILabs/aa-scan/service"
 	"github.com/procyon-projects/chrono"
@@ -56,11 +57,11 @@ func doTopPaymasterDay() {
 		now := time.Now()
 		startTime := time.Date(now.Year(), now.Month(), now.Day()-70, 0, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-		paymasterStatisHours, err := client.PaymasterStatisHour.
+		paymasterStatisDays, err := client.PaymasterStatisDay.
 			Query().
 			Where(
-				paymasterstatishour.StatisTimeGTE(startTime),
-				paymasterstatishour.StatisTimeLT(endTime),
+				paymasterstatisday.StatisTimeGTE(startTime),
+				paymasterstatisday.StatisTimeLT(endTime),
 			).
 			All(context.Background())
 
@@ -68,7 +69,7 @@ func doTopPaymasterDay() {
 			log.Println(err)
 			continue
 		}
-		if len(paymasterStatisHours) == 0 {
+		if len(paymasterStatisDays) == 0 {
 			continue
 		}
 		price := service.GetNativePrice(network)
@@ -76,25 +77,32 @@ func doTopPaymasterDay() {
 			price = &decimal.Zero
 		}
 		paymasterInfoMap := make(map[string]*ent.PaymasterInfo)
-		for _, paymasterStatisHour := range paymasterStatisHours {
-			paymaster := paymasterStatisHour.Paymaster
+		var repeatMap = make(map[string]bool)
+		for _, paymasterStatisDay := range paymasterStatisDays {
+			paymaster := paymasterStatisDay.Paymaster
+			timeStr := string(paymasterStatisDay.StatisTime.UnixMilli())
+			_, exist := repeatMap[paymaster+timeStr]
+			if exist {
+				continue
+			}
+			repeatMap[paymaster+timeStr] = true
 			paymasterInfo, paymasterInfoOk := paymasterInfoMap[paymaster]
 			if paymasterInfoOk {
-				paymasterInfo.UserOpsNum = paymasterInfo.UserOpsNum + paymasterStatisHour.UserOpsNum
-				paymasterInfo.GasSponsored = paymasterInfo.GasSponsored.Add(paymasterStatisHour.GasSponsored)
-				paymasterInfo.GasSponsoredUsd = paymasterInfo.GasSponsoredUsd.Add(paymasterStatisHour.GasSponsored.Mul(*price))
+				paymasterInfo.UserOpsNum = paymasterInfo.UserOpsNum + paymasterStatisDay.UserOpsNum
+				paymasterInfo.GasSponsored = paymasterInfo.GasSponsored.Add(paymasterStatisDay.GasSponsored)
+				paymasterInfo.GasSponsoredUsd = paymasterInfo.GasSponsoredUsd.Add(paymasterStatisDay.GasSponsored.Mul(*price))
 
 			} else {
 				paymasterInfo = &ent.PaymasterInfo{
-					UserOpsNum:      paymasterStatisHour.UserOpsNum,
-					GasSponsored:    paymasterStatisHour.GasSponsored,
-					GasSponsoredUsd: paymasterStatisHour.GasSponsored.Mul(*price),
+					UserOpsNum:      paymasterStatisDay.UserOpsNum,
+					GasSponsored:    paymasterStatisDay.GasSponsored,
+					GasSponsoredUsd: paymasterStatisDay.GasSponsored.Mul(*price),
 				}
 			}
-			paymasterInfo.ID = paymasterStatisHour.Paymaster
-			paymasterInfo.Network = paymasterStatisHour.Network
-			paymasterInfo.Reserve = paymasterStatisHour.Reserve
-			//paymasterInfo.ReserveUsd = paymasterStatisHour.ReserveUsd
+			paymasterInfo.ID = paymasterStatisDay.Paymaster
+			paymasterInfo.Network = paymasterStatisDay.Network
+			paymasterInfo.Reserve = paymasterStatisDay.Reserve
+			paymasterInfo.ReserveUsd = paymasterStatisDay.ReserveUsd
 			paymasterInfoMap[paymaster] = paymasterInfo
 
 		}
@@ -118,7 +126,7 @@ func saveOrUpdatePaymasterDay(client *ent.Client, paymaster string, info *ent.Pa
 		Where(paymasterinfo.IDEQ(paymaster)).
 		All(context.Background())
 	if err != nil {
-		log.Fatalf("saveOrUpdatePaymaster day err, %s, msg:{%s}\n", paymaster, err)
+		log.Printf("saveOrUpdatePaymaster day err, %s, msg:{%s}\n", paymaster, err)
 	}
 	if paymasterInfos == nil || len(paymasterInfos) == 0 {
 
@@ -162,7 +170,7 @@ func doTopPaymasterHour(timeRange int) {
 			continue
 		}
 		now := time.Now()
-		startTime := time.Date(now.Year(), now.Month(), now.Day()-70, now.Hour()-720, 0, 0, 0, now.Location())
+		startTime := time.Date(now.Year(), now.Month(), now.Day()-70, now.Hour()-24*timeRange, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 0, 0, 0, now.Location())
 		paymasterStatisHours, err := client.PaymasterStatisHour.
 			Query().
@@ -184,8 +192,15 @@ func doTopPaymasterHour(timeRange int) {
 			price = &decimal.Zero
 		}
 		paymasterInfoMap := make(map[string]*ent.PaymasterInfo)
+		var repeatMap = make(map[string]bool)
 		for _, paymasterStatisHour := range paymasterStatisHours {
 			paymaster := paymasterStatisHour.Paymaster
+			timeStr := string(paymasterStatisHour.StatisTime.UnixMilli())
+			_, exist := repeatMap[paymaster+timeStr]
+			if exist {
+				continue
+			}
+			repeatMap[paymaster+timeStr] = true
 			paymasterInfo, paymasterInfoOk := paymasterInfoMap[paymaster]
 			if paymasterInfoOk {
 				if timeRange == 1 {
@@ -202,16 +217,19 @@ func doTopPaymasterHour(timeRange int) {
 					paymasterInfo.GasSponsoredUsdD30 = paymasterInfo.GasSponsoredUsdD30.Add(paymasterStatisHour.GasSponsored.Mul(*price))
 				}
 			} else {
-				paymasterInfo = &ent.PaymasterInfo{
-					UserOpsNumD1:       paymasterStatisHour.UserOpsNum,
-					GasSponsoredD1:     paymasterStatisHour.GasSponsored,
-					GasSponsoredUsdD1:  paymasterStatisHour.GasSponsored.Mul(*price),
-					UserOpsNumD7:       paymasterStatisHour.UserOpsNum,
-					GasSponsoredD7:     paymasterStatisHour.GasSponsored,
-					GasSponsoredUsdD7:  paymasterStatisHour.GasSponsored.Mul(*price),
-					UserOpsNumD30:      paymasterStatisHour.UserOpsNum,
-					GasSponsoredD30:    paymasterStatisHour.GasSponsored,
-					GasSponsoredUsdD30: paymasterStatisHour.GasSponsored.Mul(*price),
+				paymasterInfo = &ent.PaymasterInfo{}
+				if timeRange == 1 {
+					paymasterInfo.UserOpsNumD1 = paymasterStatisHour.UserOpsNum
+					paymasterInfo.GasSponsoredD1 = paymasterStatisHour.GasSponsored
+					paymasterInfo.GasSponsoredUsdD1 = paymasterStatisHour.GasSponsored.Mul(*price)
+				} else if timeRange == 7 {
+					paymasterInfo.UserOpsNumD7 = paymasterStatisHour.UserOpsNum
+					paymasterInfo.GasSponsoredD7 = paymasterStatisHour.GasSponsored
+					paymasterInfo.GasSponsoredUsdD7 = paymasterStatisHour.GasSponsored.Mul(*price)
+				} else if timeRange == 30 {
+					paymasterInfo.UserOpsNumD30 = paymasterStatisHour.UserOpsNum
+					paymasterInfo.GasSponsoredD30 = paymasterStatisHour.GasSponsored
+					paymasterInfo.GasSponsoredUsdD30 = paymasterStatisHour.GasSponsored.Mul(*price)
 				}
 			}
 			paymasterInfo.ID = paymasterStatisHour.Paymaster
@@ -241,25 +259,30 @@ func saveOrUpdatePaymaster(client *ent.Client, paymaster string, info *ent.Payma
 		Where(paymasterinfo.IDEQ(paymaster)).
 		All(context.Background())
 	if err != nil {
-		log.Fatalf("saveOrUpdatePaymaster err, %s, msg:{%s}\n", paymaster, err)
+		log.Printf("saveOrUpdatePaymaster err, %s, msg:{%s}\n", paymaster, err)
 	}
 	if paymasterInfos == nil || len(paymasterInfos) == 0 {
 
-		_, err := client.PaymasterInfo.Create().
+		newPaymaster := client.PaymasterInfo.Create().
 			SetID(info.ID).
 			SetNetwork(info.Network).
-			SetUserOpsNumD1(info.UserOpsNumD1).
-			SetGasSponsoredD1(info.GasSponsoredD1).
-			SetGasSponsoredUsdD1(info.GasSponsoredUsdD1).
-			SetUserOpsNumD7(info.UserOpsNumD7).
-			SetGasSponsoredD7(info.GasSponsoredD7).
-			SetGasSponsoredUsdD7(info.GasSponsoredUsdD7).
-			SetUserOpsNumD30(info.UserOpsNumD30).
-			SetGasSponsoredD30(info.GasSponsoredD30).
-			SetGasSponsoredUsdD30(info.GasSponsoredUsdD30).
 			SetReserve(info.Reserve).
-			SetReserveUsd(info.ReserveUsd).
-			Save(context.Background())
+			SetReserveUsd(info.ReserveUsd)
+
+		if timeRange == 1 {
+			newPaymaster.SetUserOpsNumD1(info.UserOpsNumD1).
+				SetGasSponsoredD1(info.GasSponsoredD1).
+				SetGasSponsoredUsdD1(info.GasSponsoredUsdD1)
+		} else if timeRange == 7 {
+			newPaymaster.SetUserOpsNumD7(info.UserOpsNumD7).
+				SetGasSponsoredD7(info.GasSponsoredD7).
+				SetGasSponsoredUsdD7(info.GasSponsoredUsdD7)
+		} else if timeRange == 30 {
+			newPaymaster.SetUserOpsNumD30(info.UserOpsNumD30).
+				SetGasSponsoredD30(info.GasSponsoredD30).
+				SetGasSponsoredUsdD30(info.GasSponsoredUsdD30)
+		}
+		_, err := newPaymaster.Save(context.Background())
 		if err != nil {
 			log.Printf("Save paymaster err, %s\n", err)
 		}
