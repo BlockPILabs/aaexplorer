@@ -60,6 +60,7 @@ func (*bundlerService) GetBundlers(ctx context.Context, req vo.GetBundlersReques
 			FeeEarnedD1:    info.FeeEarnedD1,
 			FeeEarnedUsdD1: info.FeeEarnedUsdD1,
 			BundlerLabel:   label,
+			BundleRate:     info.BundleRate,
 		}
 	}
 

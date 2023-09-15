@@ -55,6 +55,7 @@ func (*factoryService) GetFactories(ctx context.Context, req vo.GetFactoriesRequ
 				ID:           info.ID,
 				AccountNum:   info.AccountNum,
 				AccountNumD1: info.AccountNumD1,
+				Dominance:    info.Dominance,
 				FactoryLabel: label,
 			}
 			res.Records[i] = factoryVo

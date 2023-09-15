@@ -8,6 +8,10 @@ type BundlersVo struct {
 	BundlerLabel string `json:"bundlerLabel"`
 	// BundlesNum holds the value of the "bundles_num" field.
 	BundlesNum int64 `json:"bundlesNum"`
+
+	// BundleRate holds the value of the "bundle_rate" field.
+	BundleRate decimal.Decimal `json:"bundleRate"`
+
 	// UserOpsNum holds the value of the "user_ops_num" field.
 	UserOpsNum int64 `json:"userOpsNum"`
 	// SuccessRate holds the value of the "success_rate" field.

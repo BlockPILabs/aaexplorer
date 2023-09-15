@@ -1,6 +1,9 @@
 package vo
 
-import "github.com/jackc/pgtype"
+import (
+	"github.com/jackc/pgtype"
+	"github.com/shopspring/decimal"
+)
 
 type FactoryVo struct {
 	// ID of the ent.
@@ -10,6 +13,8 @@ type FactoryVo struct {
 	AccountNum int `json:"accountNum"`
 	// AccountNumD1 holds the value of the "account_num_d1" field.
 	AccountNumD1 int `json:"accountNumD1"`
+	// Dominance holds the value of the "dominance" field.
+	Dominance decimal.Decimal `json:"dominance"`
 }
 type FactoryDbVo struct {
 	// ID of the ent.
