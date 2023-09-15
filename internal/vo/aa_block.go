@@ -18,7 +18,7 @@ type GetAaBlocksResponse struct {
 
 type AaBlocksVo struct {
 	// ID of the ent.
-	Number int64 `json:"id,omitempty"`
+	Number int64 `json:"number,omitempty"`
 	// Time holds the value of the "time" field.
 	Time time.Time `json:"time,omitempty"`
 	// Hash holds the value of the "hash" field.
