@@ -16,13 +16,20 @@ type SearchAllTransaction struct {
 }
 
 type SearchAllBlock struct {
-	BlockNumber int64 `json:"blockNumber"`
+	BlockNumber int64  `json:"blockNumber"`
+	BlockHash   string `json:"blockHash"`
+}
+
+type SearchAllResponseData struct {
+	Type    string
+	Records any
 }
 
 type SearchAllResponse struct {
-	WalletAccounts []*SearchAllAccount     `json:"walletAccount"`
-	Paymasters     []*SearchAllAccount     `json:"paymaster"`
-	Bundlers       []*SearchAllAccount     `json:"bundler"`
-	Transactions   []*SearchAllTransaction `json:"transactions"`
-	Blocks         []*SearchAllBlock       `json:"blocks"`
+	//WalletAccounts []*SearchAllAccount     `json:"walletAccount"`
+	//Paymasters     []*SearchAllAccount     `json:"paymaster"`
+	//Bundlers       []*SearchAllAccount     `json:"bundler"`
+	//Transactions   []*SearchAllTransaction `json:"transactions"`
+	//Blocks         []*SearchAllBlock       `json:"blocks"`
+	Data []*SearchAllResponseData
 }

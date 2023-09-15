@@ -34,6 +34,8 @@ func GetUserOps(fcx *fiber.Ctx) error {
 	return vo.NewResultJsonResponse(res).JSON(fcx)
 }
 
+const NameGetUserOpsAnalysis = "GetUserOpsAnalysis"
+
 func GetUserOpsAnalysis(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()
 	logger := log.Context(fcx.UserContext())
@@ -59,6 +61,8 @@ func GetUserOpsAnalysis(fcx *fiber.Ctx) error {
 	}
 	return vo.NewResultJsonResponse(res).JSON(fcx)
 }
+
+const NameGetUserOpsAnalysisList = "GetUserOpsAnalysisList"
 
 func GetUserOpsAnalysisList(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()

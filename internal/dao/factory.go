@@ -5,32 +5,30 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/paymasterinfo"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/factoryinfo"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 )
 
-type paymasterDao struct {
+type factoryDao struct {
 	baseDao
 }
 
-var PaymasterDao = &paymasterDao{}
+var FactoryDao = &factoryDao{}
 
-func (*paymasterDao) GetSortFields(ctx context.Context) []string {
+func (*factoryDao) GetSortFields(ctx context.Context) []string {
 	return []string{
 		config.Default,
-		paymasterinfo.FieldUserOpsNum,
-		paymasterinfo.FieldUserOpsNumD1,
-		paymasterinfo.FieldReserve,
-		paymasterinfo.FieldGasSponsored,
+		factoryinfo.FieldAccountNum,
+		factoryinfo.FieldAccountNumD1,
 	}
 }
-func (dao *paymasterDao) Sort(ctx context.Context, query *ent.PaymasterInfoQuery, sort int, order int) *ent.PaymasterInfoQuery {
+func (dao *factoryDao) Sort(ctx context.Context, query *ent.FactoryInfoQuery, sort int, order int) *ent.FactoryInfoQuery {
 	opts := dao.orderOptions(ctx, order)
 	if len(opts) > 0 {
 		f := dao.sortField(ctx, dao.GetSortFields(ctx), sort)
 		switch f {
 		case "", config.Default:
-			query.Order(paymasterinfo.ByUserOpsNum(opts...))
+			query.Order(factoryinfo.ByAccountNum(opts...))
 		default:
 			query.Order(sql.OrderByField(f, opts...).ToFunc())
 		}
@@ -38,9 +36,9 @@ func (dao *paymasterDao) Sort(ctx context.Context, query *ent.PaymasterInfoQuery
 	return query
 }
 
-func (dao *paymasterDao) Pagination(ctx context.Context, tx *ent.Client, req vo.GetPaymastersRequest) (list ent.PaymasterInfos, total int, err error) {
-	query := tx.PaymasterInfo.Query().Where(
-		paymasterinfo.NetworkEQ(req.Network),
+func (dao *factoryDao) Pagination(ctx context.Context, tx *ent.Client, req vo.GetFactoriesRequest) (list ent.FactoryInfos, total int, err error) {
+	query := tx.FactoryInfo.Query().Where(
+		factoryinfo.NetworkEQ(req.Network),
 	)
 	// sort
 	query = dao.Sort(ctx, query, req.Sort, req.Order)

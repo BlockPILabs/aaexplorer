@@ -1,21 +1,20 @@
 package controller
 
 import (
-	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/log"
 	"github.com/BlockPILabs/aa-scan/internal/service"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 	"github.com/gofiber/fiber/v2"
 )
 
-const NameGetAABlocksPage = "GetAABlocksPage"
+const NameGetFactories = "get_factories"
 
-func GetAABlocksPage(fcx *fiber.Ctx) error {
+func GetFactories(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()
 	logger := log.Context(fcx.UserContext())
 
-	logger.Debug("start GetAABlocks")
-	req := vo.GetAaBlocksRequest{
+	logger.Debug("start get userops")
+	req := vo.GetFactoriesRequest{
 		PaginationRequest: vo.NewDefaultPaginationRequest(),
 	}
 	err := fcx.ParamsParser(&req)
@@ -26,13 +25,10 @@ func GetAABlocksPage(fcx *fiber.Ctx) error {
 	if err != nil {
 		logger.Warn("query params parse error", "err", err, "network", req.Network)
 	}
-	client, err := entity.Client(ctx, req.Network)
+
+	res, err := service.FactoryService.GetFactories(ctx, req)
 	if err != nil {
-		return err
-	}
-	res, err := service.AaBlockService.GetAaBlockInfo(ctx, client, req)
-	if err != nil {
-		logger.Error("GetAABlocks error", "err", err)
+		logger.Error("get userops error", "err", err)
 	}
 	return vo.NewResultJsonResponse(res).JSON(fcx)
 }
