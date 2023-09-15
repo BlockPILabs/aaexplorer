@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aablockinfo"
+	"github.com/BlockPILabs/aa-scan/internal/utils"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 )
 
@@ -15,6 +16,7 @@ type aaBlockDao struct {
 var AaBlockDao = &aaBlockDao{}
 
 type AaBlockPagesCondition struct {
+	HashTerm string
 }
 
 func (dao *aaBlockDao) Pages(ctx context.Context, tx *ent.Client, page vo.PaginationRequest, condition AaBlockPagesCondition) (a []*ent.AaBlockInfo, count int, err error) {
@@ -24,7 +26,15 @@ func (dao *aaBlockDao) Pages(ctx context.Context, tx *ent.Client, page vo.Pagina
 		query = query.Order(dao.orderPage(ctx, aablockinfo.Columns, page))
 	}
 
-	count = query.CountX(ctx)
+	if len(condition.HashTerm) > 0 && utils.IsHexSting(condition.HashTerm) {
+		query = query.Where(sql.FieldHasPrefix(aablockinfo.FieldHash, utils.Fix0x(condition.HashTerm)))
+	}
+
+	if page.TotalCount > 0 {
+		count = page.TotalCount
+	} else {
+		count = query.CountX(ctx)
+	}
 	if count < 1 || page.GetOffset() > count {
 		return
 	}
@@ -38,4 +48,11 @@ func (dao *aaBlockDao) GetLatestBlock(ctx context.Context, tx *ent.Client) (a *e
 	query := tx.AaBlockInfo.Query()
 	query = query.Order(aablockinfo.ByID(sql.OrderDesc()))
 	return query.First(ctx)
+}
+
+func (*aaBlockDao) GetByBlockNumber(ctx context.Context, tx *ent.Client, blockNumber int64) (block *ent.AaBlockInfo, err error) {
+	block, err = tx.AaBlockInfo.Query().Where(
+		aablockinfo.ID(blockNumber),
+	).First(ctx)
+	return
 }
