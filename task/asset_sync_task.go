@@ -29,34 +29,51 @@ func AssetTask() {
 }
 
 func AssetSync() {
-	client, err := entity.Client(context.Background())
+	cli, err := entity.Client(context.Background())
 	if err != nil {
 		return
 	}
-	changeTraces, err := client.AssetChangeTrace.Query().Where(assetchangetrace.SyncFlagEQ(0)).All(context.Background())
-	if len(changeTraces) == 0 {
+	networks, err := cli.Network.Query().All(context.Background())
+	if len(networks) == 0 {
 		return
 	}
-	var accounts []*ent.AssetChangeTrace
-	var tokens []*ent.AssetChangeTrace
-	var accountAddrs []string
-	var tokenAddrs []string
-	var changes []int64
-
-	for _, changeTrace := range changeTraces {
-		if changeTrace.AddressType == config.AddressTypeAccount {
-			accounts = append(accounts, changeTrace)
-			accountAddrs = append(accountAddrs, changeTrace.Address)
-		} else {
-			tokens = append(tokens, changeTrace)
-			tokenAddrs = append(tokenAddrs, changeTrace.Address)
+	for _, record := range networks {
+		network := record.Name
+		client, err := entity.Client(context.Background(), network)
+		if err != nil {
+			return
 		}
-		changes = append(changes, changeTrace.ID)
+		for {
+			changeTraces, err := client.AssetChangeTrace.Query().Where(assetchangetrace.SyncFlagEQ(0)).Limit(100).All(context.Background())
+			if err != nil {
+				return
+			}
+			if len(changeTraces) == 0 {
+				return
+			}
+			var accounts []*ent.AssetChangeTrace
+			var tokens []*ent.AssetChangeTrace
+			var accountAddrs []string
+			var tokenAddrs []string
+			var changes []int64
+
+			for _, changeTrace := range changeTraces {
+				if changeTrace.AddressType == config.AddressTypeAccount {
+					accounts = append(accounts, changeTrace)
+					accountAddrs = append(accountAddrs, changeTrace.Address)
+				} else {
+					tokens = append(tokens, changeTrace)
+					tokenAddrs = append(tokenAddrs, changeTrace.Address)
+				}
+				changes = append(changes, changeTrace.ID)
+			}
+			syncAccountBalance(client, accounts)
+			syncTokenPrice(client, tokens)
+			syncWTokenPrice(client)
+			client.AssetChangeTrace.Update().Where(assetchangetrace.IDIn(changes[:]...)).SetSyncFlag(1).SetLastChangeTime(time.Now()).Exec(context.Background())
+		}
 	}
-	syncAccountBalance(client, accounts)
-	syncTokenPrice(client, tokens)
-	syncWTokenPrice(client)
-	client.AssetChangeTrace.Update().Where(assetchangetrace.IDIn(changes[:]...)).SetSyncFlag(1).SetLastChangeTime(time.Now()).Exec(context.Background())
+
 	//syncAssetValue(client, accountAddrs, tokenAddrs)
 }
 

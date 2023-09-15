@@ -2,7 +2,6 @@ package task
 
 import (
 	"context"
-	"fmt"
 	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
@@ -135,7 +134,7 @@ func bulkInsertDailyStatistic(ctx context.Context, client *ent.Client, data []*e
 
 	if _, err := client.DailyStatisticDay.CreateBulk(data...).Save(ctx); err != nil {
 		tx.Rollback()
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 
@@ -247,7 +246,6 @@ func calDailyStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, allTxHash
 		for _, receipt := range receipts {
 			spentGas = spentGas.Sub(getReceiptGas(receipt))
 		}
-		fmt.Println("spentGas: " + spentGas.String())
 		var totalGasFee = decimal.Zero
 		var txMap = make(map[string]bool)
 		var walletMap = make(map[string]bool)
@@ -298,7 +296,7 @@ func bulkInsertFactoryStatsDay(ctx context.Context, client *ent.Client, data []*
 
 	if _, err := client.FactoryStatisDay.CreateBulk(data...).Save(ctx); err != nil {
 		tx.Rollback()
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 
@@ -321,7 +319,7 @@ func bulkInsertPaymasterStatsDay(ctx context.Context, client *ent.Client, data [
 
 	if _, err := client.PaymasterStatisDay.CreateBulk(data...).Save(ctx); err != nil {
 		tx.Rollback()
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 
@@ -345,12 +343,12 @@ func bulkInsertBundlerStatsDay(ctx context.Context, client *ent.Client, data []*
 	err = client.BundlerStatisDay.CreateBulk(data...).Exec(ctx)
 	if err != nil {
 		tx.Rollback()
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 
 	if err := tx.Commit(); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 
@@ -476,7 +474,6 @@ func calFactoryStatisDay(client *ent.Client, bundlerMap map[string]map[string][]
 				SetAccountDeployNum(int64(accountDeployNum)),
 			)
 		}
-
 	}
 
 	return factories

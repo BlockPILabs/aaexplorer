@@ -128,8 +128,15 @@ func doTopBundlersDay() {
 		var bundleNumMap = make(map[string]int64)
 		var totalNumMap = make(map[string]int64)
 		var feeEarnedMap = make(map[string]decimal.Decimal)
+		var repeatMap = make(map[string]bool)
 		for _, bundlerStatisDay := range bundlerStatisDays {
 			bundler := bundlerStatisDay.Bundler
+			timeStr := string(bundlerStatisDay.StatisTime.UnixMilli())
+			_, exist := repeatMap[bundler+timeStr]
+			if exist {
+				continue
+			}
+			repeatMap[bundler+timeStr] = true
 			feeEarned, feeOk := feeEarnedMap[bundler]
 			if !feeOk {
 				feeEarned = decimal.Zero
@@ -208,7 +215,7 @@ func saveOrUpdateBundlerDay(client *ent.Client, bundler string, info *ent.Bundle
 		Where(bundlerinfo.IDEQ(bundler)).
 		All(context.Background())
 	if err != nil {
-		log.Fatalf("saveOrUpdateBundler day err, %s, msg:{%s}\n", bundler, err)
+		log.Printf("saveOrUpdateBundler day err, %s, msg:{%s}\n", bundler, err)
 	}
 	if len(bundlerInfos) == 0 {
 		_, err := client.BundlerInfo.Create().
@@ -221,6 +228,8 @@ func saveOrUpdateBundlerDay(client *ent.Client, bundler string, info *ent.Bundle
 			SetFeeEarnedUsd(info.FeeEarnedUsd).
 			SetSuccessRate(info.SuccessRate).
 			SetBundleRate(info.BundleRate).
+			SetSuccessBundlesNum(info.SuccessBundlesNum).
+			SetFailedBundlesNum(info.FailedBundlesNum).
 			Save(context.Background())
 		if err != nil {
 			log.Printf("Save bundler err, %s\n", err)
@@ -235,6 +244,8 @@ func saveOrUpdateBundlerDay(client *ent.Client, bundler string, info *ent.Bundle
 			SetFeeEarnedUsd(oldBundler.FeeEarnedUsd.Add(info.FeeEarnedUsd)).
 			SetSuccessRate(info.SuccessRate).
 			SetBundleRate(info.BundleRate).
+			SetSuccessBundlesNum(info.SuccessBundlesNum + info.SuccessBundlesNum).
+			SetFailedBundlesNum(info.FailedBundlesNum + info.FailedBundlesNum).
 			Exec(context.Background())
 		if err != nil {
 			log.Printf("Update bundler day err, %s\n", err)
@@ -258,7 +269,7 @@ func doTopBundlersHour(timeRange int) {
 			continue
 		}
 		now := time.Now()
-		startTime := time.Date(now.Year(), now.Month(), now.Day()-70, now.Hour()-720, 0, 0, 0, now.Location())
+		startTime := time.Date(now.Year(), now.Month(), now.Day()-70, now.Hour()-24*timeRange, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, now.Location())
 		bundlerStatisHours, err := client.BundlerStatisHour.
 			Query().
@@ -280,8 +291,15 @@ func doTopBundlersHour(timeRange int) {
 		var bundleNumMap = make(map[string]int64)
 		var totalNumMap = make(map[string]int64)
 		var feeEarnedMap = make(map[string]decimal.Decimal)
+		var repeatMap = make(map[string]bool)
 		for _, bundlerStatisHour := range bundlerStatisHours {
 			bundler := bundlerStatisHour.Bundler
+			timeStr := string(bundlerStatisHour.StatisTime.UnixMilli())
+			_, exist := repeatMap[bundler+timeStr]
+			if exist {
+				continue
+			}
+			repeatMap[bundler+timeStr] = true
 			feeEarned, feeOk := feeEarnedMap[bundler]
 			if !feeOk {
 				feeEarned = decimal.Zero
@@ -324,16 +342,19 @@ func doTopBundlersHour(timeRange int) {
 				}
 
 			} else {
-				bundlerInfo = &ent.BundlerInfo{
-					UserOpsNumD1:    bundlerStatisHour.UserOpsNum,
-					BundlesNumD1:    bundlerStatisHour.BundlesNum,
-					GasCollectedD1:  bundlerStatisHour.GasCollected,
-					UserOpsNumD7:    bundlerStatisHour.UserOpsNum,
-					BundlesNumD7:    bundlerStatisHour.BundlesNum,
-					GasCollectedD7:  bundlerStatisHour.GasCollected,
-					UserOpsNumD30:   bundlerStatisHour.UserOpsNum,
-					BundlesNumD30:   bundlerStatisHour.BundlesNum,
-					GasCollectedD30: bundlerStatisHour.GasCollected,
+				bundlerInfo = &ent.BundlerInfo{}
+				if timeRange == 1 {
+					bundlerInfo.UserOpsNumD1 = bundlerStatisHour.UserOpsNum
+					bundlerInfo.BundlesNumD1 = bundlerStatisHour.BundlesNum
+					bundlerInfo.GasCollectedD1 = bundlerStatisHour.GasCollected
+				} else if timeRange == 7 {
+					bundlerInfo.UserOpsNumD7 = bundlerStatisHour.UserOpsNum
+					bundlerInfo.BundlesNumD7 = bundlerStatisHour.BundlesNum
+					bundlerInfo.GasCollectedD7 = bundlerStatisHour.GasCollected
+				} else if timeRange == 30 {
+					bundlerInfo.UserOpsNumD30 = bundlerStatisHour.UserOpsNum
+					bundlerInfo.BundlesNumD30 = bundlerStatisHour.BundlesNum
+					bundlerInfo.GasCollectedD30 = bundlerStatisHour.GasCollected
 				}
 			}
 
@@ -416,37 +437,38 @@ func saveOrUpdateBundler(client *ent.Client, bundler string, info *ent.BundlerIn
 		Where(bundlerinfo.IDEQ(bundler)).
 		All(context.Background())
 	if err != nil {
-		log.Fatalf("saveOrUpdateBundler err, %s, msg:{%s}\n", bundler, err)
+		log.Printf("saveOrUpdateBundler err, %s, msg:{%s}\n", bundler, err)
 	}
 	if len(bundlerInfos) == 0 {
-		_, err := client.BundlerInfo.Create().
+		newBundler := client.BundlerInfo.Create().
 			SetID(info.ID).
-			SetNetwork(info.Network).
-			SetGasCollectedD1(info.GasCollectedD1).
-			SetUserOpsNum(info.UserOpsNum).
-			SetBundlesNum(info.BundlesNum).
-			SetGasCollected(info.GasCollected).
-			SetUserOpsNumD1(info.UserOpsNumD1).
-			SetBundlesNumD1(info.BundlesNumD1).
-			SetFeeEarned(info.FeeEarned).
-			SetFeeEarnedUsd(info.FeeEarnedUsd).
-			SetFeeEarnedD1(info.FeeEarnedD1).
-			SetFeeEarnedUsdD1(info.FeeEarnedUsdD1).
-			SetFeeEarnedD7(info.FeeEarnedD7).
-			SetFeeEarnedUsdD7(info.FeeEarnedUsdD7).
-			SetFeeEarnedD30(info.FeeEarnedD30).
-			SetFeeEarnedUsdD30(info.FeeEarnedUsdD30).
-			SetSuccessRate(info.SuccessRate).
-			SetSuccessRateD1(info.SuccessRateD1).
-			SetSuccessRateD7(info.SuccessRateD7).
-			SetSuccessRateD30(info.SuccessRateD30).
-			SetBundleRate(info.BundleRate).
-			SetBundleRateD7(info.BundleRateD7).
-			SetBundleRateD1(info.BundleRateD1).
-			SetBundleRateD30(info.BundleRateD30).
-			SetSuccessBundlesNum(info.SuccessBundlesNum).
-			SetFailedBundlesNum(info.FailedBundlesNum).
-			Save(context.Background())
+			SetNetwork(info.Network)
+		if timeRange == 1 {
+			newBundler.SetSuccessRateD1(info.SuccessRateD1).
+				SetBundleRateD1(info.BundleRateD1).
+				SetFeeEarnedD1(info.FeeEarnedD1).
+				SetFeeEarnedUsdD1(info.FeeEarnedUsdD1).
+				SetBundlesNumD1(info.BundlesNumD1).
+				SetUserOpsNumD1(info.UserOpsNumD1).
+				SetGasCollectedD1(info.GasCollectedD1)
+		} else if timeRange == 7 {
+			newBundler.SetSuccessRateD7(info.SuccessRateD7).
+				SetBundleRateD7(info.BundleRateD7).
+				SetFeeEarnedD7(info.FeeEarnedD7).
+				SetFeeEarnedUsdD7(info.FeeEarnedUsdD7).
+				SetBundlesNumD7(info.BundlesNumD7).
+				SetUserOpsNumD7(info.UserOpsNumD7).
+				SetGasCollectedD7(info.GasCollectedD7)
+		} else if timeRange == 30 {
+			newBundler.SetSuccessRateD30(info.SuccessRateD30).
+				SetBundleRateD30(info.BundleRateD30).
+				SetFeeEarnedD30(info.FeeEarnedD30).
+				SetFeeEarnedUsdD30(info.FeeEarnedUsdD30).
+				SetBundlesNumD30(info.BundlesNumD30).
+				SetUserOpsNumD30(info.UserOpsNumD30).
+				SetGasCollectedD30(info.GasCollectedD30)
+		}
+		newBundler.Save(context.Background())
 
 		if err != nil {
 			log.Printf("Save bundler err, %s\n", err)

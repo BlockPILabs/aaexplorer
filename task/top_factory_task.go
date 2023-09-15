@@ -5,8 +5,10 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/factoryinfo"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/factorystatisday"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/factorystatishour"
 	"github.com/procyon-projects/chrono"
+	"github.com/shopspring/decimal"
 	"log"
 	"time"
 )
@@ -54,11 +56,11 @@ func doTopFactoryDay() {
 		now := time.Now()
 		startTime := time.Date(now.Year(), now.Month(), now.Day()-70, 0, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-		factoryStatisHours, err := client.FactoryStatisHour.
+		factoryStatisDays, err := client.FactoryStatisDay.
 			Query().
 			Where(
-				factorystatishour.StatisTimeGTE(startTime),
-				factorystatishour.StatisTimeLT(endTime),
+				factorystatisday.StatisTimeGTE(startTime),
+				factorystatisday.StatisTimeLT(endTime),
 			).
 			All(context.Background())
 
@@ -66,13 +68,21 @@ func doTopFactoryDay() {
 			log.Println(err)
 			continue
 		}
-		if len(factoryStatisHours) == 0 {
+		if len(factoryStatisDays) == 0 {
 			continue
 		}
 
 		factoryInfoMap := make(map[string]*ent.FactoryInfo)
-		for _, factory := range factoryStatisHours {
+		var totalNum = 0
+		var repeatMap = make(map[string]bool)
+		for _, factory := range factoryStatisDays {
 			factoryAddr := factory.Factory
+			timeStr := string(factory.StatisTime.UnixMilli())
+			_, exist := repeatMap[factoryAddr+timeStr]
+			if exist {
+				continue
+			}
+			repeatMap[factoryAddr+timeStr] = true
 			factoryInfo, bundlerInfoOk := factoryInfoMap[factoryAddr]
 			if bundlerInfoOk {
 
@@ -87,13 +97,14 @@ func doTopFactoryDay() {
 			factoryInfo.ID = factory.Factory
 			factoryInfo.Network = factory.Network
 			factoryInfoMap[factoryAddr] = factoryInfo
-
+			totalNum += factoryInfo.AccountNum
 		}
 
 		for factory, factoryInfo := range factoryInfoMap {
 			if len(factory) == 0 {
 				continue
 			}
+			factoryInfo.Dominance = decimal.NewFromInt(int64(factoryInfo.AccountDeployNum)).DivRound(decimal.NewFromInt(int64(totalNum)), 4)
 			saveOrUpdateFactoryDay(client, factory, factoryInfo)
 		}
 	}
@@ -106,7 +117,7 @@ func saveOrUpdateFactoryDay(client *ent.Client, factory string, info *ent.Factor
 		Where(factoryinfo.IDEQ(factory)).
 		All(context.Background())
 	if err != nil {
-		log.Fatalf("saveOrUpdateFactory day err, %s, msg:{%s}\n", factory, err)
+		log.Printf("saveOrUpdateFactory day err, %s, msg:{%s}\n", factory, err)
 	}
 	if len(factoryInfos) == 0 {
 
@@ -115,6 +126,7 @@ func saveOrUpdateFactoryDay(client *ent.Client, factory string, info *ent.Factor
 			SetNetwork(info.Network).
 			SetAccountNum(info.AccountNum).
 			SetAccountDeployNum(info.AccountDeployNum).
+			SetDominance(info.Dominance).
 			Save(context.Background())
 		if err != nil {
 			log.Printf("Save factory day err, %s\n", err)
@@ -124,6 +136,7 @@ func saveOrUpdateFactoryDay(client *ent.Client, factory string, info *ent.Factor
 		err = client.FactoryInfo.UpdateOneID(oldFactory.ID).
 			SetAccountDeployNum(oldFactory.AccountDeployNum + info.AccountDeployNum).
 			SetAccountNum(oldFactory.AccountNum + info.AccountNum).
+			SetDominance(info.Dominance).
 			Exec(context.Background())
 		if err != nil {
 			log.Printf("Update factory day err, %s\n", err)
@@ -166,8 +179,16 @@ func doTopFactoryHour(timeRange int) {
 		}
 
 		factoryInfoMap := make(map[string]*ent.FactoryInfo)
+		var totalNum = 0
+		var repeatMap = make(map[string]bool)
 		for _, factory := range factoryStatisHours {
 			factoryAddr := factory.Factory
+			timeStr := string(factory.StatisTime.UnixMilli())
+			_, exist := repeatMap[factoryAddr+timeStr]
+			if exist {
+				continue
+			}
+			repeatMap[factoryAddr+timeStr] = true
 			factoryInfo, bundlerInfoOk := factoryInfoMap[factoryAddr]
 			if bundlerInfoOk {
 				if timeRange == 1 {
@@ -182,24 +203,41 @@ func doTopFactoryHour(timeRange int) {
 				}
 
 			} else {
-				factoryInfo = &ent.FactoryInfo{
-					AccountNumD1:        int(factory.AccountNum),
-					AccountDeployNumD1:  int(factory.AccountDeployNum),
-					AccountNumD7:        int(factory.AccountNum),
-					AccountDeployNumD7:  int(factory.AccountDeployNum),
-					AccountNumD30:       int(factory.AccountNum),
-					AccountDeployNumD30: int(factory.AccountDeployNum),
+				factoryInfo = &ent.FactoryInfo{}
+				if timeRange == 1 {
+					factoryInfo.AccountNumD1 = int(factory.AccountNum)
+					factoryInfo.AccountDeployNumD1 = int(factory.AccountDeployNum)
+				} else if timeRange == 7 {
+					factoryInfo.AccountNumD7 = int(factory.AccountNum)
+					factoryInfo.AccountDeployNumD7 = int(factory.AccountDeployNum)
+				} else if timeRange == 30 {
+					factoryInfo.AccountNumD30 = int(factory.AccountNum)
+					factoryInfo.AccountDeployNumD30 = int(factory.AccountDeployNum)
 				}
 			}
 			factoryInfo.ID = factory.Factory
 			factoryInfo.Network = factory.Network
 			factoryInfoMap[factoryAddr] = factoryInfo
+			if timeRange == 1 {
+				totalNum += factoryInfo.AccountNumD1
+			} else if timeRange == 7 {
+				totalNum += factoryInfo.AccountNumD7
+			} else if timeRange == 30 {
+				totalNum += factoryInfo.AccountNumD30
+			}
 
 		}
 
 		for factory, factoryInfo := range factoryInfoMap {
 			if len(factory) == 0 {
 				continue
+			}
+			if timeRange == 1 {
+				factoryInfo.DominanceD1 = getSingleRate(int64(factoryInfo.AccountDeployNumD1), int64(totalNum))
+			} else if timeRange == 7 {
+				factoryInfo.DominanceD7 = getSingleRate(int64(factoryInfo.AccountDeployNumD7), int64(totalNum))
+			} else if timeRange == 30 {
+				factoryInfo.DominanceD30 = getSingleRate(int64(factoryInfo.AccountDeployNumD30), int64(totalNum))
 			}
 			saveOrUpdateFactory(client, factory, factoryInfo, timeRange)
 		}
@@ -213,20 +251,28 @@ func saveOrUpdateFactory(client *ent.Client, factory string, info *ent.FactoryIn
 		Where(factoryinfo.IDEQ(factory)).
 		All(context.Background())
 	if err != nil {
-		log.Fatalf("saveOrUpdateFactory err, %s, msg:{%s}\n", factory, err)
+		log.Printf("saveOrUpdateFactory err, %s, msg:{%s}\n", factory, err)
 	}
 	if len(factoryInfos) == 0 {
 
-		_, err := client.FactoryInfo.Create().
+		newFactory := client.FactoryInfo.Create().
 			SetID(info.ID).
-			SetNetwork(info.Network).
-			SetAccountNumD1(info.AccountNumD1).
-			SetAccountDeployNumD1(info.AccountDeployNumD1).
-			SetAccountNumD7(info.AccountNumD7).
-			SetAccountDeployNumD7(info.AccountDeployNumD7).
-			SetAccountNumD30(info.AccountNumD30).
-			SetAccountDeployNumD30(info.AccountDeployNumD30).
-			Save(context.Background())
+			SetNetwork(info.Network)
+
+		if timeRange == 1 {
+			newFactory.SetAccountNumD1(info.AccountNumD1).
+				SetAccountDeployNumD1(info.AccountDeployNumD1).
+				SetDominanceD1(info.DominanceD1)
+		} else if timeRange == 7 {
+			newFactory.SetAccountNumD7(info.AccountNumD7).
+				SetAccountDeployNumD7(info.AccountDeployNumD7).
+				SetDominanceD7(info.DominanceD7)
+		} else if timeRange == 30 {
+			newFactory.SetAccountNumD30(info.AccountNumD30).
+				SetAccountDeployNumD30(info.AccountDeployNumD30).
+				SetDominanceD30(info.DominanceD30)
+		}
+		_, err := newFactory.Save(context.Background())
 		if err != nil {
 			log.Printf("Save factory err, %s\n", err)
 		}
@@ -236,16 +282,19 @@ func saveOrUpdateFactory(client *ent.Client, factory string, info *ent.FactoryIn
 			err = client.FactoryInfo.UpdateOneID(oldFactory.ID).
 				SetAccountDeployNumD1(info.AccountDeployNumD1).
 				SetAccountNumD1(info.AccountNumD1).
+				SetDominanceD1(info.DominanceD1).
 				Exec(context.Background())
 		} else if timeRange == 7 {
 			err = client.FactoryInfo.UpdateOneID(oldFactory.ID).
 				SetAccountDeployNumD7(info.AccountDeployNumD7).
 				SetAccountNumD7(info.AccountNumD7).
+				SetDominanceD7(info.DominanceD7).
 				Exec(context.Background())
 		} else if timeRange == 30 {
 			err = client.FactoryInfo.UpdateOneID(oldFactory.ID).
 				SetAccountDeployNumD30(info.AccountDeployNumD30).
 				SetAccountNumD30(info.AccountNumD30).
+				SetDominanceD30(info.DominanceD30).
 				Exec(context.Background())
 		}
 
