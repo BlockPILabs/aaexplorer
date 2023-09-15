@@ -42,8 +42,6 @@ func (dao *paymasterDao) Pagination(ctx context.Context, tx *ent.Client, req vo.
 	query := tx.PaymasterInfo.Query().Where(
 		paymasterinfo.NetworkEQ(req.Network),
 	)
-	// sort
-	query = dao.Sort(ctx, query, req.Sort, req.Order)
 
 	total = query.CountX(ctx)
 
@@ -51,8 +49,10 @@ func (dao *paymasterDao) Pagination(ctx context.Context, tx *ent.Client, req vo.
 		return
 	}
 
+	// sort
+	query = dao.Sort(ctx, query, req.Sort, req.Order)
 	// limit
-	query = query.
+	query = query.WithAccount().
 		Offset(req.GetOffset()).
 		Limit(req.PerPage)
 

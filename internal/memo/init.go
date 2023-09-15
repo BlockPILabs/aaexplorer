@@ -28,7 +28,17 @@ func (c *cache) init() (err error) {
 	return
 }
 func Start(logger log.Logger, config *config.Config) (err error) {
-	instance.config = config.MemoCache
+	if config.MemoCache == nil {
+		panic("memo cache config error")
+	}
+
+	instance.config = &ristretto.Config{
+		NumCounters:        config.MemoCache.NumCounters,
+		MaxCost:            config.MemoCache.MaxCost,
+		BufferItems:        config.MemoCache.BufferItems,
+		Metrics:            config.MemoCache.Metrics,
+		IgnoreInternalCost: config.MemoCache.IgnoreInternalCost,
+	}
 	instance.logger = logger
 	return instance.init()
 }

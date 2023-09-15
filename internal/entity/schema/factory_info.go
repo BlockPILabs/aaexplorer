@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"time"
 )
@@ -54,5 +55,15 @@ func (FactoryInfo) Annotations() []schema.Annotation {
 }
 
 func (FactoryInfo) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		//edge.From("account", Account.Type).
+		//	StructTag(`json:"account"`).
+		//	Ref("factory").
+		//	Unique(),
+		edge.To("account", Account.Type).
+			StorageKey(
+				edge.Column("address"),
+			).
+			Unique(),
+	}
 }

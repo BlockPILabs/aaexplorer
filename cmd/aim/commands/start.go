@@ -16,6 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"os"
+	"runtime/debug"
 	"strings"
 	"time"
 )
@@ -102,6 +103,11 @@ func NewStartCmd() *cobra.Command {
 			// error recover
 			app.Use(fiber_recover.New(fiber_recover.Config{
 				EnableStackTrace: true,
+				StackTraceHandler: func(c *fiber.Ctx, e interface{}) {
+					//fmt.Println(c, e)
+					log.Context(c.UserContext()).Error("request panic", "debug", string(debug.Stack()))
+					c.Next()
+				},
 			}))
 
 			// register router

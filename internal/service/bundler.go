@@ -42,7 +42,14 @@ func (*bundlerService) GetBundlers(ctx context.Context, req vo.GetBundlersReques
 	//
 	res.Records = make([]*vo.BundlersVo, len(list))
 	for i, info := range list {
-
+		label := ""
+		if info.Edges.Account != nil && info.Edges.Account.Label != nil {
+			labels := []string{}
+			info.Edges.Account.Label.Scan(&labels)
+			if len(labels) > 0 {
+				label = labels[0]
+			}
+		}
 		res.Records[i] = &vo.BundlersVo{
 			Bundler:        info.ID,
 			BundlesNum:     info.BundlesNum,
@@ -52,15 +59,8 @@ func (*bundlerService) GetBundlers(ctx context.Context, req vo.GetBundlersReques
 			BundlesNumD1:   info.BundlesNumD1,
 			FeeEarnedD1:    info.FeeEarnedD1,
 			FeeEarnedUsdD1: info.FeeEarnedUsdD1,
+			BundlerLabel:   label,
 		}
-		//account, err := dao.AccountDao.GetAbiByAddressWithMemo(ctx, client, info.Bundler)
-		//if err == nil && account != nil && account.Label != nil {
-		//	labels := []string{}
-		//	account.Label.Scan(&labels)
-		//	if len(labels) > 0 {
-		//		res.Records[i].BundlerLabel = labels[0]
-		//	}
-		//}
 	}
 
 	return &res, nil

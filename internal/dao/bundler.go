@@ -44,8 +44,6 @@ func (dao *bundlerDao) Pagination(ctx context.Context, tx *ent.Client, req vo.Ge
 	query := tx.BundlerInfo.Query().Where(
 		bundlerinfo.NetworkEQ(req.Network),
 	)
-	// sort
-	query = dao.Sort(ctx, query, req.Sort, req.Order)
 
 	total = query.CountX(ctx)
 
@@ -53,8 +51,10 @@ func (dao *bundlerDao) Pagination(ctx context.Context, tx *ent.Client, req vo.Ge
 		return
 	}
 
+	// sort
+	query = dao.Sort(ctx, query, req.Sort, req.Order)
 	// limit
-	query = query.
+	query = query.WithAccount().
 		Offset(req.GetOffset()).
 		Limit(req.PerPage)
 

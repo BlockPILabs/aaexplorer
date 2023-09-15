@@ -5,7 +5,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/account"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/factoryinfo"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 )
@@ -37,37 +36,22 @@ func (dao *factoryDao) Sort(ctx context.Context, query *ent.FactoryInfoQuery, so
 	return query
 }
 
-func (dao *factoryDao) Pagination(ctx context.Context, tx *ent.Client, req vo.GetFactoriesRequest) (list []*vo.FactoryDbVo, total int, err error) {
+func (dao *factoryDao) Pagination(ctx context.Context, tx *ent.Client, req vo.GetFactoriesRequest) (list ent.FactoryInfos, total int, err error) {
+
 	query := tx.FactoryInfo.Query().Where(
 		factoryinfo.NetworkEQ(req.Network),
 	)
-	// sort
-	query = dao.Sort(ctx, query, req.Sort, req.Order)
 
 	total = query.CountX(ctx)
 
 	if total < 1 || req.GetOffset() > total {
 		return
 	}
+	// sort
+	query = dao.Sort(ctx, query, req.Sort, req.Order)
 
-	factoryinfoTable := sql.Table(factoryinfo.Table)
-	accountTable := sql.Table(account.Table)
-	query.Modify(func(s *sql.Selector) {
-		s.LeftJoin(accountTable).On(
-			s.C(factoryinfo.FieldID),
-			accountTable.C(account.FieldID),
-		)
-
-	})
-	query.
+	list, err = query.WithAccount().
 		Offset(req.GetOffset()).
-		Limit(req.PerPage)
-
-	err = query.Select(
-		factoryinfoTable.C(factoryinfo.FieldID),
-		factoryinfoTable.C(factoryinfo.FieldAccountNum),
-		factoryinfoTable.C(factoryinfo.FieldAccountNumD1),
-		accountTable.C(account.FieldLabel),
-	).Scan(ctx, &list)
+		Limit(req.PerPage).All(ctx)
 	return
 }
