@@ -7,7 +7,8 @@ import (
 
 type GetAaBlocksRequest struct {
 	PaginationRequest
-	Network string `json:"network" params:"network" validate:"required,min=3"`
+	Network           string `json:"network" params:"network" validate:"required,min=3"`
+	LatestBlockNumber int64  `json:"latestBlockNumber" params:"latestBlockNumber" validate:"min=0"`
 }
 
 type GetAaBlocksResponse struct {
@@ -17,7 +18,7 @@ type GetAaBlocksResponse struct {
 
 type AaBlocksVo struct {
 	// ID of the ent.
-	Number int64 `json:"id,omitempty"`
+	Number int64 `json:"number,omitempty"`
 	// Time holds the value of the "time" field.
 	Time time.Time `json:"time,omitempty"`
 	// Hash holds the value of the "hash" field.

@@ -24,13 +24,13 @@ func (dao *transactionDao) Pages(ctx context.Context, tx *ent.Client, page vo.Pa
 		query = query.Where(transactiondecode.ID(*condition.TxHash))
 	}
 
-	if page.Sort > 0 {
-		query = query.Order(dao.orderPage(ctx, transactiondecode.Columns, page))
-	}
-
 	count = query.CountX(ctx)
 	if count < 1 || page.GetOffset() > count {
 		return
+	}
+
+	if page.Sort > 0 {
+		query = query.Order(dao.orderPage(ctx, transactiondecode.Columns, page))
 	}
 
 	query = query.Limit(page.GetPerPage()).Offset(page.GetOffset())
