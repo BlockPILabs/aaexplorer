@@ -62,16 +62,16 @@ func (*userOpService) GetUserOps(ctx context.Context, req vo.GetUserOpsRequest) 
 				accounts = append(accounts, info.Sender)
 			}
 
-			//if _, ok := accountsMap[info.Paymaster]; !ok {
-			//	accountsMap[info.Paymaster] = struct{}{}
-			//	accounts = append(accounts, info.Paymaster)
-			//}
-			//
-			//if _, ok := accountsMap[info.Bundler]; !ok {
-			//	accountsMap[info.Bundler] = struct{}{}
-			//	accounts = append(accounts, info.Bundler)
-			//}
-			//
+			if _, ok := accountsMap[info.Paymaster]; !ok {
+				accountsMap[info.Paymaster] = struct{}{}
+				accounts = append(accounts, info.Paymaster)
+			}
+
+			if _, ok := accountsMap[info.Bundler]; !ok {
+				accountsMap[info.Bundler] = struct{}{}
+				accounts = append(accounts, info.Bundler)
+			}
+
 			//if _, ok := accountsMap[info.Factory]; !ok {
 			//	accountsMap[info.Factory] = struct{}{}
 			//	accounts = append(accounts, info.Factory)
@@ -109,7 +109,9 @@ func (*userOpService) GetUserOps(ctx context.Context, req vo.GetUserOpsRequest) 
 				BlockNumber:       info.BlockNumber,
 				Network:           info.Network,
 				Sender:            info.Sender,
+				SenderLabel:       "",
 				Target:            info.Target,
+				TargetLabel:       "",
 				TxValue:           info.TxValue,
 				Fee:               info.Fee,
 				InitCode:          info.InitCode,
@@ -117,6 +119,8 @@ func (*userOpService) GetUserOps(ctx context.Context, req vo.GetUserOpsRequest) 
 				Source:            info.Source,
 				Targets:           lists[info.ID],
 				TargetsCount:      info.TargetsCount,
+				Bundler:           info.Bundler,
+				Paymaster:         info.Paymaster,
 			}
 
 			if a, ok := labelMap[userOpVo.Sender]; ok {
@@ -124,6 +128,12 @@ func (*userOpService) GetUserOps(ctx context.Context, req vo.GetUserOpsRequest) 
 			}
 			if a, ok := labelMap[userOpVo.Target]; ok {
 				userOpVo.TargetLabel = a[0]
+			}
+			if a, ok := labelMap[userOpVo.Bundler]; ok {
+				userOpVo.BundlerLabel = a[0]
+			}
+			if a, ok := labelMap[userOpVo.Paymaster]; ok {
+				userOpVo.Paymaster = a[0]
 			}
 			res.Records[i] = userOpVo
 		}

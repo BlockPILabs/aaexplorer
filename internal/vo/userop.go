@@ -33,11 +33,16 @@ type UserOpVo struct {
 	Status int32 `json:"status"`
 	// Source holds the value of the "source" field.
 	Source string `json:"source"`
-
 	// Targets holds the value of the "targets" field.
 	Targets []string `json:"targets"`
 	// TargetsCount holds the value of the "targets_count" field.
 	TargetsCount int `json:"targetsCount"`
+	// Bundler holds the value of the "bundler" field.
+	Bundler      string `json:"bundler"`
+	BundlerLabel string `json:"bundlerLabel"`
+	// Paymaster holds the value of the "paymaster" field.
+	Paymaster      string `json:"paymaster"`
+	PaymasterLabel string `json:"paymasterLabel"`
 }
 type GetUserOpsRequest struct {
 	PaginationRequest
@@ -49,6 +54,7 @@ type GetUserOpsRequest struct {
 	Paymaster         string `json:"paymaster" params:"paymaster"`
 	Factory           string `json:"factory" params:"factory"`
 	Account           string `json:"account" params:"account"`
+	HashTerm          string `json:"hashTerm" params:"hashTerm"`
 }
 
 type GetUserOpsResponse struct {

@@ -22,6 +22,7 @@ func (*factoryService) GetFactories(ctx context.Context, req vo.GetFactoriesRequ
 			PerPage:    req.GetPerPage(),
 			Page:       req.GetPage(),
 		},
+		Records: make([]*vo.FactoryVo, 0),
 	}
 	if err != nil {
 		logger.Error("params error", "req", req, "err", err.Error())
@@ -30,23 +31,32 @@ func (*factoryService) GetFactories(ctx context.Context, req vo.GetFactoriesRequ
 
 	client, err := entity.Client(ctx, req.Network)
 	if err != nil {
-		return nil, err
+		return &res, err
 	}
 	//
 	list, total, err := dao.FactoryDao.Pagination(ctx, client, req)
 	if err != nil {
-		return nil, err
+		return &res, err
 	}
 	res.TotalCount = total
 	res.Records = make([]*vo.FactoryVo, len(list))
 	if res.TotalCount > 0 {
 		//
 		for i, info := range list {
-			_ = info
+			label := ""
+			if info.Edges.Account != nil && info.Edges.Account.Label != nil {
+				labels := []string{}
+				info.Edges.Account.Label.Scan(&labels)
+				if len(labels) > 0 {
+					label = labels[0]
+				}
+			}
 			factoryVo := &vo.FactoryVo{
 				ID:           info.ID,
 				AccountNum:   info.AccountNum,
 				AccountNumD1: info.AccountNumD1,
+				Dominance:    info.Dominance,
+				FactoryLabel: label,
 			}
 			res.Records[i] = factoryVo
 		}

@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/jackc/pgtype"
 )
@@ -31,5 +32,16 @@ func (Account) Fields() []ent.Field {
 func (Account) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entsql.Annotation{Table: "account"},
+	}
+}
+
+func (Account) Edges() []ent.Edge {
+	return []ent.Edge{
+		edge.To("factory", FactoryInfo.Type).
+			StorageKey(
+				edge.Column("factory"),
+			).
+			//Field("factory").
+			Unique(),
 	}
 }

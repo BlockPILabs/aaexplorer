@@ -18,6 +18,7 @@ type AssetChangeTrace struct {
 	LastChangeTime time.Time
 	SyncFlag       int
 	CreateTime     time.Time
+	UpdateTime     time.Time
 	ent.Schema
 }
 
@@ -46,6 +47,9 @@ func (AssetChangeTrace) Fields() []ent.Field {
 			Default(time.Now).
 			StructTag(`json:"createTime"`).
 			Immutable(),
+		field.Time("update_time").
+			Default(time.Now).
+			StructTag(`json:"updateTime"`),
 	}
 }
 

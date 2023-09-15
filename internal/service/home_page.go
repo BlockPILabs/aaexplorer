@@ -5,11 +5,13 @@ import (
 	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropsinfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/dailystatisticday"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/dailystatistichour"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 	"github.com/shopspring/decimal"
 	"log"
+	"math"
 	"sort"
 	"time"
 )
@@ -230,4 +232,39 @@ func getRate(txNum int64, aaTxNum int64) decimal.Decimal {
 	}
 
 	return decimal.NewFromInt(aaTxNum).DivRound(decimal.NewFromInt(txNum), 4)
+}
+
+func GetLatestUserOps(ctx context.Context, req vo.LatestUserOpsRequest) (*vo.LatestUserOpsResponse, error) {
+	network := req.Network
+	client, err := entity.Client(ctx, network)
+	if err != nil {
+		return nil, err
+	}
+	var resp = &vo.LatestUserOpsResponse{}
+
+	var ago24h = time.Now().Second() - 24*3600
+
+	count, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.TxTimeGTE(int64(ago24h))).Count(context.Background())
+	allGas, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.TxTimeGTE(int64(ago24h))).Aggregate(ent.Sum(aauseropsinfo.FieldActualGasCost)).Strings(context.Background())
+	if err != nil {
+		resp.AverageGasCost24h = decimal.Zero
+		return resp, nil
+	}
+	if len(allGas) == 0 || count == 0 {
+		resp.AverageGasCost24h = decimal.Zero
+		return resp, nil
+	}
+	start, err := decimal.NewFromString(allGas[0])
+	if err != nil {
+		resp.AverageGasCost24h = decimal.Zero
+		return resp, nil
+	}
+
+	averageGas := rayDiv(start).DivRound(decimal.NewFromInt(int64(count)), 4)
+	resp.AverageGasCost24h = averageGas
+	return resp, nil
+}
+
+func rayDiv(gas decimal.Decimal) decimal.Decimal {
+	return gas.DivRound(decimal.NewFromFloat(math.Pow10(18)), 18)
 }

@@ -135,7 +135,7 @@ func bulkInsertDailyStatisticHour(ctx context.Context, client *ent.Client, data 
 
 	if _, err := client.DailyStatisticHour.CreateBulk(data...).Save(ctx); err != nil {
 		tx.Rollback()
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 
@@ -509,12 +509,12 @@ func bulkInsertBundlerStatsHour(ctx context.Context, client *ent.Client, data []
 	err = client.BundlerStatisHour.CreateBulk(data...).Exec(ctx)
 	if err != nil {
 		tx.Rollback()
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 
 	if err := tx.Commit(); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 
@@ -533,7 +533,7 @@ func bulkInsertPaymasterStatsHour(ctx context.Context, client *ent.Client, data 
 
 	if _, err := client.PaymasterStatisHour.CreateBulk(data...).Save(ctx); err != nil {
 		tx.Rollback()
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 
@@ -556,7 +556,7 @@ func bulkInsertFactoryStatsHour(ctx context.Context, client *ent.Client, data []
 
 	if _, err := client.FactoryStatisHour.CreateBulk(data...).Save(ctx); err != nil {
 		tx.Rollback()
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 

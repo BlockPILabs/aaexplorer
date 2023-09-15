@@ -17,19 +17,22 @@ func GetBundlers(fcx *fiber.Ctx) error {
 	req := vo.GetBundlersRequest{
 		PaginationRequest: vo.NewDefaultPaginationRequest(),
 	}
+	res := &vo.GetBundlersResponse{}
 	err := fcx.ParamsParser(&req)
 	if err != nil {
 		logger.Warn("params parse error", "err", err)
+		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
 	}
 	err = fcx.QueryParser(&req)
 	if err != nil {
 		logger.Warn("query params parse error", "err", err, "network", req.Network)
+		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
 	}
-	res, err := service.BundlerService.GetBundlers(ctx, req)
+	res, err = service.BundlerService.GetBundlers(ctx, req)
 	if err != nil {
 		logger.Error("get bundlers error", "err", err)
 	}
-	return vo.NewResultJsonResponse(res).JSON(fcx)
+	return vo.NewResultJsonResponse(res, vo.SetResponseError(err)).JSON(fcx)
 }
 
 const NameGetBundler = "get_bundler"

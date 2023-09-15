@@ -19,11 +19,6 @@ var SearchService = &searchService{}
 
 func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) (*vo.SearchAllResponse, error) {
 	res := &vo.SearchAllResponse{
-		//WalletAccounts: []*vo.SearchAllAccount{},
-		//Paymasters:     []*vo.SearchAllAccount{},
-		//Bundlers:       []*vo.SearchAllAccount{},
-		//Transactions:   []*vo.SearchAllTransaction{},
-		//Blocks:         []*vo.SearchAllBlock{},
 		Data: make([]*vo.SearchAllResponseData, 0),
 	}
 
@@ -42,8 +37,13 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 	var bundlers []*vo.SearchAllAccount
 	var walletAccounts []*vo.SearchAllAccount
 	var blocks []*vo.SearchAllBlock
+	var userops []*vo.SearchAllTransaction
+	var txs []*vo.SearchAllTransaction
 	if utils.IsHexSting(term) {
 		wg.Go(func() error {
+			if len(term) > 40 {
+				return nil
+			}
 			accounts, err := dao.AaAccountDao.Search(ctx, client, req)
 			if err != nil {
 				log.Context(ctx).Warn("search account error", "err", err, "term", req.Term)
@@ -80,6 +80,40 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 			}
 			return nil
 		})
+
+		wg.Go(func() error {
+			aaUserOpsInfos, _, err := dao.UserOpDao.Pagination(ctx, client, vo.GetUserOpsRequest{
+				PaginationRequest: vo.PaginationRequest{
+					PerPage:    10,
+					Page:       1,
+					TotalCount: 1,
+				},
+				Network:  req.Network,
+				HashTerm: req.Term,
+			})
+			if err != nil {
+				return nil
+			}
+			for _, info := range aaUserOpsInfos {
+				userops = append(userops, &vo.SearchAllTransaction{Hash: info.ID})
+			}
+			return nil
+		})
+
+		wg.Go(func() error {
+			transactionInfos, _, err := dao.AaTransactionDao.Pagination(ctx, client, vo.PaginationRequest{
+				PerPage:    10,
+				Page:       1,
+				TotalCount: 1,
+			}, dao.AATransactionCondition{TxHashTerm: req.Term})
+			if err != nil {
+				return nil
+			}
+			for _, transactionInfo := range transactionInfos {
+				userops = append(userops, &vo.SearchAllTransaction{Hash: transactionInfo.ID})
+			}
+			return nil
+		})
 	}
 
 	if utils.IsNumber(req.Term) {
@@ -99,6 +133,14 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 
 	err = wg.Wait()
 
+	if len(userops) > 0 {
+		res.Data = append(res.Data,
+			&vo.SearchAllResponseData{
+				Type:    "UserOps",
+				Records: userops,
+			},
+		)
+	}
 	if len(walletAccounts) > 0 {
 		res.Data = append(res.Data,
 			&vo.SearchAllResponseData{
@@ -122,6 +164,15 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 			&vo.SearchAllResponseData{
 				Type:    "Bundler",
 				Records: bundlers,
+			},
+		)
+	}
+
+	if len(txs) > 0 {
+		res.Data = append(res.Data,
+			&vo.SearchAllResponseData{
+				Type:    "Txn hash",
+				Records: txs,
 			},
 		)
 	}

@@ -11,6 +11,13 @@ func Has0xPrefix(input string) bool {
 	return len(input) >= 2 && input[0] == '0' && (input[1] == 'x' || input[1] == 'X')
 }
 
+func Fix0x(input string) string {
+	if Has0xPrefix(input) {
+		return input
+	}
+	return "0x" + input
+}
+
 // isHexCharacter returns bool of c being a valid hexadecimal.
 func isHexCharacter(c byte) bool {
 	return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F')
@@ -31,6 +38,9 @@ func IsHex(str string) bool {
 
 // IsHexSting validates whether each byte is valid hexadecimal string.
 func IsHexSting(str string) bool {
+	if Has0xPrefix(str) {
+		str = str[2:]
+	}
 	for _, c := range []byte(str) {
 		if !isHexCharacter(c) {
 			return false

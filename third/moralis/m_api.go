@@ -112,7 +112,7 @@ func GetTokenPriceBatch(tokens []string) []*TokenPrice {
 	priceLoad := pricePayload{Tokens: tokenArr}
 	jsonData, err := json.Marshal(priceLoad)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return nil
 	}
 	payload := strings.NewReader(string(jsonData))

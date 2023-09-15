@@ -3,11 +3,9 @@ package explorer
 import (
 	"github.com/BlockPILabs/aa-scan/explorer/controller"
 	"github.com/gofiber/fiber/v2"
-	fiber_recover "github.com/gofiber/fiber/v2/middleware/recover"
 )
 
 func Resister(router fiber.Router) {
-	router.Use(fiber_recover.New())
 	v1 := router.Group("/v1")
 	// networks
 
@@ -57,6 +55,7 @@ func Resister(router fiber.Router) {
 	//home page
 	networksV1.Get("/dailyStatistic", controller.GetDailyStatistic).Name(controller.NameGetDailyStatistic)
 	networksV1.Get("/aaTxnDominance", controller.GetAATxnDominance).Name(controller.NameGetAATxnDominance)
+	networksV1.Get("/latestUserOps", controller.GetLatestUserOps).Name(controller.NameGetLatestUserOps)
 
 	//user op type analyze
 	networksV1.Get("/userOpType", controller.GetUserOpType).Name(controller.NameGetUserOpType)
