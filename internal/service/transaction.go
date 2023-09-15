@@ -76,9 +76,12 @@ func (*transactionService) GetPages(ctx context.Context, client *ent.Client, req
 			Page:       req.GetPage(),
 		},
 	}
-	userOpsList, total, err := dao.TransactionDao.Pages(ctx, client, req.PaginationRequest, dao.TransactionCondition{
-		TxHash: &req.TxHash,
-	})
+
+	condition := dao.TransactionCondition{}
+	if req.TxHash != "" {
+		condition.TxHash = &req.TxHash
+	}
+	userOpsList, total, err := dao.TransactionDao.Pages(ctx, client, req.PaginationRequest, condition)
 	if err != nil {
 		return nil, err
 	}

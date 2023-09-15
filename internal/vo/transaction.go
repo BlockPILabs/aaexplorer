@@ -14,7 +14,7 @@ type TransactionRequestVo struct {
 type TransactionListRequestVo struct {
 	PaginationRequest
 	Network string `json:"network" params:"network" validate:"required,min=3"`
-	TxHash  string `json:"txHash" params:"txHash" validate:"required,min=3"`
+	TxHash  string `json:"txHash" params:"txHash"`
 }
 type TransactionListResponse struct {
 	Pagination
