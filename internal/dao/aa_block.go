@@ -17,7 +17,7 @@ var AaBlockDao = &aaBlockDao{}
 
 type AaBlockPagesCondition struct {
 	LatestBlockNumber int64
-	HashTerm string
+	HashTerm          string
 }
 
 func (dao *aaBlockDao) Pages(ctx context.Context, tx *ent.Client, page vo.PaginationRequest, condition AaBlockPagesCondition) (a []*ent.AaBlockInfo, count int, err error) {
@@ -27,7 +27,6 @@ func (dao *aaBlockDao) Pages(ctx context.Context, tx *ent.Client, page vo.Pagina
 			aablockinfo.IDGT(condition.LatestBlockNumber),
 		)
 	}
-	count = query.CountX(ctx)
 
 	if len(condition.HashTerm) > 0 && utils.IsHexSting(condition.HashTerm) {
 		if utils.IsHashHex(condition.HashTerm) {
