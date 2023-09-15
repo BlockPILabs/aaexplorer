@@ -1,8 +1,9 @@
 package vo
 
 type SearchAllRequest struct {
-	Network string `json:"network" params:"network" validate:"required,min=3"`
-	Term    string `json:"term" params:"term" validate:"required,min=4"`
+	Network           string `json:"network" params:"network" validate:"required,min=3"`
+	Term              string `json:"term" params:"term" validate:"required,min=4"`
+	SearchUserOpAndTx bool   `json:"searchUserOpAndTx" params:"searchUserOpAndTx"`
 }
 
 type SearchAllAccount struct {

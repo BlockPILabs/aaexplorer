@@ -42,6 +42,9 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 	var txs []*vo.SearchAllTransaction
 	if utils.IsHexSting(term) {
 		wg.Go(func() error {
+			if req.SearchUserOpAndTx {
+				return nil
+			}
 			start := time.Now()
 			defer func() {
 				log.Context(ctx).Debug("AaAccount search", "duration", time.Now().Sub(start).Round(time.Millisecond))
@@ -76,6 +79,9 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 		})
 
 		wg.Go(func() error {
+			if req.SearchUserOpAndTx {
+				return nil
+			}
 			start := time.Now()
 			defer func() {
 				log.Context(ctx).Debug("block search", "duration", time.Now().Sub(start).Round(time.Millisecond))
@@ -145,6 +151,9 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 		parseInt, _ := strconv.ParseInt(req.Term, 10, 64)
 		if parseInt > 0 {
 			wg.Go(func() error {
+				if req.SearchUserOpAndTx {
+					return nil
+				}
 				start := time.Now()
 				defer func() {
 					log.Context(ctx).Debug("GetByBlockNumber", "duration", time.Now().Sub(start).Round(time.Millisecond))
