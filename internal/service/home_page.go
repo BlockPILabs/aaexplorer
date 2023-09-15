@@ -44,23 +44,23 @@ func GetDailyStatistic(ctx context.Context, req vo.DailyStatisticRequest) (*vo.D
 			log.Println(err)
 			return nil, err
 		}
-		resp = getResponseDay(dailyStatisticDays)
+		resp = getResponseDay(dailyStatisticDays, 7)
 		resp.Ups = decimal.NewFromInt(resp.UserOpsNum).DivRound(decimal.NewFromInt(7*DaySecond), 6)
 	} else if timeRange == config.RangeD30 {
-		startTime := time.Now().Add(-150 * 24 * time.Hour)
+		startTime := time.Now().Add(-70 * 24 * time.Hour)
 		dailyStatisticDays, err := client.DailyStatisticDay.Query().Where(dailystatisticday.StatisticTimeGTE(startTime.UnixMilli()), dailystatisticday.NetworkEqualFold(network)).All(ctx)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		resp = getResponseDay(dailyStatisticDays)
+		resp = getResponseDay(dailyStatisticDays, 30)
 		resp.Ups = decimal.NewFromInt(resp.UserOpsNum).DivRound(decimal.NewFromInt(30*DaySecond), 6)
 	}
 
 	return resp, nil
 }
 
-func getResponseDay(days []*ent.DailyStatisticDay) *vo.DailyStatisticResponse {
+func getResponseDay(days []*ent.DailyStatisticDay, day int) *vo.DailyStatisticResponse {
 	if len(days) == 0 {
 		return nil
 	}
