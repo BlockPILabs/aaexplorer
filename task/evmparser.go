@@ -238,6 +238,11 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 			return
 		}
 
+		start := time.Now()
+		defer func() {
+			logger.Debug("block parse", "blockIds", blockIds, "count", len(blockIds), "duration", time.Now().Sub(start).Round(time.Millisecond))
+		}()
+
 		var aaUserOpsInfos ent.AAUserOpsInfos
 		var aaTransactionInfos ent.AaTransactionInfos
 		var userOpsInfoCalldatas ent.AAUserOpsCalldataSlice
