@@ -5,8 +5,11 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aablockinfo"
 	"github.com/BlockPILabs/aa-scan/internal/memo"
 	aimos "github.com/BlockPILabs/aa-scan/internal/os"
+	"github.com/BlockPILabs/aa-scan/service"
 	"github.com/BlockPILabs/aa-scan/task"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -47,14 +50,14 @@ var ScanCmd = &cobra.Command{
 			log.Print("Task: scan block has been scheduled successfully.")
 		}
 
-		task.InitDayStatis()
-		task.InitHourStatis()
-		task.TopBundlers()
-		task.TopFactories()
-		task.TopPaymaster()
-		task.AAContractInteractTask()
-		task.UserOpTypeTask()
-		task.AssetTask()
+		//task.InitDayStatis()
+		//task.InitHourStatis()
+		//task.TopBundlers()
+		//task.TopFactories()
+		//task.TopPaymaster()
+		//task.AAContractInteractTask()
+		//task.UserOpTypeTask()
+		//task.AssetTask()
 
 		//task.AssetSync()
 		//service.GetWalletBalanceDetail("0x6b1b831718d0faf86cfe790fb59a8dfe077db71b", interConfig.PolygonNetwork)
@@ -66,6 +69,22 @@ var ScanCmd = &cobra.Command{
 		// Run forever.
 		select {}
 	},
+}
+
+func refreshUsd() {
+	client, err := entity.Client(context.Background(), "polygon")
+	if err != nil {
+		return
+	}
+	price := service.GetNativePrice("polygon")
+	res, err := client.AaBlockInfo.Query().Order(ent.Asc(aablockinfo.FieldID)).Limit(1000).All(context.Background())
+	if err != nil {
+		return
+	}
+	for _, block := range res {
+		block.BundlerProfitUsd = price.Mul(block.BundlerProfit)
+		client.AaBlockInfo.Update().SetBundlerProfitUsd(block.BundlerProfitUsd).Where(aablockinfo.IDEQ(block.ID)).Exec(context.Background())
+	}
 }
 
 func test2() {
