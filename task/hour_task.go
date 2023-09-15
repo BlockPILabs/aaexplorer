@@ -201,7 +201,7 @@ func getCostMap(receipts []*ent.TransactionReceiptDecode) map[string]decimal.Dec
 		if !costOk {
 			cost = decimal.Zero
 		}
-		cost = cost.Add(getReceiptGas(receipt))
+		cost = cost.Add(GetReceiptGas(receipt))
 		receiptMap[bundler] = cost
 	}
 	return receiptMap
@@ -229,11 +229,11 @@ func getKeySlice(maps map[string]bool) []string {
 	return keys
 }
 
-func getReceiptGas(receipt *ent.TransactionReceiptDecode) decimal.Decimal {
+func GetReceiptGas(receipt *ent.TransactionReceiptDecode) decimal.Decimal {
 	var gasPrice big.Int
 	_, success := gasPrice.SetString(receipt.EffectiveGasPrice, 0)
 	if !success {
-		log.Printf("getReceiptGas convert err, %s", receipt.ID)
+		log.Printf("GetReceiptGas convert err, %s", receipt.ID)
 		return decimal.Zero
 	}
 	return receipt.GasUsed.Mul(RayDiv(decimal.NewFromInt(gasPrice.Int64())))
@@ -325,7 +325,7 @@ func calHourStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, allTxHashe
 
 		var spentGas = decimal.Zero
 		for _, receipt := range receipts {
-			spentGas = spentGas.Sub(getReceiptGas(receipt))
+			spentGas = spentGas.Sub(GetReceiptGas(receipt))
 		}
 
 		var totalGasFee = decimal.Zero

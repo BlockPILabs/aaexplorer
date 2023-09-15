@@ -244,7 +244,7 @@ func calDailyStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, allTxHash
 
 		var spentGas = decimal.Zero
 		for _, receipt := range receipts {
-			spentGas = spentGas.Sub(getReceiptGas(receipt))
+			spentGas = spentGas.Sub(GetReceiptGas(receipt))
 		}
 		var totalGasFee = decimal.Zero
 		var txMap = make(map[string]bool)

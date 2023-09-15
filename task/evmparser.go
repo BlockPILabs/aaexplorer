@@ -1051,7 +1051,8 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 		parserTx.userOpInfo.BundlerProfit = parserTx.userOpInfo.BundlerProfit.Add(decimal.NewFromInt(userOpsInfo.ActualGasCost))
 
 	}
-	parserTx.userOpInfo.BundlerProfit = parserTx.receipt.GasUsed.Sub(parserTx.transaction.Gas)
+
+	parserTx.userOpInfo.BundlerProfit = parserTx.userOpInfo.BundlerProfit.Sub(GetReceiptGas(parserTx.receipt))
 	logger.Info("parse success")
 	return nil
 }
