@@ -27,7 +27,11 @@ func (dao *aaBlockDao) Pages(ctx context.Context, tx *ent.Client, page vo.Pagina
 	}
 
 	if len(condition.HashTerm) > 0 && utils.IsHexSting(condition.HashTerm) {
-		query = query.Where(sql.FieldHasPrefix(aablockinfo.FieldHash, utils.Fix0x(condition.HashTerm)))
+		if utils.IsHashHex(condition.HashTerm) {
+			query = query.Where(aablockinfo.HashEQ(utils.Fix0x(condition.HashTerm)))
+		} else {
+			query = query.Where(sql.FieldHasPrefix(aablockinfo.FieldHash, utils.Fix0x(condition.HashTerm)))
+		}
 	}
 
 	if page.TotalCount > 0 {

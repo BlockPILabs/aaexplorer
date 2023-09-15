@@ -70,6 +70,14 @@ func IsHexAddress(s string) bool {
 	return IsAddress(s)
 }
 
+func IsHashHex(s string) bool {
+	if Has0xPrefix(s) {
+		s = s[2:]
+	}
+	//0xede7cbaa28a31bbbf30453206213b4f7296e3d85f0470713dedf58815fbad0ea
+	return IsHexSting(s) && len(s) == 64
+}
+
 func HexToDecimal(hexStr string) *big.Int {
 	hexStr = strings.TrimPrefix(hexStr, "0x")
 
