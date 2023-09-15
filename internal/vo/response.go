@@ -33,7 +33,7 @@ func SetResponseResult(result any) SetResponseOption {
 
 func SetResponseError(err error) SetResponseOption {
 	return func(r *JsonResponse) *JsonResponse {
-		if err == nil {
+		if err != nil {
 			switch e := err.(type) {
 			case *Error:
 				r.Error = e
