@@ -240,9 +240,11 @@ func (*userOpService) GetUserOpsAnalysisList(ctx context.Context, client *ent.Cl
 			Page:       req.GetPage(),
 		},
 	}
-	userOpsList, total, err := dao.UserOpDao.Pages(ctx, client, req.PaginationRequest, dao.UserOpsCondition{
-		TxHash: &req.TxHash,
-	})
+	condition := dao.UserOpsCondition{}
+	if req.TxHash != "" {
+		condition.TxHash = &req.TxHash
+	}
+	userOpsList, total, err := dao.UserOpDao.Pages(ctx, client, req.PaginationRequest, condition)
 	if err != nil {
 		return nil, err
 	}

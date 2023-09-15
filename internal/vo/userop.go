@@ -64,7 +64,7 @@ type UserOpsAnalysisRequestVo struct {
 type UserOpsAnalysisListRequestVo struct {
 	PaginationRequest
 	Network string `json:"network" params:"network" validate:"required,min=3"`
-	TxHash  string `json:"txHash" params:"txHash" validate:"required,min=3"`
+	TxHash  string `json:"txHash" params:"txHash"`
 }
 type UserOpsAnalysisListResponse struct {
 	Pagination

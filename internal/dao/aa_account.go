@@ -8,7 +8,9 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/userassetinfo"
 	"github.com/BlockPILabs/aa-scan/internal/utils"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
+	"github.com/shopspring/decimal"
 	"strings"
+	"time"
 )
 
 type aaAccountDao struct {
@@ -38,19 +40,39 @@ func (dao *aaAccountDao) Search(ctx context.Context, tx *ent.Client, req vo.Sear
 	return query.Limit(50).All(ctx)
 }
 
+type AaAccountScan struct {
+	Address      *string
+	Aa_type      *string
+	Factory      *string
+	Factory_time *time.Time
+	Total_amount *decimal.Decimal
+}
+
 func (dao *aaAccountDao) GetAaAccountRecord(ctx context.Context, tx *ent.Client, address string) (*vo.AaAccountRecord, error) {
-	record := vo.AaAccountRecord{}
-	err := tx.AaAccountData.Query().Where(aaaccountdata.ID(address)).Modify(func(s *sql.Selector) {
-		s.LeftJoin(sql.Table(userassetinfo.Table)).On(aaaccountdata.FieldID, userassetinfo.FieldAccountAddress)
-	}).GroupBy(
+	var record []*AaAccountScan
+	err := tx.AaAccountData.Query().Where(aaaccountdata.ID(address)).GroupBy(
 		aaaccountdata.FieldID,
 		aaaccountdata.FieldAaType,
 		aaaccountdata.FieldFactory,
 		aaaccountdata.FieldFactoryTime,
-	).Aggregate(ent.As(ent.Sum(userassetinfo.FieldAmount), "total_amount")).Scan(ctx, &record)
+	).Aggregate(func(selector *sql.Selector) string {
+		t := sql.Table(userassetinfo.Table)
+		selector.LeftJoin(t).On(selector.C(aaaccountdata.FieldID), t.C(userassetinfo.FieldAccountAddress))
+		return sql.As(sql.Sum(t.C(userassetinfo.FieldAmount)), "total_amount")
+	}).Scan(ctx, &record)
 	if err != nil {
 		return nil, err
 	}
 
-	return &record, nil
+	if len(record) <= 0 {
+		return nil, nil
+	}
+	ret := &vo.AaAccountRecord{
+		Address:     record[0].Address,
+		AaType:      record[0].Aa_type,
+		Factory:     record[0].Factory,
+		FactoryTime: record[0].Factory_time,
+		TotalAmount: record[0].Total_amount,
+	}
+	return ret, nil
 }

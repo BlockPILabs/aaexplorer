@@ -51,7 +51,7 @@ func (dao *userOpCallDataDao) Pages(ctx context.Context, tx *ent.Client, page vo
 	query := tx.AAUserOpsCalldata.Query()
 
 	if condition.UserOperationHash != nil {
-		query = query.Where(aauseropscalldata.ID(*condition.UserOperationHash))
+		query = query.Where(aauseropscalldata.UserOpsHash(*condition.UserOperationHash))
 	}
 
 	if page.Sort > 0 {
