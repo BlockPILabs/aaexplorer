@@ -24,6 +24,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/log"
 	"github.com/BlockPILabs/aa-scan/internal/service"
 	"github.com/BlockPILabs/aa-scan/internal/utils"
+	ser "github.com/BlockPILabs/aa-scan/service"
 	"github.com/BlockPILabs/aa-scan/task/aa"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -236,6 +237,11 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 			logger.Error("get parse data error", "err", err)
 			return
 		}
+
+		start := time.Now()
+		defer func() {
+			logger.Debug("block parse", "blockIds", blockIds, "count", len(blockIds), "duration", time.Now().Sub(start).Round(time.Millisecond))
+		}()
 
 		var aaUserOpsInfos ent.AAUserOpsInfos
 		var aaTransactionInfos ent.AaTransactionInfos
@@ -462,7 +468,7 @@ func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *e
 		block.userOpInfo.BundlerProfit = block.userOpInfo.BundlerProfit.Add(parserTx.userOpInfo.BundlerProfit)
 		block.userOpInfo.UseropCount += len(parserTx.userops)
 	}
-
+	block.userOpInfo.BundlerProfitUsd = block.userOpInfo.BundlerProfit.Mul(ser.GetNativePrice(network.ID))
 }
 
 func (t *_evmParser) getFrom(tx *types.Transaction, client *ethclient.Client) string {
@@ -527,6 +533,7 @@ func (t *_evmParser) insertBlockInfos(ctx context.Context, client *ent.Client, n
 			SetUseropCount(tx.UseropCount).
 			SetUseropMevCount(tx.UseropMevCount).
 			SetBundlerProfit(tx.BundlerProfit).
+			SetBundlerProfitUsd(tx.BundlerProfitUsd).
 			SetCreateTime(tx.CreateTime).
 			SetID(tx.ID)
 
@@ -540,7 +547,8 @@ func (t *_evmParser) insertBlockInfos(ctx context.Context, client *ent.Client, n
 				UpdateHash().
 				UpdateUseropCount().
 				UpdateUseropMevCount().
-				UpdateBundlerProfit()
+				UpdateBundlerProfit().
+				UpdateBundlerProfitUsd()
 		}).
 		Exec(context.Background())
 	if err != nil {

@@ -13,7 +13,8 @@ type UserBalanceResponse struct {
 }
 
 type BalanceDetail struct {
+	TokenAddress  string          `json:"tokenAddress"`
 	TokenAmount   decimal.Decimal `json:"tokenAmount"`
-	Percentage    string          `json:"percentage"`
+	Percentage    decimal.Decimal `json:"percentage"`
 	TokenValueUsd decimal.Decimal `json:"tokenValueUsd"`
 }

@@ -29,7 +29,11 @@ func (dao *aaTransactionDao) Pagination(ctx context.Context, tx *ent.Client, pag
 	query := tx.AaTransactionInfo.Query()
 
 	if len(condition.TxHashTerm) > 0 && utils.IsHexSting(condition.TxHashTerm) {
-		query = query.Where(sql.FieldHasPrefix(aatransactioninfo.FieldID, utils.Fix0x(condition.TxHashTerm)))
+		if utils.IsHashHex(condition.TxHashTerm) {
+			query = query.Where(aatransactioninfo.IDEQ(utils.Fix0x(condition.TxHashTerm)))
+		} else {
+			query = query.Where(sql.FieldHasPrefix(aatransactioninfo.FieldID, utils.Fix0x(condition.TxHashTerm)))
+		}
 	}
 	if page.TotalCount > 0 {
 		count = page.TotalCount

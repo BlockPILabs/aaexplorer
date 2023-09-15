@@ -20,6 +20,7 @@ func (AaBlockInfo) Fields() []ent.Field {
 		field.Int("userop_count"),
 		field.Int("userop_mev_count"),
 		field.Int64("bundler_profit").GoType(decimal.Decimal{}),
+		field.Int64("bundler_profit_usd").GoType(decimal.Decimal{}),
 		field.Time("create_time"),
 	}
 }

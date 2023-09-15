@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"github.com/BlockPILabs/aa-scan/explorer"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/log"
@@ -105,7 +106,8 @@ func NewStartCmd() *cobra.Command {
 				EnableStackTrace: true,
 				StackTraceHandler: func(c *fiber.Ctx, e interface{}) {
 					//fmt.Println(c, e)
-					log.Context(c.UserContext()).Error("request panic", "debug", string(debug.Stack()))
+					_, _ = os.Stderr.WriteString(fmt.Sprintf("panic: %v\n%s\n", e, debug.Stack())) //nolint:errcheck // This will never fail
+					//log.Context(c.UserContext()).Error("request panic", "debug", string(debug.Stack()))
 					c.Next()
 				},
 			}))

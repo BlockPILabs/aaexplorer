@@ -10,6 +10,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 	"golang.org/x/sync/errgroup"
 	"strconv"
+	"time"
 )
 
 type searchService struct {
@@ -31,6 +32,7 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 		term = term[2:]
 	}
 	maxResult := 10
+	maxTermLen := 12
 	wg, ctx := errgroup.WithContext(ctx)
 
 	var paymasters []*vo.SearchAllAccount
@@ -41,7 +43,15 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 	var txs []*vo.SearchAllTransaction
 	if utils.IsHexSting(term) {
 		wg.Go(func() error {
-			if len(term) > 40 {
+			start := time.Now()
+			defer func() {
+				log.Context(ctx).Debug("AaAccount search", "duration", time.Now().Sub(start).Round(time.Millisecond))
+			}()
+			if req.SearchUserOpAndTx {
+				return nil
+			}
+
+			if len(term) >= maxTermLen && !utils.IsAddress(term) {
 				return nil
 			}
 			accounts, err := dao.AaAccountDao.Search(ctx, client, req)
@@ -70,7 +80,25 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 		})
 
 		wg.Go(func() error {
-			_blocks, err := dao.BlockDao.Search(ctx, client, req.Term)
+			start := time.Now()
+			defer func() {
+				log.Context(ctx).Debug("block search", "duration", time.Now().Sub(start).Round(time.Millisecond))
+			}()
+			if req.SearchUserOpAndTx {
+				return nil
+			}
+
+			if len(term) >= maxTermLen && !utils.IsHashHex(term) {
+				return nil
+			}
+
+			_blocks, _, err := dao.AaBlockDao.Pages(ctx, client, vo.PaginationRequest{
+				TotalCount: 1,
+				PerPage:    maxResult,
+				Page:       1,
+			}, dao.AaBlockPagesCondition{
+				HashTerm: req.Term,
+			})
 			if err != nil {
 				log.Context(ctx).Warn("search block error", "err", err, "req.Term", req.Term)
 				return nil
@@ -82,9 +110,18 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 		})
 
 		wg.Go(func() error {
+			start := time.Now()
+			defer func() {
+				log.Context(ctx).Debug("userop search", "duration", time.Now().Sub(start).Round(time.Millisecond))
+			}()
+
+			if len(term) >= maxTermLen && !utils.IsHashHex(term) {
+				return nil
+			}
+
 			aaUserOpsInfos, _, err := dao.UserOpDao.Pagination(ctx, client, vo.GetUserOpsRequest{
 				PaginationRequest: vo.PaginationRequest{
-					PerPage:    10,
+					PerPage:    maxResult,
 					Page:       1,
 					TotalCount: 1,
 				},
@@ -101,8 +138,16 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 		})
 
 		wg.Go(func() error {
+
+			start := time.Now()
+			defer func() {
+				log.Context(ctx).Debug("AaTransaction search", "duration", time.Now().Sub(start).Round(time.Millisecond))
+			}()
+			if len(term) >= maxTermLen && !utils.IsHashHex(term) {
+				return nil
+			}
 			transactionInfos, _, err := dao.AaTransactionDao.Pagination(ctx, client, vo.PaginationRequest{
-				PerPage:    10,
+				PerPage:    maxResult,
 				Page:       1,
 				TotalCount: 1,
 			}, dao.AaTransactionCondition{TxHashTerm: req.Term})
@@ -120,7 +165,14 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 		parseInt, _ := strconv.ParseInt(req.Term, 10, 64)
 		if parseInt > 0 {
 			wg.Go(func() error {
-				block, err := dao.BlockDao.GetByBlockNumber(ctx, client, parseInt)
+				if req.SearchUserOpAndTx {
+					return nil
+				}
+				start := time.Now()
+				defer func() {
+					log.Context(ctx).Debug("GetByBlockNumber", "duration", time.Now().Sub(start).Round(time.Millisecond))
+				}()
+				block, err := dao.AaBlockDao.GetByBlockNumber(ctx, client, parseInt)
 				if err != nil {
 					log.Context(ctx).Warn("get block by number error", "err", err, "req.Term", req.Term, "number", parseInt)
 					return nil
