@@ -44,6 +44,10 @@ func Resister(router fiber.Router) {
 	networksV1.Get("/transaction", controller.GetTransaction).Name(controller.NameGetTransaction)
 	networksV1.Get("/transactionList", controller.GetTransactionList).Name(controller.NameGetTransactionList)
 
+	//aa transaction
+	networksV1.Get("/aaTransaction", controller.GetAaTransaction).Name(controller.NameGetAaTransaction)
+	networksV1.Get("/aaTransactionList", controller.GetAaTransactionList).Name(controller.NameGetAaTransactionList)
+
 	//aaAccount
 	networksV1.Get("/aaAccountInfo", controller.GetAaAccountInfo).Name(controller.NameGetAaAcountInfo)
 

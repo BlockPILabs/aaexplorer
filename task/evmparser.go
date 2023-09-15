@@ -238,6 +238,11 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 			return
 		}
 
+		start := time.Now()
+		defer func() {
+			logger.Debug("block parse", "blockIds", blockIds, "count", len(blockIds), "duration", time.Now().Sub(start).Round(time.Millisecond))
+		}()
+
 		var aaUserOpsInfos ent.AAUserOpsInfos
 		var aaTransactionInfos ent.AaTransactionInfos
 		var userOpsInfoCalldatas ent.AAUserOpsCalldataSlice
@@ -463,7 +468,7 @@ func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *e
 		block.userOpInfo.BundlerProfit = block.userOpInfo.BundlerProfit.Add(parserTx.userOpInfo.BundlerProfit)
 		block.userOpInfo.UseropCount += len(parserTx.userops)
 	}
-	block.userOpInfo.BundlerProfitUsd = block.userOpInfo.BundlerProfit.Mul(ser.GetNativePrice(network.Name))
+	block.userOpInfo.BundlerProfitUsd = block.userOpInfo.BundlerProfit.Mul(ser.GetNativePrice(network.ID))
 }
 
 func (t *_evmParser) getFrom(tx *types.Transaction, client *ethclient.Client) string {
@@ -495,6 +500,7 @@ func (t *_evmParser) insertTransactions(ctx context.Context, client *ent.Client,
 			SetIsMev(tx.IsMev).
 			SetBundlerProfit(tx.BundlerProfit).
 			SetCreateTime(tx.CreateTime).
+			SetBundlerProfitUsd(tx.BundlerProfitUsd).
 			SetID(tx.ID)
 
 		transactionInfoCreates = append(transactionInfoCreates, txCreate)
@@ -508,7 +514,8 @@ func (t *_evmParser) insertTransactions(ctx context.Context, client *ent.Client,
 				UpdateBlockNumber().
 				UpdateUseropCount().
 				UpdateIsMev().
-				UpdateBundlerProfit()
+				UpdateBundlerProfit().
+				UpdateBundlerProfitUsd()
 		}).
 		Exec(context.Background())
 	if err != nil {
@@ -528,6 +535,7 @@ func (t *_evmParser) insertBlockInfos(ctx context.Context, client *ent.Client, n
 			SetUseropCount(tx.UseropCount).
 			SetUseropMevCount(tx.UseropMevCount).
 			SetBundlerProfit(tx.BundlerProfit).
+			SetBundlerProfitUsd(tx.BundlerProfitUsd).
 			SetCreateTime(tx.CreateTime).
 			SetID(tx.ID)
 
@@ -541,7 +549,8 @@ func (t *_evmParser) insertBlockInfos(ctx context.Context, client *ent.Client, n
 				UpdateHash().
 				UpdateUseropCount().
 				UpdateUseropMevCount().
-				UpdateBundlerProfit()
+				UpdateBundlerProfit().
+				UpdateBundlerProfitUsd()
 		}).
 		Exec(context.Background())
 	if err != nil {
@@ -894,7 +903,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 		return err
 	}
 
-	events, opsValMap := t.parseLogs(ctx, parserTx.logs)
+	events, _ := t.parseLogs(ctx, parserTx.logs)
 
 	parserTx.userOpInfo = &ent.AaTransactionInfo{
 		ID:            parserTx.transaction.ID,
@@ -942,8 +951,8 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 			Sender:               strings.ToLower(op.Sender.Hex()),
 			Target:               target,
 			Targets:              &pgTarges,
-			TxValue:              parserTx.transaction.Value,
-			Fee:                  parserTx.transaction.Gas,
+			TxValue:              decimal.Zero,
+			Fee:                  decimal.Zero,
 			Bundler:              strings.ToLower(parserTx.transaction.FromAddr),
 			EntryPoint:           strings.ToLower(parserTx.transaction.ToAddr),
 			Factory:              "",
@@ -995,12 +1004,13 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 			userOpsInfo.ID = opsVal.OpsHash
 			userOpsInfo.ActualGasCost = opsVal.ActualGasCost
 			userOpsInfo.Status = int32(opsVal.Success)
-			userOpsInfo.Fee = utils.DivRav(opsVal.ActualGasCost)
 		}
-		opsTxValue, opsTxValueOk := opsValMap[userOpsInfo.Sender]
-		if opsTxValueOk {
-			userOpsInfo.TxValue = opsTxValue
-		}
+
+		userOpsInfo.Fee = utils.DivRav(opsVal.ActualGasCost)
+		//opsTxValue, opsTxValueOk := opsValMap[userOpsInfo.Sender]
+		//if opsTxValueOk {
+		//	userOpsInfo.TxValue = opsTxValue
+		//}
 
 		for aaCallIndex, callDetail := range callDetails {
 			id := crypto.
@@ -1026,7 +1036,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 				Network:     userOpsInfo.Network,
 				Sender:      userOpsInfo.Sender,
 				Target:      callDetail.target,
-				TxValue:     callDetail.value,
+				TxValue:     &callDetail.value,
 				Source:      callDetail.source,
 				Calldata:    callDetail.data,
 				TxTime:      userOpsInfo.TxTime,
@@ -1037,14 +1047,17 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 			parserTx.userOpsCalldata = append(parserTx.userOpsCalldata, aaUserOpsCalldata)
 
 			block.AaAccountData(aaUserOpsCalldata.Target)
+			userOpsInfo.TxValue.Add(callDetail.value)
 		}
 
 		parserTx.userops = append(parserTx.userops, userOpsInfo)
 		parserTx.userOpInfo.UseropCount++
-		parserTx.userOpInfo.BundlerProfit = parserTx.userOpInfo.BundlerProfit.Add(decimal.NewFromInt(userOpsInfo.ActualGasCost))
+		parserTx.userOpInfo.BundlerProfit = parserTx.userOpInfo.BundlerProfit.Add(userOpsInfo.Fee)
 
 	}
-	parserTx.userOpInfo.BundlerProfit = parserTx.receipt.GasUsed.Sub(parserTx.transaction.Gas)
+
+	parserTx.userOpInfo.BundlerProfit = parserTx.userOpInfo.BundlerProfit.Sub(GetReceiptGasRayDiv(parserTx.receipt))
+	parserTx.userOpInfo.BundlerProfitUsd = parserTx.userOpInfo.BundlerProfit.Mul(ser.GetNativePrice(network.ID))
 	logger.Info("parse success")
 	return nil
 }
@@ -1182,7 +1195,7 @@ func (t *_evmParser) parseExecuteBatchCall(ctx context.Context, paramData string
 		data := utils.Substring(paramData, offset3*2+64*i, offset3*2+64*(i+1))
 		callDetails = append(callDetails, &CallDetail{
 			target: target,
-			value:  &value,
+			value:  value,
 			data:   data,
 		})
 	}
@@ -1206,7 +1219,7 @@ func (t *_evmParser) parseExecuteBatch(ctx context.Context, paramData string) []
 		data := utils.Substring(paramData, offset3*2+64*i, offset3*2+64*(i+1))
 		callDetails = append(callDetails, &CallDetail{
 			target: target,
-			value:  &value,
+			value:  value,
 			data:   data,
 		})
 	}
@@ -1226,7 +1239,7 @@ func (t *_evmParser) parseExecute(ctx context.Context, paramData string) []*Call
 	var details []*CallDetail
 	details = append(details, &CallDetail{
 		target: target,
-		value:  &value,
+		value:  value,
 		data:   data,
 	})
 

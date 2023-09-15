@@ -24,7 +24,7 @@ func (*aaBlockService) GetAaBlockInfo(ctx context.Context, client *ent.Client, r
 		},
 	}
 
-	pages, total, err := dao.AaBlockDao.Pages(ctx, client, req.PaginationRequest, dao.AaBlockPagesCondition{})
+	pages, total, err := dao.AaBlockDao.Pages(ctx, client, req.PaginationRequest, dao.AaBlockPagesCondition{LatestBlockNumber: req.LatestBlockNumber})
 	if err != nil {
 		return nil, err
 	}

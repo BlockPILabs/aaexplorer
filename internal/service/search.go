@@ -32,6 +32,7 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 		term = term[2:]
 	}
 	maxResult := 10
+	maxTermLen := 12
 	wg, ctx := errgroup.WithContext(ctx)
 
 	var paymasters []*vo.SearchAllAccount
@@ -46,8 +47,11 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 			defer func() {
 				log.Context(ctx).Debug("AaAccount search", "duration", time.Now().Sub(start).Round(time.Millisecond))
 			}()
+			if req.SearchUserOpAndTx {
+				return nil
+			}
 
-			if len(term) > 40 {
+			if len(term) >= maxTermLen && !utils.IsAddress(term) {
 				return nil
 			}
 			accounts, err := dao.AaAccountDao.Search(ctx, client, req)
@@ -80,9 +84,17 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 			defer func() {
 				log.Context(ctx).Debug("block search", "duration", time.Now().Sub(start).Round(time.Millisecond))
 			}()
+			if req.SearchUserOpAndTx {
+				return nil
+			}
+
+			if len(term) >= maxTermLen && !utils.IsHashHex(term) {
+				return nil
+			}
+
 			_blocks, _, err := dao.AaBlockDao.Pages(ctx, client, vo.PaginationRequest{
 				TotalCount: 1,
-				PerPage:    10,
+				PerPage:    maxResult,
 				Page:       1,
 			}, dao.AaBlockPagesCondition{
 				HashTerm: req.Term,
@@ -102,9 +114,14 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 			defer func() {
 				log.Context(ctx).Debug("userop search", "duration", time.Now().Sub(start).Round(time.Millisecond))
 			}()
+
+			if len(term) >= maxTermLen && !utils.IsHashHex(term) {
+				return nil
+			}
+
 			aaUserOpsInfos, _, err := dao.UserOpDao.Pagination(ctx, client, vo.GetUserOpsRequest{
 				PaginationRequest: vo.PaginationRequest{
-					PerPage:    10,
+					PerPage:    maxResult,
 					Page:       1,
 					TotalCount: 1,
 				},
@@ -126,11 +143,14 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 			defer func() {
 				log.Context(ctx).Debug("AaTransaction search", "duration", time.Now().Sub(start).Round(time.Millisecond))
 			}()
+			if len(term) >= maxTermLen && !utils.IsHashHex(term) {
+				return nil
+			}
 			transactionInfos, _, err := dao.AaTransactionDao.Pagination(ctx, client, vo.PaginationRequest{
-				PerPage:    10,
+				PerPage:    maxResult,
 				Page:       1,
 				TotalCount: 1,
-			}, dao.AATransactionCondition{TxHashTerm: req.Term})
+			}, dao.AaTransactionCondition{TxHashTerm: req.Term})
 			if err != nil {
 				return nil
 			}
@@ -145,6 +165,9 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 		parseInt, _ := strconv.ParseInt(req.Term, 10, 64)
 		if parseInt > 0 {
 			wg.Go(func() error {
+				if req.SearchUserOpAndTx {
+					return nil
+				}
 				start := time.Now()
 				defer func() {
 					log.Context(ctx).Debug("GetByBlockNumber", "duration", time.Now().Sub(start).Round(time.Millisecond))

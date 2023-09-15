@@ -13,7 +13,7 @@ func SearchAll(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()
 	logger := log.Context(fcx.UserContext())
 
-	logger.Debug("start get bundlers")
+	logger.Debug("start search all")
 	req := vo.SearchAllRequest{}
 	err := fcx.ParamsParser(&req)
 	if err != nil {
