@@ -383,10 +383,11 @@ func (t *_evmParser) getParseData(ctx context.Context, client *ent.Client, block
 	transactionMap = map[string]*parserTransaction{}
 	for _, blockDataDecode := range blockDataDecodes {
 		blocksMap[blockDataDecode.ID] = &parserBlock{
-			block:       blockDataDecode,
-			transitions: []*parserTransaction{},
-			userOpInfo:  &ent.AaBlockInfo{},
-			aaAccounts:  &sync.Map{},
+			block:         blockDataDecode,
+			transitions:   []*parserTransaction{},
+			userOpInfo:    &ent.AaBlockInfo{},
+			aaAccounts:    &sync.Map{},
+			aaAccountsLck: &sync.Mutex{},
 		}
 	}
 	for _, transactionDecode := range transactionDecodes {
@@ -986,18 +987,16 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 			paymaster.AaType = config.AaAccountTypePaymaster
 		}
 
+		factoryAddr, paymaster := t.getAddr(ctx, userOpsInfo.InitCode, userOpsInfo.PaymasterAndData)
+
+		userOpsInfo.Factory = strings.ToLower(factoryAddr)
+		userOpsInfo.Paymaster = strings.ToLower(paymaster)
 		if len(userOpsInfo.Factory) > 0 {
 			factory := block.AaAccountData(userOpsInfo.Factory)
 			factory.AaType = config.AaAccountTypeFactory
 			sender.Factory = userOpsInfo.Factory
 			sender.FactoryTime = userOpsInfo.Time
 		}
-
-		factoryAddr, paymaster := t.getAddr(ctx, userOpsInfo.InitCode, userOpsInfo.PaymasterAndData)
-
-		userOpsInfo.Factory = strings.ToLower(factoryAddr)
-		userOpsInfo.Paymaster = strings.ToLower(paymaster)
-
 		opsVal, ok := events[userOpsInfo.Sender+strconv.Itoa(int(userOpsInfo.Nonce))]
 		if ok {
 			userOpsInfo.ActualGasUsed = opsVal.ActualGasUsed
