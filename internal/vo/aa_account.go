@@ -17,3 +17,11 @@ type AaAccountRecord struct {
 	FactoryTime *time.Time       `json:"factoryTime"`
 	TotalAmount *decimal.Decimal `json:"totalAmount"`
 }
+
+type AaAccountNetworkRequestVo struct {
+	Address string `json:"address" params:"address" validate:"required,min=3"`
+}
+
+type AaAccountNetworkResponseVo struct {
+	Chains []string `json:"chains"`
+}
