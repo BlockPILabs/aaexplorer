@@ -54,6 +54,8 @@ func (AAUserOpsInfo) Fields() []ent.Field {
 		field.Time("update_time").StructTag(`json:"updateTime"`),
 		field.Int64("usd_amount").StructTag(`json:"usdAmount"`).GoType(decimal.Decimal{}).Optional().Nillable(),
 		field.Int("aa_index").StructTag(`json:"aaIndex"`),
+		field.Int64("fee_usd").StructTag(`json:"feeUsd"`).GoType(decimal.Decimal{}).Optional(),
+		field.Int64("tx_value_usd").StructTag(`json:"txValueUsd"`).GoType(decimal.Decimal{}).Optional(),
 	}
 }
 
