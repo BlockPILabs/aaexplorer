@@ -67,3 +67,30 @@ func GetFactoryAccounts(fcx *fiber.Ctx) error {
 	}
 	return vo.NewResultJsonResponse(res, vo.SetResponseError(err)).JSON(fcx)
 }
+
+const NameGetFactory = "GetFactory"
+
+func GetFactory(fcx *fiber.Ctx) error {
+	ctx := fcx.UserContext()
+	logger := log.Context(fcx.UserContext())
+
+	logger.Debug("start GetFactory")
+	req := vo.GetFactoryRequest{}
+	res := &vo.GetFactoryResponse{}
+	err := fcx.ParamsParser(&req)
+	if err != nil {
+		logger.Warn("params parse error", "err", err)
+		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
+	}
+	err = fcx.QueryParser(&req)
+	if err != nil {
+		logger.Warn("query params parse error", "err", err, "network", req.Network)
+		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
+	}
+
+	res, err = service.FactoryService.GetFactory(ctx, req)
+	if err != nil {
+		logger.Error("GetFactory error", "err", err)
+	}
+	return vo.NewResultJsonResponse(res, vo.SetResponseError(err)).JSON(fcx)
+}
