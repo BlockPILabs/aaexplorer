@@ -1153,7 +1153,7 @@ func (t *_evmParser) parseCallData(ctx context.Context, client *ent.Client, netw
 
 	client, _ = entity.Client(ctx, network.ID)
 
-	for i, detail := range callDetails {
+	for _, detail := range callDetails {
 		if len(detail.data) < 8 {
 			continue
 		}
@@ -1162,6 +1162,13 @@ func (t *_evmParser) parseCallData(ctx context.Context, client *ent.Client, netw
 			detail.source = ""
 			continue
 		}
+
+		functionSignature, err := service.FunctionSignatureService.GetMethodBySignature(ctx, entity.MustClient(), detail.source)
+		if err == nil {
+			detail.source = functionSignature.Name
+			continue
+		}
+
 		accountAbi, err := service.AccountService.GetAbiByAddress(ctx, client, detail.target)
 		if err != nil {
 			continue
@@ -1172,8 +1179,14 @@ func (t *_evmParser) parseCallData(ctx context.Context, client *ent.Client, netw
 			continue
 		}
 		detail.source = method.Name
-		if i == 0 {
-			source = detail.source
+	}
+
+	if len(callDetails) > 0 {
+		for _, detail := range callDetails {
+			if len(detail.source) > 0 {
+				source = detail.source
+				break
+			}
 		}
 	}
 
