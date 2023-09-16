@@ -53,7 +53,7 @@ func doInteractTaskDay(days int) {
 	}
 	for _, record := range records {
 		network := record.ID
-		client, err := entity.Client(context.Background())
+		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			return
 		}
@@ -120,7 +120,7 @@ func day1InteractTask() {
 	}
 	for _, record := range records {
 		network := record.ID
-		client, err := entity.Client(context.Background())
+		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			return
 		}

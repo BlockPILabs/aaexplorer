@@ -54,7 +54,7 @@ func doTaskDay(days int) {
 	}
 	for _, record := range records {
 		network := record.ID
-		client, err := entity.Client(context.Background())
+		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			return
 		}
@@ -124,7 +124,7 @@ func day1Task() {
 	}
 	for _, record := range records {
 		network := record.Network
-		client, err := entity.Client(context.Background())
+		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			return
 		}

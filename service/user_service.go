@@ -169,6 +169,19 @@ func GetTokenPrice(tokenAddress string, network string) decimal.Decimal {
 	return prices[0].TokenPrice
 }
 
+func GetTotalBalance(address string, network string) decimal.Decimal {
+	details := GetWalletBalanceDetail(address, network)
+	if len(details) == 0 {
+		return decimal.Zero
+	}
+	var totalBalance = decimal.Zero
+	for _, detail := range details {
+		totalBalance = totalBalance.Add(detail.ValueUsd)
+	}
+
+	return totalBalance
+}
+
 type WhaleOverview struct {
 	TxDominance     decimal.Decimal
 	Represent       decimal.Decimal

@@ -45,7 +45,7 @@ func (*bundlerService) GetBundlers(ctx context.Context, req vo.GetBundlersReques
 		label := ""
 		if info.Edges.Account != nil && info.Edges.Account.Label != nil {
 			labels := []string{}
-			info.Edges.Account.Label.Scan(&labels)
+			info.Edges.Account.Label.AssignTo(&labels)
 			if len(labels) > 0 {
 				label = labels[0]
 			}
