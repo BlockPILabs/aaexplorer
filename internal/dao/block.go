@@ -81,3 +81,12 @@ func (dao *blockDao) GetBlock(ctx context.Context, tx *ent.Client, blockNumberOr
 		return dao.GetByBlockNumber(ctx, tx, blockNumber)
 	}
 }
+
+func (dao *blockDao) GetMaxBlockNumber(ctx context.Context, tx *ent.Client) int64 {
+	var num []int64
+	err := tx.BlockDataDecode.Query().Aggregate(ent.Max(blockdatadecode.FieldID)).Scan(ctx, &num)
+	if err != nil && len(num) <= 0 {
+		return 0
+	}
+	return num[0]
+}

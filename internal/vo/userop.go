@@ -1,9 +1,7 @@
 package vo
 
 import (
-	"github.com/jackc/pgtype"
 	"github.com/shopspring/decimal"
-	"time"
 )
 
 type UserOpVo struct {
@@ -77,45 +75,46 @@ type UserOpsAnalysisListResponse struct {
 	Records []*UserOpsAnalysisRecord `json:"records"`
 }
 type UserOpsAnalysisRecord struct {
-	UserOperationHash    string            `json:"userOperationHash"`
-	Time                 time.Time         `json:"time"`
-	TxHash               string            `json:"txHash"`
-	BlockNumber          int64             `json:"blockNumber"`
-	Network              string            `json:"network"`
-	Sender               string            `json:"sender"`
-	Target               string            `json:"target"`
-	Targets              *pgtype.TextArray `json:"targets"`
-	TargetsCount         int               `json:"targetsCount"`
-	TxValue              decimal.Decimal   `json:"txValue"`
-	Fee                  decimal.Decimal   `json:"fee"`
-	Bundler              string            `json:"bundler"`
-	EntryPoint           string            `json:"entryPoint"`
-	Factory              string            `json:"factory"`
-	Paymaster            string            `json:"paymaster"`
-	PaymasterAndData     string            `json:"paymasterAndData"`
-	Signature            string            `json:"signature"`
-	Calldata             string            `json:"calldata"`
-	CalldataContract     string            `json:"calldataContract"`
-	Nonce                int64             `json:"nonce"`
-	CallGasLimit         int64             `json:"callGasLimit"`
-	PreVerificationGas   int64             `json:"preVerificationGas"`
-	VerificationGasLimit int64             `json:"verificationGasLimit"`
-	MaxFeePerGas         int64             `json:"max_fee_per_gas"`
-	MaxPriorityFeePerGas int64             `json:"maxPriorityFeePerGas"`
-	TxTime               int64             `json:"txTime"`
-	InitCode             string            `json:"initCode"`
-	Status               int32             `json:"status"`
-	Source               string            `json:"source"`
-	ActualGasCost        int64             `json:"actualGasCost"`
-	ActualGasUsed        int64             `json:"actualGasUsed"`
-	CreateTime           time.Time         `json:"createTime"`
-	UpdateTime           time.Time         `json:"updateTime"`
-	UsdAmount            *decimal.Decimal  `json:"usdAmount"`
-	CallData             []CallDataInfo    `json:"callData"`
+	UserOperationHash    string           `json:"userOperationHash"`
+	Time                 int64            `json:"time"`
+	TxHash               string           `json:"txHash"`
+	BlockNumber          int64            `json:"blockNumber"`
+	Network              string           `json:"network"`
+	Sender               string           `json:"sender"`
+	Target               string           `json:"target"`
+	Targets              []string         `json:"targets"`
+	TargetsCount         int              `json:"targetsCount"`
+	TxValue              decimal.Decimal  `json:"txValue"`
+	Fee                  decimal.Decimal  `json:"fee"`
+	Bundler              string           `json:"bundler"`
+	EntryPoint           string           `json:"entryPoint"`
+	Factory              string           `json:"factory"`
+	Paymaster            string           `json:"paymaster"`
+	PaymasterAndData     string           `json:"paymasterAndData"`
+	Signature            string           `json:"signature"`
+	Calldata             string           `json:"calldata"`
+	CalldataContract     string           `json:"calldataContract"`
+	Nonce                int64            `json:"nonce"`
+	CallGasLimit         int64            `json:"callGasLimit"`
+	PreVerificationGas   int64            `json:"preVerificationGas"`
+	VerificationGasLimit int64            `json:"verificationGasLimit"`
+	MaxFeePerGas         int64            `json:"maxFeePerGas"`
+	MaxPriorityFeePerGas int64            `json:"maxPriorityFeePerGas"`
+	TxTime               int64            `json:"txTime"`
+	InitCode             string           `json:"initCode"`
+	Status               int32            `json:"status"`
+	Source               string           `json:"source"`
+	ActualGasCost        int64            `json:"actualGasCost"`
+	ActualGasUsed        int64            `json:"actualGasUsed"`
+	CreateTime           int64            `json:"createTime"`
+	UpdateTime           int64            `json:"updateTime"`
+	UsdAmount            *decimal.Decimal `json:"usdAmount"`
+	ConfirmBlock         int64            `json:"confirmBlock"`
+	CallData             []CallDataInfo   `json:"callData"`
 }
 
 type CallDataInfo struct {
-	Time        time.Time       `json:"time"`
+	Time        int64           `json:"time"`
 	UserOpsHash string          `json:"userOpsHash"`
 	TxHash      string          `json:"txHash"`
 	BlockNumber int64           `json:"blockNumber"`
@@ -126,7 +125,7 @@ type CallDataInfo struct {
 	Source      string          `json:"source"`
 	Calldata    string          `json:"calldata"`
 	TxTime      int64           `json:"txTime"`
-	CreateTime  time.Time       `json:"createTime"`
-	UpdateTime  time.Time       `json:"updateTime"`
+	CreateTime  int64           `json:"createTime"`
+	UpdateTime  int64           `json:"updateTime"`
 	AaIndex     int             `json:"aaIndex"`
 }

@@ -151,7 +151,7 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 	}
 
 	userOpsList, _, err := dao.UserOpDao.Pages(ctx, client, vo.PaginationRequest{
-		PerPage: 1,
+		PerPage: 1000,
 		Page:    1,
 	}, dao.UserOpsCondition{
 		UserOperationHash: &req.UserOperationHash,
@@ -165,7 +165,7 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 	userOps := userOpsList[0]
 
 	callDataList, _, err := dao.UserOpCallDataDao.Pages(ctx, client, vo.PaginationRequest{
-		PerPage: 1,
+		PerPage: 1000,
 		Page:    1,
 	}, dao.UserOpsCallDataCondition{
 		UserOperationHash: &req.UserOperationHash,
@@ -177,7 +177,7 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 	var callData []vo.CallDataInfo
 	for _, info := range callDataList {
 		data := vo.CallDataInfo{
-			Time:        info.Time,
+			Time:        info.Time.UnixMilli(),
 			UserOpsHash: info.UserOpsHash,
 			TxHash:      info.TxHash,
 			BlockNumber: info.BlockNumber,
@@ -188,22 +188,22 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 			Source:      info.Source,
 			Calldata:    info.Calldata,
 			TxTime:      info.TxTime,
-			CreateTime:  info.CreateTime,
-			UpdateTime:  info.UpdateTime,
+			CreateTime:  info.CreateTime.UnixMilli(),
+			UpdateTime:  info.UpdateTime.UnixMilli(),
 			AaIndex:     info.AaIndex,
 		}
 		callData = append(callData, data)
 	}
+	maxNum := dao.BlockDao.GetMaxBlockNumber(ctx, client)
+	ret := &vo.UserOpsAnalysisRecord{
+		UserOperationHash: userOps.ID,
+		Time:              userOps.Time.UnixMilli(),
+		TxHash:            userOps.TxHash,
+		BlockNumber:       userOps.BlockNumber,
+		Network:           userOps.Network,
+		Sender:            userOps.Sender,
+		Target:            userOps.Target,
 
-	return &vo.UserOpsAnalysisRecord{
-		UserOperationHash:    userOps.ID,
-		Time:                 userOps.Time,
-		TxHash:               userOps.TxHash,
-		BlockNumber:          userOps.BlockNumber,
-		Network:              userOps.Network,
-		Sender:               userOps.Sender,
-		Target:               userOps.Target,
-		Targets:              userOps.Targets,
 		TargetsCount:         userOps.TargetsCount,
 		TxValue:              userOps.TxValue,
 		Fee:                  userOps.Fee,
@@ -227,11 +227,17 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 		Source:               userOps.Source,
 		ActualGasCost:        userOps.ActualGasCost,
 		ActualGasUsed:        userOps.ActualGasUsed,
-		CreateTime:           userOps.CreateTime,
-		UpdateTime:           userOps.UpdateTime,
+		CreateTime:           userOps.CreateTime.UnixMilli(),
+		UpdateTime:           userOps.UpdateTime.UnixMilli(),
 		UsdAmount:            userOps.UsdAmount,
+		ConfirmBlock:         maxNum,
 		CallData:             callData,
-	}, nil
+	}
+	var targets []string
+	_ = userOps.Targets.AssignTo(&targets)
+	ret.Targets = targets
+
+	return ret, nil
 
 }
 
@@ -260,15 +266,15 @@ func (*userOpService) GetUserOpsAnalysisList(ctx context.Context, client *ent.Cl
 	}
 	res.TotalCount = total
 	for _, info := range userOpsList {
-		res.Records = append(res.Records, &vo.UserOpsAnalysisRecord{
-			UserOperationHash:    info.ID,
-			Time:                 info.Time,
-			TxHash:               info.TxHash,
-			BlockNumber:          info.BlockNumber,
-			Network:              info.Network,
-			Sender:               info.Sender,
-			Target:               info.Target,
-			Targets:              info.Targets,
+		ret := &vo.UserOpsAnalysisRecord{
+			UserOperationHash: info.ID,
+			Time:              info.Time.UnixMilli(),
+			TxHash:            info.TxHash,
+			BlockNumber:       info.BlockNumber,
+			Network:           info.Network,
+			Sender:            info.Sender,
+			Target:            info.Target,
+
 			TargetsCount:         info.TargetsCount,
 			TxValue:              info.TxValue,
 			Fee:                  info.Fee,
@@ -292,10 +298,14 @@ func (*userOpService) GetUserOpsAnalysisList(ctx context.Context, client *ent.Cl
 			Source:               info.Source,
 			ActualGasCost:        info.ActualGasCost,
 			ActualGasUsed:        info.ActualGasUsed,
-			CreateTime:           info.CreateTime,
-			UpdateTime:           info.UpdateTime,
+			CreateTime:           info.CreateTime.UnixMilli(),
+			UpdateTime:           info.UpdateTime.UnixMilli(),
 			UsdAmount:            info.UsdAmount,
-		})
+		}
+		var targets []string
+		_ = info.Targets.AssignTo(&targets)
+		ret.Targets = targets
+		res.Records = append(res.Records, ret)
 	}
 
 	return &res, nil

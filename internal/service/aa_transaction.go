@@ -35,9 +35,9 @@ func (*aaTransactionService) GetRecord(ctx context.Context, client *ent.Client, 
 	}
 	record := list[0]
 
-	return &vo.AaTransactionRecord{
-		HASH:                     record.HASH,
-		TIME:                     record.TIME,
+	ret := &vo.AaTransactionRecord{
+		HASH: record.HASH,
+
 		BLOCK_HASH:               record.BLOCK_HASH,
 		BLOCK_NUMBER:             record.BLOCK_NUMBER,
 		USEROP_COUNT:             record.USEROP_COUNT,
@@ -59,7 +59,11 @@ func (*aaTransactionService) GetRecord(ctx context.Context, client *ent.Client, 
 		MAX_FEE_PER_GAS:          record.MAX_FEE_PER_GAS,
 		MAX_PRIORITY_FEE_PER_GAS: record.MAX_PRIORITY_FEE_PER_GAS,
 		ACCESS_LIST:              record.ACCESS_LIST,
-	}, nil
+	}
+	if record.TIME != nil {
+		ret.TIME = record.TIME.UnixMilli()
+	}
+	return ret, nil
 
 }
 
@@ -89,9 +93,9 @@ func (*aaTransactionService) GetPages(ctx context.Context, client *ent.Client, r
 	}
 	res.TotalCount = total
 	for _, record := range userOpsList {
-		res.Records = append(res.Records, &vo.AaTransactionRecord{
-			HASH:                     record.HASH,
-			TIME:                     record.TIME,
+		ret := &vo.AaTransactionRecord{
+			HASH: record.HASH,
+
 			BLOCK_HASH:               record.BLOCK_HASH,
 			BLOCK_NUMBER:             record.BLOCK_NUMBER,
 			USEROP_COUNT:             record.USEROP_COUNT,
@@ -113,7 +117,12 @@ func (*aaTransactionService) GetPages(ctx context.Context, client *ent.Client, r
 			MAX_FEE_PER_GAS:          record.MAX_FEE_PER_GAS,
 			MAX_PRIORITY_FEE_PER_GAS: record.MAX_PRIORITY_FEE_PER_GAS,
 			ACCESS_LIST:              record.ACCESS_LIST,
-		})
+		}
+
+		if record.TIME != nil {
+			ret.TIME = record.TIME.UnixMilli()
+		}
+		res.Records = append(res.Records, ret)
 	}
 
 	return &res, nil

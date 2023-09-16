@@ -2,7 +2,6 @@ package vo
 
 import (
 	"github.com/shopspring/decimal"
-	"time"
 )
 
 type GetAaBlocksRequest struct {
@@ -20,15 +19,15 @@ type AaBlocksVo struct {
 	// ID of the ent.
 	Number int64 `json:"number,omitempty"`
 	// Time holds the value of the "time" field.
-	Time time.Time `json:"time,omitempty"`
+	Time int64 `json:"time,omitempty"`
 	// Hash holds the value of the "hash" field.
 	Hash string `json:"hash,omitempty"`
 	// UseropCount holds the value of the "userop_count" field.
-	UseropCount int `json:"userop_count,omitempty"`
+	UseropCount int `json:"useropCount,omitempty"`
 	// UseropMevCount holds the value of the "userop_mev_count" field.
-	UseropMevCount int `json:"userop_mev_count,omitempty"`
+	UseropMevCount int `json:"useropMevCount,omitempty"`
 	// BundlerProfit holds the value of the "bundler_profit" field.
-	BundlerProfit decimal.Decimal `json:"bundler_profit,omitempty"`
+	BundlerProfit decimal.Decimal `json:"bundlerProfit,omitempty"`
 	// CreateTime holds the value of the "create_time" field.
-	CreateTime time.Time `json:"create_time,omitempty"`
+	CreateTime int64 `json:"createTime,omitempty"`
 }
