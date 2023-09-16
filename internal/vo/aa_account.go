@@ -22,7 +22,7 @@ type AaAccountRecord struct {
 type AaAccountDataVo struct {
 	// ID of the ent.
 	ID           string `json:"address"`
-	AddressLable string `json:"addressLable"`
+	AddressLabel string `json:"addressLabel"`
 	// AaType holds the value of the "aa_type" field.
 	AaType string `json:"aaType"`
 	// Factory holds the value of the "factory" field.
