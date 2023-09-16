@@ -36,6 +36,7 @@ func AssetSync() {
 	if len(networks) == 0 {
 		return
 	}
+	hour6Ago := time.Now().UnixMilli() - 6*3600*1000
 	for _, record := range networks {
 		network := record.Name
 		client, err := entity.Client(context.Background(), network)
@@ -43,7 +44,7 @@ func AssetSync() {
 			return
 		}
 		for {
-			changeTraces, err := client.AssetChangeTrace.Query().Where(assetchangetrace.SyncFlagEQ(0)).Limit(100).All(context.Background())
+			changeTraces, err := client.AssetChangeTrace.Query().Where(assetchangetrace.SyncFlagEQ(0), assetchangetrace.LastChangeTimeLT(hour6Ago)).Limit(100).All(context.Background())
 			if err != nil {
 				return
 			}
@@ -69,7 +70,7 @@ func AssetSync() {
 			syncAccountBalance(client, accounts)
 			syncTokenPrice(client, tokens)
 			syncWTokenPrice(client)
-			client.AssetChangeTrace.Update().Where(assetchangetrace.IDIn(changes[:]...)).SetSyncFlag(1).SetLastChangeTime(time.Now()).Exec(context.Background())
+			client.AssetChangeTrace.Update().Where(assetchangetrace.IDIn(changes[:]...)).SetSyncFlag(1).SetLastChangeTime(time.Now().UnixMilli()).Exec(context.Background())
 		}
 	}
 

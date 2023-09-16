@@ -5,6 +5,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aaaccountdata"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/tokenpriceinfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/userassetinfo"
 	"github.com/BlockPILabs/aa-scan/third/moralis"
@@ -170,16 +171,33 @@ func GetTokenPrice(tokenAddress string, network string) decimal.Decimal {
 }
 
 func GetTotalBalance(address string, network string) decimal.Decimal {
+	client, err := entity.Client(context.Background(), network)
+	if err != nil {
+		return decimal.Zero
+	}
+	existAccount, err := client.AaAccountData.Query().Where(aaaccountdata.IDEQ(address)).Limit(1).All(context.Background())
+	if len(existAccount) > 0 {
+		return existAccount[0].TotalBalanceUsd
+	}
 	details := GetWalletBalanceDetail(address, network)
+
 	if len(details) == 0 {
+		updateBalance(address, client, decimal.Zero)
 		return decimal.Zero
 	}
 	var totalBalance = decimal.Zero
 	for _, detail := range details {
 		totalBalance = totalBalance.Add(detail.ValueUsd)
 	}
-
+	updateBalance(address, client, totalBalance)
 	return totalBalance
+}
+
+func updateBalance(address string, client *ent.Client, balance decimal.Decimal) {
+	accountData, _ := client.AaAccountData.Query().Where(aaaccountdata.IDEQ(address)).All(context.Background())
+	if accountData != nil && len(accountData) > 0 {
+		client.AaAccountData.Update().SetTotalBalanceUsd(balance).SetLastTime(time.Now().UnixMilli()).Where(aaaccountdata.IDEQ(accountData[0].ID)).Exec(context.Background())
+	}
 }
 
 type WhaleOverview struct {

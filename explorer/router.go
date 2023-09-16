@@ -38,6 +38,8 @@ func Resister(router fiber.Router) {
 
 	// paymasters
 	networksV1.Get("/paymasters", controller.GetPaymasters).Name(controller.NameGetPaymasters)
+	networksV1.Get("/paymasterOverview", controller.GetPaymasterOverview).Name(controller.NameGetPaymasterOverview)
+
 	// blocks
 	networksV1.Get("/blocks", controller.GetBlocks).Name(controller.NameGetBlocks)
 	networksV1.Get("/aaBlocks", controller.GetAABlocksPage).Name(controller.NameGetAABlocksPage)

@@ -46,3 +46,19 @@ type ReserveDetail struct {
 	Bundler   string          `json:"bundler"`
 	Balance   decimal.Decimal `json:"balance"`
 }
+
+type GetPaymasterOverviewRequest struct {
+	Paymaster string `json:"paymaster"`
+	Network   string `json:"network"`
+}
+
+type GetPaymasterOverviewResponse struct {
+	SponsorGasFeeUsd24h   decimal.Decimal `json:"sponsorGasFee24h"`
+	UserOpsNum24h         int64           `json:"userOpsNum24h"`
+	SponsorGasFeeUsdTotal decimal.Decimal `json:"sponsorGasFeeTotal"`
+	UserOpsNumTotal       int64           `json:"userOpsNumTotal"`
+	Dominance             decimal.Decimal `json:"dominance"`
+	Rank                  int             `json:"rank"`
+	AccountBalance        decimal.Decimal `json:"accountBalance"`
+	EstimateTxnNum        int             `json:"estimateTxnNum"`
+}

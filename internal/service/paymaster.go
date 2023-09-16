@@ -4,8 +4,11 @@ import (
 	"context"
 	"github.com/BlockPILabs/aa-scan/internal/dao"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/paymasterinfo"
 	"github.com/BlockPILabs/aa-scan/internal/log"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
+	"github.com/BlockPILabs/aa-scan/service"
 )
 
 type paymasterService struct {
@@ -86,3 +89,43 @@ func (*paymasterService) GetPaymasters(ctx context.Context, req vo.GetPaymasters
 
 	return &res, nil
 }*/
+
+func GetPaymasterOverview(ctx context.Context, req vo.GetPaymasterOverviewRequest) (*vo.GetPaymasterOverviewResponse, error) {
+	ctx, logger := log.With(ctx, "service", "GetPaymasterOverview")
+	err := vo.ValidateStruct(req)
+	res := vo.GetPaymasterOverviewResponse{}
+	if err != nil {
+		logger.Error("params error", "req", req, "err", err.Error())
+		return &res, vo.ErrParams.SetData(err)
+	}
+
+	client, err := entity.Client(ctx, req.Network)
+	if err != nil {
+		return nil, err
+	}
+	paymaster := req.Paymaster
+	paymasterInfos, err := client.PaymasterInfo.Query().Where(paymasterinfo.IDEQ(paymaster)).All(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	if len(paymasterInfos) == 0 {
+		return nil, nil
+	}
+
+	allUserOpsNum, err := client.PaymasterInfo.Query().Aggregate(ent.Sum(paymasterinfo.FieldUserOpsNum)).Ints(context.Background())
+
+	info := paymasterInfos[0]
+	res.SponsorGasFeeUsdTotal = info.GasSponsoredUsd.RoundDown(2)
+	res.SponsorGasFeeUsd24h = info.GasSponsoredUsdD1.RoundDown(2)
+	res.UserOpsNumTotal = info.UserOpsNum
+	res.UserOpsNum24h = info.UserOpsNumD1
+	allNum := allUserOpsNum[0]
+	if allNum != 0 {
+		res.Dominance = getRate(int64(allNum), res.UserOpsNumTotal)
+	}
+	highCount, err := client.PaymasterInfo.Query().Where(paymasterinfo.UserOpsNumGT(res.UserOpsNumTotal)).Count(context.Background())
+	totalBalance := service.GetTotalBalance(paymaster, req.Network)
+	res.Rank = highCount + 1
+	res.AccountBalance = totalBalance
+	return &res, nil
+}
