@@ -87,9 +87,11 @@ type UserOpsAnalysisRecord struct {
 	TxValue              decimal.Decimal  `json:"txValue"`
 	Fee                  decimal.Decimal  `json:"fee"`
 	Bundler              string           `json:"bundler"`
+	BundlerLabel         []string         `json:"bundlerLabel"`
 	EntryPoint           string           `json:"entryPoint"`
 	Factory              string           `json:"factory"`
 	Paymaster            string           `json:"paymaster"`
+	PaymasterLabel       []string         `json:"paymasterLabel"`
 	PaymasterAndData     string           `json:"paymasterAndData"`
 	Signature            string           `json:"signature"`
 	Calldata             string           `json:"calldata"`
@@ -110,6 +112,11 @@ type UserOpsAnalysisRecord struct {
 	UpdateTime           int64            `json:"updateTime"`
 	UsdAmount            *decimal.Decimal `json:"usdAmount"`
 	ConfirmBlock         int64            `json:"confirmBlock"`
+	AaIndex              int              `json:"aaIndex"`
+	FeeUsd               decimal.Decimal  `json:"feeUsd"`
+	TxValueUsd           decimal.Decimal  `json:"txValueUsd"`
+	BundlerProfit        decimal.Decimal  `json:"bundlerProfit"`
+	BundlerProfitUsd     decimal.Decimal  `json:"bundlerProfitUsd"`
 	CallData             []CallDataInfo   `json:"callData"`
 }
 

@@ -7,6 +7,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/log"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
+	"github.com/shopspring/decimal"
 	"strings"
 )
 
@@ -173,6 +174,31 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 	if err != nil {
 		return nil, err
 	}
+	var bundlerLabel []string
+	var paymasterLabel []string
+	accs, _ := dao.AccountDao.GetAccountByAddresses(ctx, client, []string{userOps.Bundler, userOps.Paymaster})
+	for _, acc := range accs {
+		if acc.ID == userOps.Bundler {
+			acc.Label.AssignTo(bundlerLabel)
+		}
+		if acc.ID == userOps.Paymaster {
+			acc.Label.AssignTo(paymasterLabel)
+		}
+	}
+
+	pages, _, _ := dao.AaTransactionDao.Pages(ctx, client, vo.PaginationRequest{
+		PerPage: 1,
+		Page:    1,
+	}, dao.AaTransactionCondition{TxHash: &userOps.TxHash})
+
+	bundlerPerfit := decimal.Decimal{}
+	bundlerProfitUsd := decimal.Decimal{}
+	if len(pages) > 0 {
+		if pages[0].BUNDLER_PROFIT != nil {
+			bundlerPerfit = *pages[0].BUNDLER_PROFIT
+		}
+		bundlerProfitUsd = pages[0].BundlerProfitUsd
+	}
 
 	var callData []vo.CallDataInfo
 	for _, info := range callDataList {
@@ -208,9 +234,11 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 		TxValue:              userOps.TxValue,
 		Fee:                  userOps.Fee,
 		Bundler:              userOps.Bundler,
+		BundlerLabel:         bundlerLabel,
 		EntryPoint:           userOps.EntryPoint,
 		Factory:              userOps.Factory,
 		Paymaster:            userOps.Paymaster,
+		PaymasterLabel:       paymasterLabel,
 		PaymasterAndData:     userOps.PaymasterAndData,
 		Signature:            userOps.Signature,
 		Calldata:             userOps.Calldata,
@@ -231,6 +259,11 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 		UpdateTime:           userOps.UpdateTime.UnixMilli(),
 		UsdAmount:            userOps.UsdAmount,
 		ConfirmBlock:         maxNum,
+		AaIndex:              userOps.AaIndex,
+		FeeUsd:               userOps.FeeUsd,
+		TxValueUsd:           userOps.TxValueUsd,
+		BundlerProfit:        bundlerPerfit,
+		BundlerProfitUsd:     bundlerProfitUsd,
 		CallData:             callData,
 	}
 	var targets []string
@@ -266,6 +299,19 @@ func (*userOpService) GetUserOpsAnalysisList(ctx context.Context, client *ent.Cl
 	}
 	res.TotalCount = total
 	for _, info := range userOpsList {
+
+		var bundlerLabel []string
+		var paymasterLabel []string
+		accs, _ := dao.AccountDao.GetAccountByAddresses(ctx, client, []string{info.Bundler, info.Paymaster})
+		for _, acc := range accs {
+			if acc.ID == info.Bundler {
+				acc.Label.AssignTo(bundlerLabel)
+			}
+			if acc.ID == info.Paymaster {
+				acc.Label.AssignTo(paymasterLabel)
+			}
+		}
+
 		ret := &vo.UserOpsAnalysisRecord{
 			UserOperationHash: info.ID,
 			Time:              info.Time.UnixMilli(),
@@ -279,9 +325,11 @@ func (*userOpService) GetUserOpsAnalysisList(ctx context.Context, client *ent.Cl
 			TxValue:              info.TxValue,
 			Fee:                  info.Fee,
 			Bundler:              info.Bundler,
+			BundlerLabel:         bundlerLabel,
 			EntryPoint:           info.EntryPoint,
 			Factory:              info.Factory,
 			Paymaster:            info.Paymaster,
+			PaymasterLabel:       paymasterLabel,
 			PaymasterAndData:     info.PaymasterAndData,
 			Signature:            info.Signature,
 			Calldata:             info.Calldata,
@@ -301,6 +349,9 @@ func (*userOpService) GetUserOpsAnalysisList(ctx context.Context, client *ent.Cl
 			CreateTime:           info.CreateTime.UnixMilli(),
 			UpdateTime:           info.UpdateTime.UnixMilli(),
 			UsdAmount:            info.UsdAmount,
+			AaIndex:              info.AaIndex,
+			FeeUsd:               info.FeeUsd,
+			TxValueUsd:           info.TxValueUsd,
 		}
 		var targets []string
 		_ = info.Targets.AssignTo(&targets)
