@@ -45,7 +45,11 @@ func (dao *bundlerDao) Pagination(ctx context.Context, tx *ent.Client, req vo.Ge
 		bundlerinfo.NetworkEQ(req.Network),
 	)
 
-	total = query.CountX(ctx)
+	if req.TotalCount > 0 {
+		total = req.TotalCount
+	} else {
+		total = query.CountX(ctx)
+	}
 
 	if total < 1 || req.GetOffset() > total {
 		return

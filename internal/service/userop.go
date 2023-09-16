@@ -91,7 +91,7 @@ func (*userOpService) GetUserOps(ctx context.Context, req vo.GetUserOpsRequest) 
 			if err == nil {
 				for i, account := range addresses {
 					var labels []string
-					addresses[i].Label.Scan(&labels)
+					addresses[i].Label.AssignTo(&labels)
 					if len(labels) > 0 {
 						labelMap[account.ID] = labels
 					}

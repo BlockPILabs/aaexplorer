@@ -34,3 +34,9 @@ type GetFactoriesResponse struct {
 	Pagination
 	Records []*FactoryVo `json:"records"`
 }
+
+type GetFactoryAccountsRequest struct {
+	PaginationRequest
+	Network string `json:"network" params:"network" validate:"required,min=3"`
+	Factory string `json:"factory" params:"factory" validate:"required,len=42"`
+}
