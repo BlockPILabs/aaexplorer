@@ -49,7 +49,7 @@ func (b *parserBlock) AaAccountData(address string) *ent.AaAccountData {
 	a, ok := b.aaAccounts.Load(address)
 	if !ok {
 		b.aaAccountsLck.Lock()
-		defer b.aaAccountsLck.Lock()
+		defer b.aaAccountsLck.Unlock()
 		a, ok = b.aaAccounts.Load(address)
 		if !ok {
 			a = &ent.AaAccountData{ID: address}
