@@ -10,7 +10,6 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/memo"
 	aimos "github.com/BlockPILabs/aa-scan/internal/os"
 	"github.com/BlockPILabs/aa-scan/service"
-	"github.com/BlockPILabs/aa-scan/task"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -50,7 +49,7 @@ var ScanCmd = &cobra.Command{
 			log.Print("Task: scan block has been scheduled successfully.")
 		}
 
-		task.AccountTask()
+		//task.AccountTask()
 		//task.InitDayStatis()
 		//task.InitHourStatis()
 		//task.TopBundlers()
