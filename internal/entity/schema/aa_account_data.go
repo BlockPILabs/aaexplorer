@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/shopspring/decimal"
 )
@@ -27,8 +28,18 @@ func (AaAccountData) Fields() []ent.Field {
 	}
 }
 
-func (Account) AaAccountData() []schema.Annotation {
+func (AaAccountData) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entsql.Annotation{Table: "aa_account_data"},
+	}
+}
+
+func (AaAccountData) Edges() []ent.Edge {
+	return []ent.Edge{
+		edge.To("account", Account.Type).
+			StorageKey(
+				edge.Column("address"),
+			).
+			Unique(),
 	}
 }

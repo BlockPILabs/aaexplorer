@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"entgo.io/ent/dialect/sql"
+	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aaaccountdata"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/userassetinfo"
@@ -19,6 +20,24 @@ type aaAccountDao struct {
 
 var AaAccountDao = &aaAccountDao{}
 
+func (*aaAccountDao) GetSortFields(ctx context.Context) []string {
+	return []string{
+		config.Default,
+	}
+}
+func (dao *aaAccountDao) Sort(ctx context.Context, query *ent.AaAccountDataQuery, sort int, order int) *ent.AaAccountDataQuery {
+	opts := dao.orderOptions(ctx, order)
+	if len(opts) > 0 {
+		f := dao.sortField(ctx, dao.GetSortFields(ctx), sort)
+		switch f {
+		case "", config.Default:
+			query.Order(aaaccountdata.ByUpdateTime(opts...))
+		default:
+			query.Order(sql.OrderByField(f, opts...).ToFunc())
+		}
+	}
+	return query
+}
 func (dao *aaAccountDao) Search(ctx context.Context, tx *ent.Client, req vo.SearchAllRequest) (a ent.AaAccountDataSlice, err error) {
 
 	term := utils.Fix0x(strings.ToLower(req.Term))
@@ -72,6 +91,41 @@ func (dao *aaAccountDao) GetAaAccountRecord(ctx context.Context, tx *ent.Client,
 		TotalAmount: record[0].Total_amount,
 	}
 	return ret, nil
+}
+
+func (dao *aaAccountDao) Pagination(ctx context.Context, tx *ent.Client, req vo.GetAccountsRequest) (list ent.AaAccountDataSlice, total int, err error) {
+	query := tx.AaAccountData.Query()
+
+	if len(req.Address) > 0 {
+		query = query.Where(
+			aaaccountdata.IDEQ(req.Address),
+		)
+	}
+	if len(req.Factory) > 0 {
+		query = query.Where(
+			aaaccountdata.FactoryEQ(req.Factory),
+		)
+	}
+
+	if req.TotalCount > 0 {
+		total = req.TotalCount
+	} else {
+		total = query.CountX(ctx)
+	}
+
+	if total < 1 || req.GetOffset() > total {
+		return
+	}
+
+	// sort
+	query = dao.Sort(ctx, query, req.Sort, req.Order)
+	// limit
+	query = query.WithAccount().
+		Offset(req.GetOffset()).
+		Limit(req.PerPage)
+
+	list, err = query.All(ctx)
+	return
 }
 
 func (dao *aaAccountDao) AaAccountExists(ctx context.Context, tx *ent.Client, address string) bool {
