@@ -15,7 +15,7 @@ type AssetChangeTrace struct {
 	Network        string
 	Address        string
 	AddressType    int
-	LastChangeTime time.Time
+	LastChangeTime int64
 	SyncFlag       int
 	CreateTime     time.Time
 	UpdateTime     time.Time
@@ -36,7 +36,7 @@ func (AssetChangeTrace) Fields() []ent.Field {
 			StructTag(`json:"address"`),
 		field.Int("address_type").
 			StructTag(`json:"addressType"`),
-		field.Time("last_change_time").
+		field.Int64("last_change_time").
 			StructTag(`json:"lastChangeTime"`),
 		field.Int("sync_flag").
 			StructTag(`json:"syncFlag"`),

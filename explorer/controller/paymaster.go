@@ -8,6 +8,7 @@ import (
 )
 
 const NameGetPaymasters = "get_paymasters"
+const NameGetPaymasterOverview = "get_paymaster_overview"
 
 func GetPaymasters(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()
@@ -32,6 +33,31 @@ func GetPaymasters(fcx *fiber.Ctx) error {
 	res, err = service.PaymasterService.GetPaymasters(ctx, req)
 	if err != nil {
 		logger.Error("get paymasters error", "err", err)
+	}
+	return vo.NewResultJsonResponse(res, vo.SetResponseError(err)).JSON(fcx)
+}
+
+func GetPaymasterOverview(fcx *fiber.Ctx) error {
+	ctx := fcx.UserContext()
+	logger := log.Context(fcx.UserContext())
+
+	logger.Debug("start get paymaster overview")
+	req := vo.GetPaymasterOverviewRequest{}
+	res := &vo.GetPaymasterOverviewResponse{}
+	err := fcx.ParamsParser(&req)
+	if err != nil {
+		logger.Warn("params parse error", "err", err)
+
+		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
+	}
+	err = fcx.QueryParser(&req)
+	if err != nil {
+		logger.Warn("query params parse error", "err", err, "network", req.Network)
+		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
+	}
+	res, err = service.GetPaymasterOverview(ctx, req)
+	if err != nil {
+		logger.Error("get paymaster overview error", "err", err)
 	}
 	return vo.NewResultJsonResponse(res, vo.SetResponseError(err)).JSON(fcx)
 }

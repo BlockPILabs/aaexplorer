@@ -13,7 +13,6 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactiondecode"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactionreceiptdecode"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/shopspring/decimal"
 	"log"
 	"strings"
 	"time"
@@ -79,8 +78,7 @@ func doScanBlock() {
 		if len(blockData) == 0 {
 			continue
 		}
-		maxNum, err := decimal.NewFromString(string(blockData[0].ID))
-		for i := last + 1; i <= maxNum.BigInt().Int64(); i++ {
+		for i := last + 1; i <= blockData[0].ID; i++ {
 			//do biz
 			//task.MEVTask(i, network)
 			transactions, err := cli.TransactionDecode.Query().Where(transactiondecode.BlockNumberEQ(i)).All(context.Background())
@@ -182,7 +180,7 @@ func saveTrace(network string, address string, addressType int, receipt *ent.Tra
 		SetSyncFlag(0).
 		SetTxHash(receipt.ID).
 		SetBlockNumber(receipt.BlockNumber).
-		SetLastChangeTime(time.Now()).
+		SetLastChangeTime(0).
 		SetAddress(address).
 		SetAddressType(addressType)
 	_, err := trace.Save(context.Background())

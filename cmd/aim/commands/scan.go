@@ -63,7 +63,7 @@ var ScanCmd = &cobra.Command{
 
 		//task.AssetSync()
 		//service.GetWalletBalanceDetail("0x6b1b831718d0faf86cfe790fb59a8dfe077db71b", interConfig.PolygonNetwork)
-		//task.InitEvmParse(cmd.Context(), config, logger.With("module", "task"))
+		task.InitEvmParse(cmd.Context(), config, logger.With("module", "task"))
 		//test2()
 		//task.AssetSync()
 		aimos.TrapSignal(logger, func() {})
