@@ -38,14 +38,25 @@ type _evmParser struct {
 }
 
 type parserBlock struct {
-	block       *ent.BlockDataDecode
-	transitions []*parserTransaction
-	userOpInfo  *ent.AaBlockInfo
-	aaAccounts  *sync.Map
+	block         *ent.BlockDataDecode
+	transitions   []*parserTransaction
+	userOpInfo    *ent.AaBlockInfo
+	aaAccounts    *sync.Map
+	aaAccountsLck *sync.Mutex
 }
 
 func (b *parserBlock) AaAccountData(address string) *ent.AaAccountData {
-	a, _ := b.aaAccounts.LoadOrStore(address, &ent.AaAccountData{ID: address})
+	a, ok := b.aaAccounts.Load(address)
+	if !ok {
+		b.aaAccountsLck.Lock()
+		defer b.aaAccountsLck.Unlock()
+		a, ok = b.aaAccounts.Load(address)
+		if !ok {
+			a = &ent.AaAccountData{ID: address}
+			b.aaAccounts.Store(address, a)
+		}
+	}
+	//a, _ := b.aaAccounts.LoadOrStore(address, &ent.AaAccountData{ID: address})
 	return a.(*ent.AaAccountData)
 }
 func (b *parserBlock) AaAccountDataSlice() ent.AaAccountDataSlice {

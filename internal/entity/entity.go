@@ -119,6 +119,14 @@ func Client(ctx context.Context, group ...string) (*ent.Client, error) {
 	return cc.Client, nil
 }
 
+func MustClient(group ...string) *ent.Client {
+	c, err := Client(context.Background(), group...)
+	if err != nil {
+		panic(err)
+		return nil
+	}
+	return c
+}
 func SetDialect(ctx context.Context, f func(string), group ...string) {
 	g := config.Default
 	if len(group) > 0 && len(group[0]) > 0 {

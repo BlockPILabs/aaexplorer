@@ -73,3 +73,11 @@ func (dao *aaAccountDao) GetAaAccountRecord(ctx context.Context, tx *ent.Client,
 	}
 	return ret, nil
 }
+
+func (dao *aaAccountDao) AaAccountExists(ctx context.Context, tx *ent.Client, address string) bool {
+	exist, err := tx.AaAccountData.Query().Exist(ctx)
+	if err != nil {
+		return false
+	}
+	return exist
+}
