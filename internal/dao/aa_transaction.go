@@ -54,41 +54,42 @@ func (dao *aaTransactionDao) Pagination(ctx context.Context, tx *ent.Client, pag
 }
 
 type AaTransactionScan struct {
-	HASH                     *string          `json:"hash"`
-	TIME                     *time.Time       `json:"time"`
-	BLOCK_HASH               *string          `json:"block_hash"`
-	BLOCK_NUMBER             *int64           `json:"block_number"`
-	USEROP_COUNT             *int64           `json:"userop_count"`
-	IS_MEV                   *bool            `json:"is_mev"`
-	BUNDLER_PROFIT           *decimal.Decimal `json:"bundler_profit"`
-	NONCE                    *decimal.Decimal `json:"nonce"`
-	TRANSACTION_INDEX        *decimal.Decimal `json:"transaction_index"`
-	FROM_ADDR                *string          `json:"from_addr"`
-	TO_ADDR                  *string          `json:"to_addr"`
-	VALUE                    *decimal.Decimal `json:"value"`
-	GAS_PRICE                *decimal.Decimal `json:"gas_price"`
-	GAS                      *decimal.Decimal `json:"gas"`
-	INPUT                    *string          `json:"input"`
-	R                        *string          `json:"r"`
-	S                        *string          `json:"s"`
-	V                        *decimal.Decimal `json:"v"`
-	CHAIN_ID                 *int64           `json:"chain_id"`
-	TYPE                     *string          `json:"type"`
-	MAX_FEE_PER_GAS          *decimal.Decimal `json:"max_fee_per_gas"`
-	MAX_PRIORITY_FEE_PER_GAS *decimal.Decimal `json:"max_priority_fee_per_gas"`
-	ACCESS_LIST              *pgtype.JSONB    `json:"access_list"`
-	Create_Time              *time.Time       `json:"create_time"`
-	BundlerProfitUsd         decimal.Decimal  `json:"bundler_profit_usd,omitempty"`
+	Hash             string          `json:"hash"`
+	Time             time.Time       `json:"time"`
+	BlockHash        string          `json:"block_hash"`
+	BlockNumber      int64           `json:"block_number"`
+	UseropCount      int64           `json:"userop_count"`
+	IsMev            bool            `json:"is_mev"`
+	BundlerProfit    decimal.Decimal `json:"bundler_profit"`
+	CreateTime       time.Time       `json:"create_time"`
+	BundlerProfitUsd decimal.Decimal `json:"bundler_profit_usd"`
+
+	Nonce                decimal.Decimal  `json:"nonce"`
+	TransactionIndex     decimal.Decimal  `json:"transaction_index"`
+	FromAddr             string           `json:"from_addr"`
+	ToAddr               string           `json:"to_addr"`
+	Value                decimal.Decimal  `json:"value"`
+	GasPrice             decimal.Decimal  `json:"gas_price"`
+	Gas                  decimal.Decimal  `json:"gas"`
+	Input                string           `json:"input"`
+	R                    string           `json:"r"`
+	S                    string           `json:"s"`
+	V                    decimal.Decimal  `json:"v"`
+	ChainID              int64            `json:"chain_id"`
+	Type                 string           `json:"type"`
+	MaxFeePerGas         *decimal.Decimal `json:"max_fee_per_gas"`
+	MaxPriorityFeePerGas *decimal.Decimal `json:"max_priority_fee_per_gas"`
+	AccessList           *pgtype.JSONB    `json:"access_list"`
+	Method               string           `json:"method"`
 }
 
 func (dao *aaTransactionDao) Pages(ctx context.Context, tx *ent.Client, page vo.PaginationRequest, condition AaTransactionCondition) (a []*AaTransactionScan, count int, err error) {
 	query := tx.AaTransactionInfo.Query().Modify(func(s *sql.Selector) {
-		t := sql.Table(transactiondecode.Table)
+		t := sql.Table(transactiondecode.Table).As(transactiondecode.Table)
 		s.LeftJoin(t).On(s.C(aatransactioninfo.FieldID), t.C(transactiondecode.FieldID))
 		if len(condition.TxHashTerm) > 0 && utils.IsHexSting(condition.TxHashTerm) {
 			s.Where(sql.HasPrefix(aatransactioninfo.FieldID, utils.Fix0x(condition.TxHashTerm)))
 		}
-
 		if condition.TxHash != nil && len(*(condition.TxHash)) > 0 {
 			sql.FieldEQ(aatransactioninfo.FieldID, *condition.TxHash)(s)
 		}
@@ -116,6 +117,9 @@ func (dao *aaTransactionDao) Pages(ctx context.Context, tx *ent.Client, page vo.
 			dao.orderPage(ctx, aatransactioninfo.Columns, page)(s)
 		}
 		s.Limit(page.GetPerPage()).Offset(page.GetOffset())
+		a := sql.Dialect(s.Dialect()).Table(aatransactioninfo.Table)
+		t := sql.Dialect(s.Dialect()).Table(transactiondecode.Table)
+		s.Select(a.C("*"), t.C("*"))
 	})
 	err = query.Scan(ctx, &a)
 	return

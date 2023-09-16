@@ -73,9 +73,9 @@ func (*userOpService) GetUserOps(ctx context.Context, req vo.GetUserOpsRequest) 
 				accounts = append(accounts, info.Bundler)
 			}
 
-			//if _, ok := accountsMap[info.Factory]; !ok {
-			//	accountsMap[info.Factory] = struct{}{}
-			//	accounts = append(accounts, info.Factory)
+			//if _, ok := accountsMap[info.Bundler]; !ok {
+			//	accountsMap[info.Bundler] = struct{}{}
+			//	accounts = append(accounts, info.Bundler)
 			//}
 
 		}
@@ -194,9 +194,7 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 	bundlerPerfit := decimal.Decimal{}
 	bundlerProfitUsd := decimal.Decimal{}
 	if len(pages) > 0 {
-		if pages[0].BUNDLER_PROFIT != nil {
-			bundlerPerfit = *pages[0].BUNDLER_PROFIT
-		}
+		bundlerPerfit = pages[0].BundlerProfit
 		bundlerProfitUsd = pages[0].BundlerProfitUsd
 	}
 

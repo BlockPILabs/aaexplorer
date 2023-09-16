@@ -47,3 +47,5 @@ const (
 	OrderAsc  = 1
 	OrderDesc = -1
 )
+
+const TokenTypeBase = "base"

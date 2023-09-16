@@ -60,6 +60,7 @@ func (TransactionDecode) Fields() []ent.Field {
 		field.Other("access_list", &pgtype.JSONB{}).StructTag(`json:"accessList"`).SchemaType(map[string]string{
 			dialect.Postgres: "jsonb",
 		}),
+		field.String("method"),
 	}
 }
 
