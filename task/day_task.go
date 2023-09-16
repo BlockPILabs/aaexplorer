@@ -22,7 +22,6 @@ const TimeLayout = "2006-01-02 15:04:05"
 
 func InitDayStatis() {
 	dayScheduler := chrono.NewDefaultTaskScheduler()
-	doDayStatistic()
 	_, err := dayScheduler.ScheduleWithCron(func(ctx context.Context) {
 		doDayStatistic()
 	}, "0 15 0 * * ?")

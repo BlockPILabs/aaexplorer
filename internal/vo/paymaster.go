@@ -26,3 +26,23 @@ type GetPaymastersResponse struct {
 	Pagination
 	Records []*PaymastersVo `json:"records"`
 }
+
+type GetReserveRequest struct {
+	PaginationRequest
+	Paymaster string `json:"paymaster"`
+	Network   string `json:"network"`
+}
+
+type GetReserveResponse struct {
+	Pagination
+	Records []*ReserveDetail
+}
+
+type ReserveDetail struct {
+	Timestamp int64           `json:"timestamp"`
+	Sender    string          `json:"sender"`
+	Target    string          `json:"target"`
+	Status    string          `json:"status"`
+	Bundler   string          `json:"bundler"`
+	Balance   decimal.Decimal `json:"balance"`
+}

@@ -21,9 +21,7 @@ import (
 )
 
 func InitHourStatis() {
-	doHourStatistic()
 	hourScheduler := chrono.NewDefaultTaskScheduler()
-
 	_, err := hourScheduler.ScheduleWithCron(func(ctx context.Context) {
 		doHourStatistic()
 	}, "0 5 * * * ?")

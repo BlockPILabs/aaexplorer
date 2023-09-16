@@ -33,22 +33,42 @@ type ReceiptLog struct {
 }
 
 func ScanBlock() {
-	client, err := entity.Client(context.Background())
+	go scanBlock()
+}
+
+func scanBlock() {
+	for {
+		doScanBlock()
+		time.Sleep(20 * time.Millisecond)
+	}
+
+}
+
+func doScanBlock() {
+	cli, err := entity.Client(context.Background())
 	if err != nil {
 		return
 	}
-	records, err := client.BlockScanRecord.Query().All(context.Background())
-	if len(records) == 0 {
+	networks, err := cli.Network.Query().All(context.Background())
+	if len(networks) == 0 {
 		return
 	}
-	for _, record := range records {
-		network := record.Network
+	for _, net := range networks {
+		network := net.ID
+		client, err := entity.Client(context.Background(), network)
+		if err != nil {
+			continue
+		}
+		records, err := client.BlockScanRecord.Query().Where(blockscanrecord.NetworkEQ(network)).All(context.Background())
+		if len(records) == 0 {
+			continue
+		}
+		record := records[0]
 		last := record.LastBlockNumber
 		cli, err := entity.Client(context.Background(), network)
 		if err != nil {
 			continue
 		}
-		fmt.Println(network)
 		//1.get max block num by network
 		//2.
 		blockData, err := cli.BlockDataDecode.Query().Order(ent.Desc(blockdatadecode.FieldID)).Limit(1).All(context.Background())
@@ -78,6 +98,7 @@ func ScanBlock() {
 			client.BlockScanRecord.Update().Where(blockscanrecord.IDEQ(record.ID)).SetLastBlockNumber(i).Exec(context.Background())
 		}
 	}
+
 }
 
 func parseReceipt(network string, receipts []*ent.TransactionReceiptDecode, cli *ent.Client) {

@@ -18,7 +18,6 @@ import (
 
 func AssetTask() {
 	dayScheduler := chrono.NewDefaultTaskScheduler()
-
 	_, err := dayScheduler.ScheduleWithCron(func(ctx context.Context) {
 		AssetSync()
 	}, "0 15 0 * * ?")

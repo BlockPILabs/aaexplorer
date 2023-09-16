@@ -63,3 +63,26 @@ func (*paymasterService) GetPaymasters(ctx context.Context, req vo.GetPaymasters
 
 	return &res, nil
 }
+
+/*func GetReservePage(ctx context.Context, req vo.GetReserveRequest) (*vo.GetReserveResponse, error) {
+	ctx, logger := log.With(ctx, "service", "GetReservePage")
+	err := vo.ValidateStruct(req)
+	res := vo.GetReserveResponse{
+		Pagination: vo.Pagination{
+			TotalCount: 0,
+			PerPage:    req.GetPerPage(),
+			Page:       req.GetPage(),
+		},
+	}
+	if err != nil {
+		logger.Error("params error", "req", req, "err", err.Error())
+		return &res, vo.ErrParams.SetData(err)
+	}
+
+	client, err := entity.Client(ctx, req.Network)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}*/

@@ -14,10 +14,6 @@ import (
 )
 
 func TopPaymaster() {
-	doTopPaymasterHour(1)
-	doTopPaymasterHour(7)
-	doTopPaymasterHour(30)
-	doTopPaymasterDay()
 	paymasterScheduler := chrono.NewDefaultTaskScheduler()
 
 	_, err := paymasterScheduler.ScheduleWithCron(func(ctx context.Context) {

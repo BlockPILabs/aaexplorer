@@ -12,11 +12,10 @@ import (
 )
 
 func AccountTask() {
-	//doAccountTask()
 	d1Scheduler := chrono.NewDefaultTaskScheduler()
 	_, err := d1Scheduler.ScheduleWithCron(func(ctx context.Context) {
 		doAccountTask()
-	}, "0 1 * * * ?")
+	}, "0 30 0 * * ?")
 	if err != nil {
 		log.Println(err)
 	}

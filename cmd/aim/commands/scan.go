@@ -10,6 +10,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/memo"
 	aimos "github.com/BlockPILabs/aa-scan/internal/os"
 	"github.com/BlockPILabs/aa-scan/service"
+	"github.com/BlockPILabs/aa-scan/task"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -49,15 +50,16 @@ var ScanCmd = &cobra.Command{
 			log.Print("Task: scan block has been scheduled successfully.")
 		}
 
-		//task.AccountTask()
-		//task.InitDayStatis()
-		//task.InitHourStatis()
-		//task.TopBundlers()
-		//task.TopFactories()
-		//task.TopPaymaster()
-		//task.AAContractInteractTask()
-		//task.UserOpTypeTask()
-		//task.AssetTask()
+		task.AccountTask()
+		task.InitDayStatis()
+		task.InitHourStatis()
+		task.TopBundlers()
+		task.TopFactories()
+		task.TopPaymaster()
+		task.AAContractInteractTask()
+		task.UserOpTypeTask()
+		task.AssetTask()
+		//service.ScanBlock()
 
 		//task.AssetSync()
 		//service.GetWalletBalanceDetail("0x6b1b831718d0faf86cfe790fb59a8dfe077db71b", interConfig.PolygonNetwork)

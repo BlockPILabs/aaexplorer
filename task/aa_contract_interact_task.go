@@ -13,7 +13,6 @@ import (
 )
 
 func AAContractInteractTask() {
-	day1InteractTask()
 	d1Scheduler := chrono.NewDefaultTaskScheduler()
 	_, err := d1Scheduler.ScheduleWithCron(func(ctx context.Context) {
 		day1InteractTask()
@@ -22,8 +21,6 @@ func AAContractInteractTask() {
 		log.Println(err)
 	}
 
-	day7InteractTask()
-	day30InteractTask()
 	dayScheduler := chrono.NewDefaultTaskScheduler()
 	_, err = dayScheduler.ScheduleWithCron(func(ctx context.Context) {
 		day7InteractTask()
