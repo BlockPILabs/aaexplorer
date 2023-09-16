@@ -34,3 +34,22 @@ type GetBundlersResponse struct {
 	Pagination
 	Records []*BundlersVo `json:"records"`
 }
+
+type GetBundlerRequest struct {
+	Network string `json:"network" params:"network" validate:"required,min=3"`
+	Bundler string `json:"factory" params:"factory" validate:"required,len=42"`
+}
+type GetBundlerResponse struct {
+	// FeeEarnedUsdD1 holds the value of the "fee_earned_usd_d1" field.
+	FeeEarnedUsdD1 decimal.Decimal `json:"feeEarnedUsdD1"`
+	// FeeEarnedUsd holds the value of the "fee_earned_usd" field.
+	FeeEarnedUsd decimal.Decimal `json:"feeEarnedUsd"`
+	// SuccessRateD1 holds the value of the "success_rate_d1" field.
+	SuccessRateD1 decimal.Decimal `json:"successRateD1"`
+	// SuccessRate holds the value of the "success_rate" field.
+	SuccessRate decimal.Decimal `json:"successRate"`
+	// BundleRate holds the value of the "bundle_rate" field.
+	BundleRate    decimal.Decimal `json:"bundleRate"`
+	Rank          int64           `json:"rank"`
+	TotalBundlers int64           `json:"totalBundlers"`
+}

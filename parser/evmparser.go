@@ -40,7 +40,7 @@ type UserOperationEvent struct {
 	ActualGasCost int64
 	ActualGasUsed int64
 	Target        string
-	Factory       string
+	Bundler       string
 }
 
 type CallDetail struct {
@@ -231,7 +231,7 @@ func insertUserOpsInfo(infos []schema.UserOpsInfo) {
 	for _, ops := range infos {
 		userOpsCreate := client.UserOpsInfo.Create().
 			SetUserOperationHash(ops.UserOperationHash).
-			SetFactory(ops.Factory).
+			SetFactory(ops.Bundler).
 			SetPaymaster(ops.Paymaster).
 			SetNetwork(ops.Network).
 			SetBundler(ops.Bundler).
@@ -330,7 +330,7 @@ func parseUserOps(input string, tx *types.Transaction, receipt *types.Receipt, t
 			Target:               target,
 			Bundler:              from,
 			EntryPoint:           strings.ToLower(tx.To().String()),
-			Factory:              factoryAddr,
+			Bundler:              factoryAddr,
 			Paymaster:            paymaster,
 			PaymasterAndData:     "0x" + paymasterAndData,
 			Calldata:             "0x" + callData,
