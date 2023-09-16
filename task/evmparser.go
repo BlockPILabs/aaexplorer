@@ -651,7 +651,9 @@ func (t *_evmParser) insertUserOpsInfo(ctx context.Context, client *ent.Client, 
 			SetUsdAmount(*ops.UsdAmount).
 			SetID(ops.ID).
 			SetTargetsCount(ops.TargetsCount).
-			SetAaIndex(ops.AaIndex)
+			SetAaIndex(ops.AaIndex).
+			SetFeeUsd(ops.FeeUsd).
+			SetTxValueUsd(ops.TxValueUsd)
 
 		userOpsInfoCreates = append(userOpsInfoCreates, userOpsCreate)
 	}
@@ -692,7 +694,9 @@ func (t *_evmParser) insertUserOpsInfo(ctx context.Context, client *ent.Client, 
 				UpdateUpdateTime().
 				UpdateUsdAmount().
 				UpdateAaIndex().
-				UpdateTargetsCount()
+				UpdateTargetsCount().
+				UpdateFeeUsd().
+				UpdateTxValueUsd()
 		}).Exec(context.Background())
 	if err != nil {
 		log.Context(ctx).Info("insert AAUserOpsInfo error", "err", err)
@@ -1046,13 +1050,16 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 			parserTx.userOpsCalldata = append(parserTx.userOpsCalldata, aaUserOpsCalldata)
 
 			block.AaAccountData(aaUserOpsCalldata.Target)
-			userOpsInfo.TxValue.Add(callDetail.value)
+			userOpsInfo.TxValue = userOpsInfo.TxValue.Add(callDetail.value)
 		}
 
-		parserTx.userops = append(parserTx.userops, userOpsInfo)
+		userOpsInfo.FeeUsd = userOpsInfo.Fee.Mul(ser.GetNativePrice(network.ID))
+		userOpsInfo.TxValueUsd = userOpsInfo.TxValue.Mul(ser.GetNativePrice(network.ID))
+
 		parserTx.userOpInfo.UseropCount++
 		parserTx.userOpInfo.BundlerProfit = parserTx.userOpInfo.BundlerProfit.Add(userOpsInfo.Fee)
 
+		parserTx.userops = append(parserTx.userops, userOpsInfo)
 	}
 
 	parserTx.userOpInfo.BundlerProfit = parserTx.userOpInfo.BundlerProfit.Sub(GetReceiptGasRayDiv(parserTx.receipt))
