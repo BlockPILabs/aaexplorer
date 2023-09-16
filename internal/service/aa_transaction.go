@@ -6,6 +6,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/log"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
+	"github.com/shopspring/decimal"
 )
 
 type aaTransactionService struct {
@@ -21,7 +22,7 @@ func (*aaTransactionService) GetRecord(ctx context.Context, client *ent.Client, 
 		return nil, vo.ErrParams.SetData(err)
 	}
 
-	list, _, err := dao.AaTransactionDao.Pages(ctx, client, vo.PaginationRequest{
+	aatxlist, _, err := dao.AaTransactionDao.Pagination(ctx, client, vo.PaginationRequest{
 		PerPage: 1,
 		Page:    1,
 	}, dao.AaTransactionCondition{
@@ -30,39 +31,84 @@ func (*aaTransactionService) GetRecord(ctx context.Context, client *ent.Client, 
 	if err != nil {
 		return nil, err
 	}
-	if len(list) != 1 {
+	if len(aatxlist) != 1 {
 		return nil, nil
 	}
-	record := list[0]
+	aatx := aatxlist[0]
+
+	txlist, _, err := dao.TransactionDao.Pages(ctx, client, vo.PaginationRequest{
+		PerPage: 1,
+		Page:    1,
+	}, dao.TransactionCondition{
+		TxHash: &req.TxHash,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	if len(txlist) != 1 {
+		return nil, nil
+	}
+	tx := txlist[0]
+
+	txrlist, _, err := dao.TransactionReceiptDao.Pages(ctx, client, vo.PaginationRequest{
+		PerPage: 1,
+		Page:    1,
+	}, dao.TransactionReceiptCondition{
+		TxHash: &req.TxHash,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(txrlist) != 1 {
+		return nil, nil
+	}
+	txr := txrlist[0]
+
+	tokenPrice, err := dao.TokenPriceInfoDao.GetBaseTokenPrice(ctx, client)
+	if err != nil {
+		return nil, err
+	}
 
 	ret := &vo.AaTransactionRecord{
-		HASH: record.HASH,
+		Hash:                 aatx.ID,
+		Time:                 aatx.Time.UnixMilli(),
+		BlockHash:            aatx.BlockHash,
+		BlockNumber:          aatx.BlockNumber,
+		UseropCount:          aatx.UseropCount,
+		IsMev:                aatx.IsMev,
+		BundlerProfit:        aatx.BundlerProfit,
+		BundlerProfitUsd:     aatx.BundlerProfitUsd,
+		Nonce:                tx.Nonce,
+		TransactionIndex:     tx.TransactionIndex,
+		FromAddr:             tx.FromAddr,
+		ToAddr:               tx.ToAddr,
+		Value:                tx.Value,
+		GasPrice:             tx.GasPrice,
+		Gas:                  tx.Gas,
+		Input:                tx.Input,
+		R:                    tx.R,
+		S:                    tx.S,
+		V:                    tx.V,
+		ChainID:              tx.ChainID,
+		Type:                 tx.Type,
+		MaxFeePerGas:         tx.MaxFeePerGas,
+		MaxPriorityFeePerGas: tx.MaxPriorityFeePerGas,
+		AccessList:           tx.AccessList,
+		Method:               tx.Method,
+		ContractAddress:      txr.ContractAddress,
+		CumulativeGasUsed:    txr.CumulativeGasUsed,
+		EffectiveGasPrice:    txr.EffectiveGasPrice,
+		GasUsed:              txr.GasUsed,
+		//Logs:                 txr.Logs,
+		//LogsBloom:            txr.LogsBloom,
+		Status: txr.Status,
 
-		BLOCK_HASH:               record.BLOCK_HASH,
-		BLOCK_NUMBER:             record.BLOCK_NUMBER,
-		USEROP_COUNT:             record.USEROP_COUNT,
-		IS_MEV:                   record.IS_MEV,
-		BUNDLER_PROFIT:           record.BUNDLER_PROFIT,
-		NONCE:                    record.NONCE,
-		TRANSACTION_INDEX:        record.TRANSACTION_INDEX,
-		FROM_ADDR:                record.FROM_ADDR,
-		TO_ADDR:                  record.TO_ADDR,
-		VALUE:                    record.VALUE,
-		GAS_PRICE:                record.GAS_PRICE,
-		GAS:                      record.GAS,
-		INPUT:                    record.INPUT,
-		R:                        record.R,
-		S:                        record.S,
-		V:                        record.V,
-		CHAIN_ID:                 record.CHAIN_ID,
-		TYPE:                     record.TYPE,
-		MAX_FEE_PER_GAS:          record.MAX_FEE_PER_GAS,
-		MAX_PRIORITY_FEE_PER_GAS: record.MAX_PRIORITY_FEE_PER_GAS,
-		ACCESS_LIST:              record.ACCESS_LIST,
+		TokenPriceUsd: tokenPrice.TokenPrice,
+		GasPriceUsd:   tx.GasPrice.Mul(tokenPrice.TokenPrice).Mul(decimal.NewFromInt(10).Pow(decimal.NewFromInt(18))),
+		ValueUsd:      tx.Value.Mul(tokenPrice.TokenPrice).Mul(decimal.NewFromInt(10).Pow(decimal.NewFromInt(18))),
 	}
-	if record.TIME != nil {
-		ret.TIME = record.TIME.UnixMilli()
-	}
+
 	return ret, nil
 
 }
@@ -74,7 +120,6 @@ func (*aaTransactionService) GetPages(ctx context.Context, client *ent.Client, r
 		logger.Error("params error", "req", req, "err", err.Error())
 		return nil, vo.ErrParams.SetData(err)
 	}
-
 	res := vo.AaTransactionListResponse{
 		Pagination: vo.Pagination{
 			TotalCount: 0,
@@ -87,40 +132,52 @@ func (*aaTransactionService) GetPages(ctx context.Context, client *ent.Client, r
 	if req.TxHash != "" {
 		condition.TxHash = &req.TxHash
 	}
-	userOpsList, total, err := dao.AaTransactionDao.Pages(ctx, client, req.PaginationRequest, condition)
+	userOpsList, total, err := dao.AaTransactionDao.Pagination(ctx, client, req.PaginationRequest, condition)
 	if err != nil {
 		return nil, err
 	}
 	res.TotalCount = total
 	for _, record := range userOpsList {
-		ret := &vo.AaTransactionRecord{
-			HASH: record.HASH,
+		txlist, _, err := dao.TransactionDao.Pages(ctx, client, vo.PaginationRequest{
+			PerPage: 1,
+			Page:    1,
+		}, dao.TransactionCondition{
+			TxHash: &req.TxHash,
+		})
 
-			BLOCK_HASH:               record.BLOCK_HASH,
-			BLOCK_NUMBER:             record.BLOCK_NUMBER,
-			USEROP_COUNT:             record.USEROP_COUNT,
-			IS_MEV:                   record.IS_MEV,
-			BUNDLER_PROFIT:           record.BUNDLER_PROFIT,
-			NONCE:                    record.NONCE,
-			TRANSACTION_INDEX:        record.TRANSACTION_INDEX,
-			FROM_ADDR:                record.FROM_ADDR,
-			TO_ADDR:                  record.TO_ADDR,
-			VALUE:                    record.VALUE,
-			GAS_PRICE:                record.GAS_PRICE,
-			GAS:                      record.GAS,
-			INPUT:                    record.INPUT,
-			R:                        record.R,
-			S:                        record.S,
-			V:                        record.V,
-			CHAIN_ID:                 record.CHAIN_ID,
-			TYPE:                     record.TYPE,
-			MAX_FEE_PER_GAS:          record.MAX_FEE_PER_GAS,
-			MAX_PRIORITY_FEE_PER_GAS: record.MAX_PRIORITY_FEE_PER_GAS,
-			ACCESS_LIST:              record.ACCESS_LIST,
+		if err != nil {
+			return nil, err
 		}
-
-		if record.TIME != nil {
-			ret.TIME = record.TIME.UnixMilli()
+		if len(txlist) != 1 {
+			return nil, nil
+		}
+		tx := txlist[0]
+		ret := &vo.AaTransactionRecord{
+			Hash:                 record.ID,
+			Time:                 record.Time.UnixMilli(),
+			BlockHash:            record.BlockHash,
+			BlockNumber:          record.BlockNumber,
+			UseropCount:          record.UseropCount,
+			IsMev:                record.IsMev,
+			BundlerProfit:        record.BundlerProfit,
+			BundlerProfitUsd:     record.BundlerProfitUsd,
+			Nonce:                tx.Nonce,
+			TransactionIndex:     tx.TransactionIndex,
+			FromAddr:             tx.FromAddr,
+			ToAddr:               tx.ToAddr,
+			Value:                tx.Value,
+			GasPrice:             tx.GasPrice,
+			Gas:                  tx.Gas,
+			Input:                tx.Input,
+			R:                    tx.R,
+			S:                    tx.S,
+			V:                    tx.V,
+			ChainID:              tx.ChainID,
+			Type:                 tx.Type,
+			MaxFeePerGas:         tx.MaxFeePerGas,
+			MaxPriorityFeePerGas: tx.MaxPriorityFeePerGas,
+			AccessList:           tx.AccessList,
+			Method:               tx.Method,
 		}
 		res.Records = append(res.Records, ret)
 	}

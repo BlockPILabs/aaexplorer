@@ -194,9 +194,7 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 	bundlerPerfit := decimal.Decimal{}
 	bundlerProfitUsd := decimal.Decimal{}
 	if len(pages) > 0 {
-		if pages[0].BUNDLER_PROFIT != nil {
-			bundlerPerfit = *pages[0].BUNDLER_PROFIT
-		}
+		bundlerPerfit = pages[0].BundlerProfit
 		bundlerProfitUsd = pages[0].BundlerProfitUsd
 	}
 

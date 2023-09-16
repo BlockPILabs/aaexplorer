@@ -42,6 +42,9 @@ func (TokenPriceInfo) Fields() []ent.Field {
 			UpdateDefault(time.Now).
 			StructTag(`json:"updateTime"`).
 			Immutable(),
+		field.String("type").
+			StructTag(`json:"type"`).
+			Immutable().Nillable(),
 	}
 }
 
