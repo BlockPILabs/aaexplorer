@@ -60,7 +60,7 @@ func (s *aaAccountService) GetAccounts(ctx context.Context, req vo.GetAccountsRe
 
 		a := &vo.AaAccountDataVo{
 			ID:              info.ID,
-			AddressLable:    label,
+			AddressLabel:    label,
 			AaType:          info.AaType,
 			Factory:         info.Factory,
 			FactoryTime:     info.FactoryTime.UnixMilli(),

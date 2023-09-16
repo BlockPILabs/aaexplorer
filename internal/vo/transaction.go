@@ -3,7 +3,6 @@ package vo
 import (
 	"github.com/jackc/pgtype"
 	"github.com/shopspring/decimal"
-	"time"
 )
 
 type TransactionRequestVo struct {
@@ -23,14 +22,14 @@ type TransactionListResponse struct {
 
 type TransactionRecord struct {
 	Hash                 string           `json:"hash"`
-	Time                 time.Time        `json:"time"`
-	CreateTime           time.Time        `json:"createTime"`
+	Time                 int64            `json:"time"`
+	CreateTime           int64            `json:"createTime"`
 	BlockHash            string           `json:"blockHash"`
 	BlockNumber          int64            `json:"blockNumber"`
 	Nonce                decimal.Decimal  `json:"nonce"`
 	TransactionIndex     decimal.Decimal  `json:"transactionIndex"`
-	FromAddr             string           `json:"from_addr"`
-	ToAddr               string           `json:"to_addr"`
+	FromAddr             string           `json:"fromAddr"`
+	ToAddr               string           `json:"toAddr"`
 	Value                decimal.Decimal  `json:"value"`
 	GasPrice             decimal.Decimal  `json:"gasPrice"`
 	Gas                  decimal.Decimal  `json:"gas"`

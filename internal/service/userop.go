@@ -7,6 +7,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/log"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
+	"github.com/shopspring/decimal"
 	"strings"
 )
 
@@ -151,7 +152,7 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 	}
 
 	userOpsList, _, err := dao.UserOpDao.Pages(ctx, client, vo.PaginationRequest{
-		PerPage: 1,
+		PerPage: 1000,
 		Page:    1,
 	}, dao.UserOpsCondition{
 		UserOperationHash: &req.UserOperationHash,
@@ -165,7 +166,7 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 	userOps := userOpsList[0]
 
 	callDataList, _, err := dao.UserOpCallDataDao.Pages(ctx, client, vo.PaginationRequest{
-		PerPage: 1,
+		PerPage: 1000,
 		Page:    1,
 	}, dao.UserOpsCallDataCondition{
 		UserOperationHash: &req.UserOperationHash,
@@ -173,11 +174,36 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 	if err != nil {
 		return nil, err
 	}
+	var bundlerLabel []string
+	var paymasterLabel []string
+	accs, _ := dao.AccountDao.GetAccountByAddresses(ctx, client, []string{userOps.Bundler, userOps.Paymaster})
+	for _, acc := range accs {
+		if acc.ID == userOps.Bundler {
+			acc.Label.AssignTo(bundlerLabel)
+		}
+		if acc.ID == userOps.Paymaster {
+			acc.Label.AssignTo(paymasterLabel)
+		}
+	}
+
+	pages, _, _ := dao.AaTransactionDao.Pages(ctx, client, vo.PaginationRequest{
+		PerPage: 1,
+		Page:    1,
+	}, dao.AaTransactionCondition{TxHash: &userOps.TxHash})
+
+	bundlerPerfit := decimal.Decimal{}
+	bundlerProfitUsd := decimal.Decimal{}
+	if len(pages) > 0 {
+		if pages[0].BUNDLER_PROFIT != nil {
+			bundlerPerfit = *pages[0].BUNDLER_PROFIT
+		}
+		bundlerProfitUsd = pages[0].BundlerProfitUsd
+	}
 
 	var callData []vo.CallDataInfo
 	for _, info := range callDataList {
 		data := vo.CallDataInfo{
-			Time:        info.Time,
+			Time:        info.Time.UnixMilli(),
 			UserOpsHash: info.UserOpsHash,
 			TxHash:      info.TxHash,
 			BlockNumber: info.BlockNumber,
@@ -188,29 +214,31 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 			Source:      info.Source,
 			Calldata:    info.Calldata,
 			TxTime:      info.TxTime,
-			CreateTime:  info.CreateTime,
-			UpdateTime:  info.UpdateTime,
+			CreateTime:  info.CreateTime.UnixMilli(),
+			UpdateTime:  info.UpdateTime.UnixMilli(),
 			AaIndex:     info.AaIndex,
 		}
 		callData = append(callData, data)
 	}
+	maxNum := dao.BlockDao.GetMaxBlockNumber(ctx, client)
+	ret := &vo.UserOpsAnalysisRecord{
+		UserOperationHash: userOps.ID,
+		Time:              userOps.Time.UnixMilli(),
+		TxHash:            userOps.TxHash,
+		BlockNumber:       userOps.BlockNumber,
+		Network:           userOps.Network,
+		Sender:            userOps.Sender,
+		Target:            userOps.Target,
 
-	return &vo.UserOpsAnalysisRecord{
-		UserOperationHash:    userOps.ID,
-		Time:                 userOps.Time,
-		TxHash:               userOps.TxHash,
-		BlockNumber:          userOps.BlockNumber,
-		Network:              userOps.Network,
-		Sender:               userOps.Sender,
-		Target:               userOps.Target,
-		Targets:              userOps.Targets,
 		TargetsCount:         userOps.TargetsCount,
 		TxValue:              userOps.TxValue,
 		Fee:                  userOps.Fee,
 		Bundler:              userOps.Bundler,
+		BundlerLabel:         bundlerLabel,
 		EntryPoint:           userOps.EntryPoint,
 		Factory:              userOps.Factory,
 		Paymaster:            userOps.Paymaster,
+		PaymasterLabel:       paymasterLabel,
 		PaymasterAndData:     userOps.PaymasterAndData,
 		Signature:            userOps.Signature,
 		Calldata:             userOps.Calldata,
@@ -227,11 +255,22 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 		Source:               userOps.Source,
 		ActualGasCost:        userOps.ActualGasCost,
 		ActualGasUsed:        userOps.ActualGasUsed,
-		CreateTime:           userOps.CreateTime,
-		UpdateTime:           userOps.UpdateTime,
+		CreateTime:           userOps.CreateTime.UnixMilli(),
+		UpdateTime:           userOps.UpdateTime.UnixMilli(),
 		UsdAmount:            userOps.UsdAmount,
+		ConfirmBlock:         maxNum,
+		AaIndex:              userOps.AaIndex,
+		FeeUsd:               userOps.FeeUsd,
+		TxValueUsd:           userOps.TxValueUsd,
+		BundlerProfit:        bundlerPerfit,
+		BundlerProfitUsd:     bundlerProfitUsd,
 		CallData:             callData,
-	}, nil
+	}
+	var targets []string
+	_ = userOps.Targets.AssignTo(&targets)
+	ret.Targets = targets
+
+	return ret, nil
 
 }
 
@@ -260,22 +299,37 @@ func (*userOpService) GetUserOpsAnalysisList(ctx context.Context, client *ent.Cl
 	}
 	res.TotalCount = total
 	for _, info := range userOpsList {
-		res.Records = append(res.Records, &vo.UserOpsAnalysisRecord{
-			UserOperationHash:    info.ID,
-			Time:                 info.Time,
-			TxHash:               info.TxHash,
-			BlockNumber:          info.BlockNumber,
-			Network:              info.Network,
-			Sender:               info.Sender,
-			Target:               info.Target,
-			Targets:              info.Targets,
+
+		var bundlerLabel []string
+		var paymasterLabel []string
+		accs, _ := dao.AccountDao.GetAccountByAddresses(ctx, client, []string{info.Bundler, info.Paymaster})
+		for _, acc := range accs {
+			if acc.ID == info.Bundler {
+				acc.Label.AssignTo(bundlerLabel)
+			}
+			if acc.ID == info.Paymaster {
+				acc.Label.AssignTo(paymasterLabel)
+			}
+		}
+
+		ret := &vo.UserOpsAnalysisRecord{
+			UserOperationHash: info.ID,
+			Time:              info.Time.UnixMilli(),
+			TxHash:            info.TxHash,
+			BlockNumber:       info.BlockNumber,
+			Network:           info.Network,
+			Sender:            info.Sender,
+			Target:            info.Target,
+
 			TargetsCount:         info.TargetsCount,
 			TxValue:              info.TxValue,
 			Fee:                  info.Fee,
 			Bundler:              info.Bundler,
+			BundlerLabel:         bundlerLabel,
 			EntryPoint:           info.EntryPoint,
 			Factory:              info.Factory,
 			Paymaster:            info.Paymaster,
+			PaymasterLabel:       paymasterLabel,
 			PaymasterAndData:     info.PaymasterAndData,
 			Signature:            info.Signature,
 			Calldata:             info.Calldata,
@@ -292,10 +346,17 @@ func (*userOpService) GetUserOpsAnalysisList(ctx context.Context, client *ent.Cl
 			Source:               info.Source,
 			ActualGasCost:        info.ActualGasCost,
 			ActualGasUsed:        info.ActualGasUsed,
-			CreateTime:           info.CreateTime,
-			UpdateTime:           info.UpdateTime,
+			CreateTime:           info.CreateTime.UnixMilli(),
+			UpdateTime:           info.UpdateTime.UnixMilli(),
 			UsdAmount:            info.UsdAmount,
-		})
+			AaIndex:              info.AaIndex,
+			FeeUsd:               info.FeeUsd,
+			TxValueUsd:           info.TxValueUsd,
+		}
+		var targets []string
+		_ = info.Targets.AssignTo(&targets)
+		ret.Targets = targets
+		res.Records = append(res.Records, ret)
 	}
 
 	return &res, nil

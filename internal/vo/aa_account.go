@@ -2,7 +2,6 @@ package vo
 
 import (
 	"github.com/shopspring/decimal"
-	"time"
 )
 
 type AaAccountRequestVo struct {
@@ -14,7 +13,7 @@ type AaAccountRecord struct {
 	Address     *string          `json:"address"`
 	AaType      *string          `json:"aaType"`
 	Factory     *string          `json:"factory"`
-	FactoryTime *time.Time       `json:"factoryTime"`
+	FactoryTime int64            `json:"factoryTime"`
 	TotalAmount *decimal.Decimal `json:"totalAmount"`
 }
 
@@ -22,7 +21,7 @@ type AaAccountRecord struct {
 type AaAccountDataVo struct {
 	// ID of the ent.
 	ID           string `json:"address"`
-	AddressLable string `json:"addressLable"`
+	AddressLabel string `json:"addressLabel"`
 	// AaType holds the value of the "aa_type" field.
 	AaType string `json:"aaType"`
 	// Factory holds the value of the "factory" field.

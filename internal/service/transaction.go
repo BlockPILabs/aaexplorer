@@ -35,10 +35,10 @@ func (*transactionService) GetRecord(ctx context.Context, client *ent.Client, re
 	}
 	record := list[0]
 
-	return &vo.TransactionRecord{
+	ret := &vo.TransactionRecord{
 		Hash:                 record.ID,
-		Time:                 record.Time,
-		CreateTime:           record.CreateTime,
+		Time:                 record.Time.UnixMilli(),
+		CreateTime:           record.CreateTime.UnixMilli(),
 		BlockHash:            record.BlockHash,
 		BlockNumber:          record.BlockNumber,
 		Nonce:                record.Nonce,
@@ -57,7 +57,9 @@ func (*transactionService) GetRecord(ctx context.Context, client *ent.Client, re
 		MaxFeePerGas:         record.MaxFeePerGas,
 		MaxPriorityFeePerGas: record.MaxPriorityFeePerGas,
 		AccessList:           record.AccessList,
-	}, nil
+	}
+
+	return ret, nil
 
 }
 
@@ -89,8 +91,8 @@ func (*transactionService) GetPages(ctx context.Context, client *ent.Client, req
 	for _, record := range userOpsList {
 		res.Records = append(res.Records, &vo.TransactionRecord{
 			Hash:                 record.ID,
-			Time:                 record.Time,
-			CreateTime:           record.CreateTime,
+			Time:                 record.Time.UnixMilli(),
+			CreateTime:           record.CreateTime.UnixMilli(),
 			BlockHash:            record.BlockHash,
 			BlockNumber:          record.BlockNumber,
 			Nonce:                record.Nonce,

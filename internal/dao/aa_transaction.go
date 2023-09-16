@@ -78,6 +78,7 @@ type AaTransactionScan struct {
 	MAX_PRIORITY_FEE_PER_GAS *decimal.Decimal `json:"max_priority_fee_per_gas"`
 	ACCESS_LIST              *pgtype.JSONB    `json:"access_list"`
 	Create_Time              *time.Time       `json:"create_time"`
+	BundlerProfitUsd         decimal.Decimal  `json:"bundler_profit_usd,omitempty"`
 }
 
 func (dao *aaTransactionDao) Pages(ctx context.Context, tx *ent.Client, page vo.PaginationRequest, condition AaTransactionCondition) (a []*AaTransactionScan, count int, err error) {

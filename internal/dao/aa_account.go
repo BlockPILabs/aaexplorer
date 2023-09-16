@@ -23,6 +23,10 @@ var AaAccountDao = &aaAccountDao{}
 func (*aaAccountDao) GetSortFields(ctx context.Context) []string {
 	return []string{
 		config.Default,
+		aaaccountdata.FieldUpdateTime,
+		aaaccountdata.FieldFactoryTime,
+		aaaccountdata.FieldUserOpsNum,
+		aaaccountdata.FieldTotalBalanceUsd,
 	}
 }
 func (dao *aaAccountDao) Sort(ctx context.Context, query *ent.AaAccountDataQuery, sort int, order int) *ent.AaAccountDataQuery {
@@ -87,8 +91,10 @@ func (dao *aaAccountDao) GetAaAccountRecord(ctx context.Context, tx *ent.Client,
 		Address:     record[0].Address,
 		AaType:      record[0].Aa_type,
 		Factory:     record[0].Factory,
-		FactoryTime: record[0].Factory_time,
 		TotalAmount: record[0].Total_amount,
+	}
+	if record[0].Factory_time != nil {
+		ret.FactoryTime = record[0].Factory_time.UnixMilli()
 	}
 	return ret, nil
 }

@@ -3,7 +3,6 @@ package vo
 import (
 	"github.com/jackc/pgtype"
 	"github.com/shopspring/decimal"
-	"time"
 )
 
 type AaTransactionRequestVo struct {
@@ -24,7 +23,7 @@ type AaTransactionListResponse struct {
 
 type AaTransactionRecord struct {
 	HASH                     *string          `json:"hash"`
-	TIME                     *time.Time       `json:"time"`
+	TIME                     int64            `json:"time"`
 	BLOCK_HASH               *string          `json:"blockHash"`
 	BLOCK_NUMBER             *int64           `json:"blockNumber"`
 	USEROP_COUNT             *int64           `json:"useropCount"`
@@ -32,8 +31,8 @@ type AaTransactionRecord struct {
 	BUNDLER_PROFIT           *decimal.Decimal `json:"bundlerProfit"`
 	NONCE                    *decimal.Decimal `json:"nonce"`
 	TRANSACTION_INDEX        *decimal.Decimal `json:"transactionIndex"`
-	FROM_ADDR                *string          `json:"from_addr"`
-	TO_ADDR                  *string          `json:"to_addr"`
+	FROM_ADDR                *string          `json:"fromAddr"`
+	TO_ADDR                  *string          `json:"toAddr"`
 	VALUE                    *decimal.Decimal `json:"value"`
 	GAS_PRICE                *decimal.Decimal `json:"gasPrice"`
 	GAS                      *decimal.Decimal `json:"gas"`
