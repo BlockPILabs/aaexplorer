@@ -14,10 +14,6 @@ import (
 )
 
 func TopFactories() {
-	doTopFactoryHour(1)
-	doTopFactoryHour(7)
-	doTopFactoryHour(30)
-	doTopFactoryDay()
 	factoryScheduler := chrono.NewDefaultTaskScheduler()
 
 	_, err := factoryScheduler.ScheduleWithCron(func(ctx context.Context) {

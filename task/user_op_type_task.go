@@ -13,7 +13,6 @@ import (
 )
 
 func UserOpTypeTask() {
-	day1Task()
 	d1Scheduler := chrono.NewDefaultTaskScheduler()
 	_, err := d1Scheduler.ScheduleWithCron(func(ctx context.Context) {
 		day1Task()
@@ -22,8 +21,6 @@ func UserOpTypeTask() {
 		log.Println(err)
 	}
 
-	day7Task()
-	day30Task()
 	dayScheduler := chrono.NewDefaultTaskScheduler()
 	_, err = dayScheduler.ScheduleWithCron(func(ctx context.Context) {
 		day7Task()

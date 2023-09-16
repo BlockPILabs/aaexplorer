@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/BlockPILabs/aa-scan/internal/dao"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/bundlerinfo"
 	"github.com/BlockPILabs/aa-scan/internal/log"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 )
@@ -65,4 +66,35 @@ func (*bundlerService) GetBundlers(ctx context.Context, req vo.GetBundlersReques
 	}
 
 	return &res, nil
+}
+
+func (*bundlerService) GetBundler(ctx context.Context, req vo.GetBundlerRequest) (res *vo.GetBundlerResponse, err error) {
+	res = &vo.GetBundlerResponse{}
+	client, err := entity.Client(ctx, req.Network)
+	if err != nil {
+		return
+	}
+
+	info, err := client.BundlerInfo.Get(ctx, req.Bundler)
+	if err != nil {
+		return
+	}
+
+	res = &vo.GetBundlerResponse{
+		FeeEarnedUsdD1: info.FeeEarnedUsdD1,
+		FeeEarnedUsd:   info.FeeEarnedUsd,
+		SuccessRateD1:  info.SuccessRateD1,
+		SuccessRate:    info.SuccessRate,
+		BundleRate:     info.BundleRate,
+		Rank:           999,
+		TotalBundlers:  int64(client.BundlerInfo.Query().CountX(ctx)),
+	}
+
+	res.Rank = res.TotalBundlers
+	res.Rank = int64(
+		client.BundlerInfo.Query().Where(
+			bundlerinfo.BundlesNumGT(info.BundlesNum),
+		).CountX(ctx),
+	)
+	return
 }

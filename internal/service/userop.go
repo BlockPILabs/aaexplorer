@@ -73,9 +73,9 @@ func (*userOpService) GetUserOps(ctx context.Context, req vo.GetUserOpsRequest) 
 				accounts = append(accounts, info.Bundler)
 			}
 
-			//if _, ok := accountsMap[info.Factory]; !ok {
-			//	accountsMap[info.Factory] = struct{}{}
-			//	accounts = append(accounts, info.Factory)
+			//if _, ok := accountsMap[info.Bundler]; !ok {
+			//	accountsMap[info.Bundler] = struct{}{}
+			//	accounts = append(accounts, info.Bundler)
 			//}
 
 		}
