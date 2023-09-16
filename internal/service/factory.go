@@ -85,6 +85,7 @@ func (*factoryService) GetFactory(ctx context.Context, req vo.GetFactoryRequest)
 	res = &vo.GetFactoryResponse{
 		TotalAccountDeployNum: info.AccountDeployNum,
 		AccountDeployNumD1:    info.AccountDeployNumD1,
+		Dominance:             info.Dominance,
 		UserOpsNum:            acc.UserOpsNum,
 		Rank:                  0,
 	}
@@ -94,5 +95,14 @@ func (*factoryService) GetFactory(ctx context.Context, req vo.GetFactoryRequest)
 			factoryinfo.AccountDeployNumGT(info.AccountDeployNum),
 		).CountX(ctx),
 	)
+	res.TotalNumber = int64(
+		client.FactoryInfo.Query().CountX(ctx),
+	)
+
+	addresses, _ := dao.AccountDao.GetAccountByAddresses(ctx, client, []string{req.Factory})
+	if len(addresses) > 0 {
+		addresses[0].Label.AssignTo(&res.Label)
+	}
+
 	return
 }
