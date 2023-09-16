@@ -23,6 +23,10 @@ var AaAccountDao = &aaAccountDao{}
 func (*aaAccountDao) GetSortFields(ctx context.Context) []string {
 	return []string{
 		config.Default,
+		aaaccountdata.FieldUpdateTime,
+		aaaccountdata.FieldFactoryTime,
+		aaaccountdata.FieldUserOpsNum,
+		aaaccountdata.FieldTotalBalanceUsd,
 	}
 }
 func (dao *aaAccountDao) Sort(ctx context.Context, query *ent.AaAccountDataQuery, sort int, order int) *ent.AaAccountDataQuery {
