@@ -182,7 +182,7 @@ func doTopBundlersDay() {
 
 			bundlerInfo.ID = bundlerStatisDay.Bundler
 			bundlerInfo.Network = bundlerStatisDay.Network
-			bundlerInfo.SuccessRate = getSingleRate(bundlerInfo.SuccessBundlesNum, bundlerInfo.BundlesNum)
+			bundlerInfo.SuccessRate = getSingleRate(bundlerInfo.SuccessBundlesNum, bundlerInfo.SuccessBundlesNum+bundlerInfo.FailedBundlesNum)
 			bundlerInfoMap[bundler] = bundlerInfo
 
 		}
