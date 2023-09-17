@@ -127,5 +127,10 @@ func GetPaymasterOverview(ctx context.Context, req vo.GetPaymasterOverviewReques
 	totalBalance := service.GetTotalBalance(paymaster, req.Network)
 	res.Rank = highCount + 1
 	res.AccountBalance = totalBalance
+
+	addresses, _ := dao.AccountDao.GetAccountByAddresses(ctx, client, []string{req.Paymaster})
+	if len(addresses) > 0 {
+		addresses[0].Label.AssignTo(&res.Label)
+	}
 	return &res, nil
 }

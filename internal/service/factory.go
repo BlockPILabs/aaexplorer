@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/BlockPILabs/aa-scan/internal/dao"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/factoryinfo"
 	"github.com/BlockPILabs/aa-scan/internal/log"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 )
@@ -63,4 +64,45 @@ func (*factoryService) GetFactories(ctx context.Context, req vo.GetFactoriesRequ
 	}
 
 	return &res, nil
+}
+
+func (*factoryService) GetFactory(ctx context.Context, req vo.GetFactoryRequest) (res *vo.GetFactoryResponse, err error) {
+	res = &vo.GetFactoryResponse{}
+	client, err := entity.Client(ctx, req.Network)
+	if err != nil {
+		return
+	}
+
+	info, err := client.FactoryInfo.Get(ctx, req.Factory)
+	if err != nil {
+		return
+	}
+
+	acc, err := client.AaAccountData.Get(ctx, req.Factory)
+	if err != nil {
+		return
+	}
+	res = &vo.GetFactoryResponse{
+		TotalAccountDeployNum: info.AccountDeployNum,
+		AccountDeployNumD1:    info.AccountDeployNumD1,
+		Dominance:             info.Dominance,
+		UserOpsNum:            acc.UserOpsNum,
+		Rank:                  0,
+	}
+
+	res.Rank = int64(
+		client.FactoryInfo.Query().Where(
+			factoryinfo.AccountDeployNumGT(info.AccountDeployNum),
+		).CountX(ctx),
+	)
+	res.TotalNumber = int64(
+		client.FactoryInfo.Query().CountX(ctx),
+	)
+
+	addresses, _ := dao.AccountDao.GetAccountByAddresses(ctx, client, []string{req.Factory})
+	if len(addresses) > 0 {
+		addresses[0].Label.AssignTo(&res.Label)
+	}
+
+	return
 }

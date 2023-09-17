@@ -61,4 +61,5 @@ type GetPaymasterOverviewResponse struct {
 	Rank                  int             `json:"rank"`
 	AccountBalance        decimal.Decimal `json:"accountBalance"`
 	EstimateTxnNum        int             `json:"estimateTxnNum"`
+	Label                 []string        `json:"label"`
 }

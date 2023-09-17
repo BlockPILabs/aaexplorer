@@ -52,4 +52,5 @@ type GetBundlerResponse struct {
 	BundleRate    decimal.Decimal `json:"bundleRate"`
 	Rank          int64           `json:"rank"`
 	TotalBundlers int64           `json:"totalBundlers"`
+	Label         []string        `json:"label"`
 }

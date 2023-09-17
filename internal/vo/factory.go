@@ -40,3 +40,17 @@ type GetFactoryAccountsRequest struct {
 	Network string `json:"network" params:"network" validate:"required,min=3"`
 	Factory string `json:"factory" params:"factory" validate:"required,len=42"`
 }
+
+type GetFactoryRequest struct {
+	Network string `json:"network" params:"network" validate:"required,min=3"`
+	Factory string `json:"factory" params:"factory" validate:"required,len=42"`
+}
+type GetFactoryResponse struct {
+	TotalAccountDeployNum int             `json:"accountDeployNum"`
+	AccountDeployNumD1    int             `json:"accountDeployNumD1"`
+	Dominance             decimal.Decimal `json:"dominance"`
+	UserOpsNum            int64           `json:"userOpsNum"`
+	Rank                  int64           `json:"rank"`
+	TotalNumber           int64           `json:"totalNumber"`
+	Label                 []string        `json:"label"`
+}
