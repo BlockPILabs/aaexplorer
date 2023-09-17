@@ -186,7 +186,7 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 		}
 	}
 
-	pages, _, _ := dao.AaTransactionDao.Pages(ctx, client, vo.PaginationRequest{
+	pages, _, _ := dao.AaTransactionDao.Pagination(ctx, client, vo.PaginationRequest{
 		PerPage: 1,
 		Page:    1,
 	}, dao.AaTransactionCondition{TxHash: &userOps.TxHash})

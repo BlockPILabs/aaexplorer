@@ -128,56 +128,65 @@ func (*aaTransactionService) GetPages(ctx context.Context, client *ent.Client, r
 		},
 	}
 
-	condition := dao.AaTransactionCondition{}
+	condition := dao.TransactionCondition{}
 	if req.TxHash != "" {
 		condition.TxHash = &req.TxHash
 	}
-	userOpsList, total, err := dao.AaTransactionDao.Pagination(ctx, client, req.PaginationRequest, condition)
+
+	if req.Address != "" {
+		condition.Address = &req.Address
+	}
+
+	list, total, err := dao.TransactionDao.PagesWithTxaa(ctx, client, req.PaginationRequest, condition)
 	if err != nil {
 		return nil, err
 	}
 	res.TotalCount = total
-	for _, record := range userOpsList {
-		txlist, _, err := dao.TransactionDao.Pages(ctx, client, vo.PaginationRequest{
-			PerPage: 1,
-			Page:    1,
-		}, dao.TransactionCondition{
-			TxHash: &req.TxHash,
-		})
+	for _, record := range list {
+		//txlist, _, err := dao.TransactionDao.Pages(ctx, client, vo.PaginationRequest{
+		//	PerPage: 1,
+		//	Page:    1,
+		//}, dao.TransactionCondition{
+		//	TxHash: &req.TxHash,
+		//})
+		//if err != nil {
+		//	return nil, err
+		//}
+		//tx := ent.TransactionDecode{}
+		//if len(txlist) < 1 {
+		//	tx = *txlist[0]
+		//}
+		aa := record.Edges.Txaa
+		if aa == nil {
+			aa = &ent.AaTransactionInfo{}
+		}
 
-		if err != nil {
-			return nil, err
-		}
-		if len(txlist) != 1 {
-			return nil, nil
-		}
-		tx := txlist[0]
 		ret := &vo.AaTransactionRecord{
 			Hash:                 record.ID,
 			Time:                 record.Time.UnixMilli(),
 			BlockHash:            record.BlockHash,
 			BlockNumber:          record.BlockNumber,
-			UseropCount:          record.UseropCount,
-			IsMev:                record.IsMev,
-			BundlerProfit:        record.BundlerProfit,
-			BundlerProfitUsd:     record.BundlerProfitUsd,
-			Nonce:                tx.Nonce,
-			TransactionIndex:     tx.TransactionIndex,
-			FromAddr:             tx.FromAddr,
-			ToAddr:               tx.ToAddr,
-			Value:                tx.Value,
-			GasPrice:             tx.GasPrice,
-			Gas:                  tx.Gas,
-			Input:                tx.Input,
-			R:                    tx.R,
-			S:                    tx.S,
-			V:                    tx.V,
-			ChainID:              tx.ChainID,
-			Type:                 tx.Type,
-			MaxFeePerGas:         tx.MaxFeePerGas,
-			MaxPriorityFeePerGas: tx.MaxPriorityFeePerGas,
-			AccessList:           tx.AccessList,
-			Method:               tx.Method,
+			UseropCount:          aa.UseropCount,
+			IsMev:                aa.IsMev,
+			BundlerProfit:        aa.BundlerProfit,
+			BundlerProfitUsd:     aa.BundlerProfitUsd,
+			Nonce:                record.Nonce,
+			TransactionIndex:     record.TransactionIndex,
+			FromAddr:             record.FromAddr,
+			ToAddr:               record.ToAddr,
+			Value:                record.Value,
+			GasPrice:             record.GasPrice,
+			Gas:                  record.Gas,
+			Input:                record.Input,
+			R:                    record.R,
+			S:                    record.S,
+			V:                    record.V,
+			ChainID:              record.ChainID,
+			Type:                 record.Type,
+			MaxFeePerGas:         record.MaxFeePerGas,
+			MaxPriorityFeePerGas: record.MaxPriorityFeePerGas,
+			AccessList:           record.AccessList,
+			Method:               record.Method,
 		}
 		res.Records = append(res.Records, ret)
 	}
