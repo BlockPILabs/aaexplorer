@@ -109,6 +109,24 @@ func (dao *userOpDao) Pagination(ctx context.Context, tx *ent.Client, req vo.Get
 	start = time.Now()
 	// limit
 	query = query.
+		Select(
+			aauseropsinfo.FieldTime,
+			aauseropsinfo.FieldID,
+			aauseropsinfo.FieldTxHash,
+			aauseropsinfo.FieldNetwork,
+			aauseropsinfo.FieldSender,
+			aauseropsinfo.FieldTarget,
+			aauseropsinfo.FieldTargets,
+			aauseropsinfo.FieldTargetsCount,
+			aauseropsinfo.FieldTxValue,
+			aauseropsinfo.FieldTxValueUsd,
+			aauseropsinfo.FieldFee,
+			aauseropsinfo.FieldStatus,
+			aauseropsinfo.FieldSource,
+			aauseropsinfo.FieldBundler,
+			aauseropsinfo.FieldPaymaster,
+			aauseropsinfo.FieldBlockNumber,
+		).
 		Offset(req.GetOffset()).
 		Limit(req.PerPage)
 
