@@ -252,8 +252,9 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 		for _, block := range blocksMap {
 			t.doParse(ctx, client, network, block)
 
+			setBlockSyncedId = append(setBlockSyncedId, block.block.ID)
+
 			if block.userOpInfo == nil || block.userOpInfo.UseropCount < 1 {
-				setBlockSyncedId = append(setBlockSyncedId, block.block.ID)
 				continue
 			}
 			aaBlockInfos = append(aaBlockInfos, block.userOpInfo)
