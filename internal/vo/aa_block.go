@@ -27,7 +27,8 @@ type AaBlocksVo struct {
 	// UseropMevCount holds the value of the "userop_mev_count" field.
 	UseropMevCount int `json:"useropMevCount,omitempty"`
 	// BundlerProfit holds the value of the "bundler_profit" field.
-	BundlerProfit decimal.Decimal `json:"bundlerProfit,omitempty"`
+	BundlerProfit    decimal.Decimal `json:"bundlerProfit,omitempty"`
+	BundlerProfitUsd decimal.Decimal `json:"bundlerProfitUsd,omitempty"`
 	// CreateTime holds the value of the "create_time" field.
 	CreateTime int64 `json:"createTime,omitempty"`
 }

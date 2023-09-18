@@ -34,13 +34,14 @@ func (*aaBlockService) GetAaBlockInfo(ctx context.Context, client *ent.Client, r
 	res.Records = make([]*vo.AaBlocksVo, len(pages))
 	for i, info := range pages {
 		res.Records[i] = &vo.AaBlocksVo{
-			Number:         info.ID,
-			Time:           info.Time.UnixMilli(),
-			Hash:           info.Hash,
-			UseropCount:    info.UseropCount,
-			UseropMevCount: info.UseropMevCount,
-			BundlerProfit:  info.BundlerProfit,
-			CreateTime:     info.CreateTime.UnixMilli(),
+			Number:           info.ID,
+			Time:             info.Time.UnixMilli(),
+			Hash:             info.Hash,
+			UseropCount:      info.UseropCount,
+			UseropMevCount:   info.UseropMevCount,
+			BundlerProfit:    info.BundlerProfit,
+			BundlerProfitUsd: info.BundlerProfitUsd,
+			CreateTime:       info.CreateTime.UnixMilli(),
 		}
 
 	}
