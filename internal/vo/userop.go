@@ -63,7 +63,7 @@ type GetUserOpsResponse struct {
 type UserOpsAnalysisRequestVo struct {
 	Network           string `json:"network" params:"network" validate:"required,min=3"`
 	UserOperationHash string `json:"userOperationHash" params:"userOperationHash" validate:"required,min=3"`
-	TxHash            string `json:"txHash" params:"txHash" validate:"required,min=3"`
+	TxHash            string `json:"txHash" params:"txHash"`
 }
 
 type UserOpsAnalysisListRequestVo struct {
