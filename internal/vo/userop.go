@@ -25,8 +25,6 @@ type UserOpVo struct {
 	TxValue decimal.Decimal `json:"txValue"`
 	// Fee holds the value of the "fee" field.
 	Fee decimal.Decimal `json:"fee"`
-	// InitCode holds the value of the "init_code" field.
-	InitCode string `json:"initCode"`
 	// Status holds the value of the "status" field.
 	Status int32 `json:"status"`
 	// Source holds the value of the "source" field.
@@ -63,6 +61,7 @@ type GetUserOpsResponse struct {
 type UserOpsAnalysisRequestVo struct {
 	Network           string `json:"network" params:"network" validate:"required,min=3"`
 	UserOperationHash string `json:"userOperationHash" params:"userOperationHash" validate:"required,min=3"`
+	TxHash            string `json:"txHash" params:"txHash"`
 }
 
 type UserOpsAnalysisListRequestVo struct {

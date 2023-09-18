@@ -45,9 +45,9 @@ func (dao *aaBlockDao) Pages(ctx context.Context, tx *ent.Client, page vo.Pagina
 		return
 	}
 
-	if page.Sort > 0 {
-		query = query.Order(dao.orderPage(ctx, aablockinfo.Columns, page))
-	}
+	//if page.Sort > 0 {
+	query = query.Order(dao.orderPage(ctx, aablockinfo.Columns, page))
+	//}
 
 	query = query.Limit(page.GetPerPage()).Offset(page.GetOffset())
 	a, err = query.All(ctx)

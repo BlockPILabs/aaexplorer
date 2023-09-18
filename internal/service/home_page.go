@@ -251,10 +251,10 @@ func GetLatestUserOps(ctx context.Context, req vo.LatestUserOpsRequest) (*vo.Lat
 	}
 	var resp = &vo.LatestUserOpsResponse{}
 
-	var ago24h = time.Now().Second() - 24*3600
+	var ago24h = time.Now().Add(-time.Hour * 24)
 
-	count, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.TxTimeGTE(int64(ago24h))).Count(context.Background())
-	allGas, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.TxTimeGTE(int64(ago24h))).Aggregate(ent.Sum(aauseropsinfo.FieldActualGasCost)).Strings(context.Background())
+	count, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.TimeGTE(ago24h)).Count(context.Background())
+	allGas, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.TimeGTE(ago24h)).Aggregate(ent.Sum(aauseropsinfo.FieldActualGasCost)).Strings(context.Background())
 	if err != nil {
 		resp.AverageGasCost24h = decimal.Zero
 		return resp, nil

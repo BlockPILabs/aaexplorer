@@ -8,7 +8,6 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/log"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 	"github.com/shopspring/decimal"
-	"strings"
 )
 
 type userOpService struct {
@@ -45,17 +44,21 @@ func (*userOpService) GetUserOps(ctx context.Context, req vo.GetUserOpsRequest) 
 	if res.TotalCount > 0 {
 
 		var lists = map[string][]string{}
-		var userOpsHashIn = []string{}
+		//var userOpsHashIn = []string{}
 		var accountsMap = map[string]struct{}{}
 		var accounts = []string{}
 		for _, info := range list {
 			lists[info.ID] = []string{info.Target}
-			if info.TargetsCount > 0 {
-				if len(info.Targets.Elements) == 1 {
-					lists[info.ID] = strings.Split(strings.Trim(strings.Repeat(info.Target+"-", info.TargetsCount), "-"), "-")
-				} else {
-					userOpsHashIn = append(userOpsHashIn, info.ID)
-				}
+			if info.TargetsCount > 1 {
+				//if len(info.Targets.Elements) == 1 {
+				//	lists[info.ID] = strings.Split(strings.Trim(strings.Repeat(info.Target+"-", info.TargetsCount), "-"), "-")
+				//} else {
+				//	userOpsHashIn = append(userOpsHashIn, info.ID)
+				//}
+				tgs := []string{info.Target}
+				info.Targets.AssignTo(&tgs)
+				lists[info.ID] = tgs
+
 			}
 
 			if _, ok := accountsMap[info.Sender]; !ok {
@@ -79,12 +82,12 @@ func (*userOpService) GetUserOps(ctx context.Context, req vo.GetUserOpsRequest) 
 			//}
 
 		}
-		if len(userOpsHashIn) > 0 {
-			getTargets, _ := dao.UserOpCallDataDao.GetTargets(ctx, client, userOpsHashIn)
-			for id, targets := range getTargets {
-				lists[id] = targets
-			}
-		}
+		//if len(userOpsHashIn) > 0 {
+		//	getTargets, _ := dao.UserOpCallDataDao.GetTargets(ctx, client, userOpsHashIn)
+		//	for id, targets := range getTargets {
+		//		lists[id] = targets
+		//	}
+		//}
 
 		var labelMap = map[string][]string{}
 		if len(accounts) > 0 {
@@ -115,7 +118,6 @@ func (*userOpService) GetUserOps(ctx context.Context, req vo.GetUserOpsRequest) 
 				TargetLabel:       "",
 				TxValue:           info.TxValue,
 				Fee:               info.Fee,
-				InitCode:          info.InitCode,
 				Status:            info.Status,
 				Source:            info.Source,
 				Targets:           lists[info.ID],
@@ -134,7 +136,7 @@ func (*userOpService) GetUserOps(ctx context.Context, req vo.GetUserOpsRequest) 
 				userOpVo.BundlerLabel = a[0]
 			}
 			if a, ok := labelMap[userOpVo.Paymaster]; ok {
-				userOpVo.Paymaster = a[0]
+				userOpVo.PaymasterLabel = a[0]
 			}
 			res.Records[i] = userOpVo
 		}
@@ -156,6 +158,7 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 		Page:    1,
 	}, dao.UserOpsCondition{
 		UserOperationHash: &req.UserOperationHash,
+		TxHash:            &req.TxHash,
 	})
 	if err != nil {
 		return nil, err

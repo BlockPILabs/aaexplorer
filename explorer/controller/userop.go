@@ -64,7 +64,7 @@ func GetUserOpsAnalysis(fcx *fiber.Ctx) error {
 	if err != nil {
 		logger.Error("GetUserOpsAnalysis error", "err", err)
 	}
-	return vo.NewResultJsonResponse(res).JSON(fcx)
+	return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(err)).JSON(fcx)
 }
 
 const NameGetUserOpsAnalysisList = "GetUserOpsAnalysisList"
