@@ -47,6 +47,18 @@ func SetResponseError(err error) SetResponseOption {
 		return r
 	}
 }
+func SetResponseAutoDataError(err error) SetResponseOption {
+	return func(r *JsonResponse) *JsonResponse {
+		r = SetResponseError(err)(r)
+		if r.Error != nil {
+			if r.Error.Data == nil {
+				r.Error.Data = r.Result
+			}
+			r.Result = nil
+		}
+		return r
+	}
+}
 
 func NewJsonResponse(sets ...SetResponseOption) *JsonResponse {
 	r := &JsonResponse{Version: vsn}
