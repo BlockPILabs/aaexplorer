@@ -155,7 +155,7 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 				return nil
 			}
 			for _, transactionInfo := range transactionInfos {
-				userops = append(userops, &vo.SearchAllTransaction{TxHash: transactionInfo.ID})
+				txs = append(txs, &vo.SearchAllTransaction{TxHash: transactionInfo.ID})
 			}
 			return nil
 		})
