@@ -50,7 +50,7 @@ func doTopPaymasterDay() {
 			continue
 		}
 		now := time.Now()
-		startTime := time.Date(now.Year(), now.Month(), now.Day()-70, 0, 0, 0, 0, now.Location())
+		startTime := time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		paymasterStatisDays, err := client.PaymasterStatisDay.
 			Query().
@@ -162,8 +162,8 @@ func doTopPaymasterHour(timeRange int) {
 			continue
 		}
 		now := time.Now()
-		startTime := time.Date(now.Year(), now.Month(), now.Day()-70, now.Hour()-24*timeRange, 0, 0, 0, now.Location())
-		endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 0, 0, 0, now.Location())
+		startTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-24*timeRange, 0, 0, 0, now.Location())
+		endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, now.Location())
 		paymasterStatisHours, err := client.PaymasterStatisHour.
 			Query().
 			Where(

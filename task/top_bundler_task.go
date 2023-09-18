@@ -41,9 +41,9 @@ func addOpsInfo(key string, opsInfo *ent.AAUserOpsInfo, bundlerMap map[string]ma
 	}
 	var startOf = ""
 	if startType == "day" {
-		startOf = getDayStart(opsInfo.TxTime)
+		startOf = getDayStart(opsInfo.Time)
 	} else {
-		startOf = getHourStart(opsInfo.TxTime)
+		startOf = getHourStart(opsInfo.Time)
 	}
 	timeOps, timeOpOk := bundlerOps[startOf]
 	if !timeOpOk {
@@ -54,15 +54,13 @@ func addOpsInfo(key string, opsInfo *ent.AAUserOpsInfo, bundlerMap map[string]ma
 	bundlerMap[key] = bundlerOps
 }
 
-func getDayStart(timestamp int64) string {
-	t := time.Unix(timestamp, 0)
-	startOfDay := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC).Format(TimeLayout)
+func getDayStart(t time.Time) string {
+	startOfDay := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local).Format(TimeLayout)
 	return startOfDay
 }
 
-func getHourStart(timestamp int64) string {
-	t := time.Unix(timestamp, 0)
-	startOfHour := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, time.UTC).Format(TimeLayout)
+func getHourStart(t time.Time) string {
+	startOfHour := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, time.Local).Format(TimeLayout)
 	return startOfHour
 }
 
@@ -102,7 +100,7 @@ func doTopBundlersDay() {
 			continue
 		}
 		now := time.Now()
-		startTime := time.Date(now.Year(), now.Month(), now.Day()-70, 0, 0, 0, 0, now.Location())
+		startTime := time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		bundlerStatisDays, err := client.BundlerStatisDay.
 			Query().
@@ -262,7 +260,7 @@ func doTopBundlersHour(timeRange int) {
 			continue
 		}
 		now := time.Now()
-		startTime := time.Date(now.Year(), now.Month(), now.Day()-70, now.Hour()-24*timeRange, 0, 0, 0, now.Location())
+		startTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-24*timeRange, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, now.Location())
 		bundlerStatisHours, err := client.BundlerStatisHour.
 			Query().
