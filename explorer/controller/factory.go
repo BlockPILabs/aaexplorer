@@ -22,19 +22,19 @@ func GetFactories(fcx *fiber.Ctx) error {
 	err := fcx.ParamsParser(&req)
 	if err != nil {
 		logger.Warn("params parse error", "err", err)
-		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
 	}
 	err = fcx.QueryParser(&req)
 	if err != nil {
 		logger.Warn("query params parse error", "err", err, "network", req.Network)
-		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
 	}
 
 	res, err = service.FactoryService.GetFactories(ctx, req)
 	if err != nil {
 		logger.Error("get factories error", "err", err)
 	}
-	return vo.NewResultJsonResponse(res, vo.SetResponseError(err)).JSON(fcx)
+	return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(err)).JSON(fcx)
 }
 
 func GetFactoryAccounts(fcx *fiber.Ctx) error {
@@ -49,12 +49,12 @@ func GetFactoryAccounts(fcx *fiber.Ctx) error {
 	err := fcx.ParamsParser(&req)
 	if err != nil {
 		logger.Warn("params parse error", "err", err)
-		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
 	}
 	err = fcx.QueryParser(&req)
 	if err != nil {
 		logger.Warn("query params parse error", "err", err, "network", req.Network)
-		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
 	}
 
 	res, err = service.AaAccountService.GetAccounts(ctx, vo.GetAccountsRequest{
@@ -65,7 +65,7 @@ func GetFactoryAccounts(fcx *fiber.Ctx) error {
 	if err != nil {
 		logger.Error("get factories error", "err", err)
 	}
-	return vo.NewResultJsonResponse(res, vo.SetResponseError(err)).JSON(fcx)
+	return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(err)).JSON(fcx)
 }
 
 const NameGetFactory = "GetFactory"

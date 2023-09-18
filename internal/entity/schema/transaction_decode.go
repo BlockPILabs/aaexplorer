@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/jackc/pgtype"
 	"github.com/shopspring/decimal"
@@ -65,7 +66,9 @@ func (TransactionDecode) Fields() []ent.Field {
 }
 
 func (TransactionDecode) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.To("txaa", AaTransactionInfo.Type).StorageKey(edge.Column("hash")).Unique(),
+	}
 }
 
 func (TransactionDecode) Annotations() []schema.Annotation {

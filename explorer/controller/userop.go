@@ -23,20 +23,20 @@ func GetUserOps(fcx *fiber.Ctx) error {
 	if err != nil {
 		logger.Warn("params parse error", "err", err)
 
-		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
 	}
 	err = fcx.QueryParser(&req)
 	if err != nil {
 		logger.Warn("query params parse error", "err", err, "network", req.Network)
 
-		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
 	}
 
 	res, err = service.UserOpService.GetUserOps(ctx, req)
 	if err != nil {
 		logger.Error("get userops error", "err", err)
 	}
-	return vo.NewResultJsonResponse(res, vo.SetResponseError(err)).JSON(fcx)
+	return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(err)).JSON(fcx)
 }
 
 const NameGetUserOpsAnalysis = "GetUserOpsAnalysis"

@@ -31,3 +31,10 @@ func (AaTransactionInfo) Annotations() []schema.Annotation {
 		entsql.Annotation{Table: "aa_transaction_info"},
 	}
 }
+
+/*func (AaTransactionInfo) Edges() []ent.Edge {
+	return []ent.Edge{
+		edge.From("aatx", TransactionDecode.Type).StorageKey().Field("id").Unique(),
+	}
+}
+*/

@@ -21,18 +21,18 @@ func GetBundlers(fcx *fiber.Ctx) error {
 	err := fcx.ParamsParser(&req)
 	if err != nil {
 		logger.Warn("params parse error", "err", err)
-		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
 	}
 	err = fcx.QueryParser(&req)
 	if err != nil {
 		logger.Warn("query params parse error", "err", err, "network", req.Network)
-		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
 	}
 	res, err = service.BundlerService.GetBundlers(ctx, req)
 	if err != nil {
 		logger.Error("get bundlers error", "err", err)
 	}
-	return vo.NewResultJsonResponse(res, vo.SetResponseError(err)).JSON(fcx)
+	return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(err)).JSON(fcx)
 }
 
 const NameGetBundler = "get_bundler"
@@ -47,7 +47,7 @@ func GetBundler(fcx *fiber.Ctx) error {
 	err := fcx.ParamsParser(&req)
 	if err != nil {
 		logger.Warn("params parse error", "err", err)
-		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
 	}
 
 	ctx, logger = log.With(ctx, "bundler", req.Bundler, "network", req.Network)
@@ -55,8 +55,8 @@ func GetBundler(fcx *fiber.Ctx) error {
 	err = fcx.QueryParser(&req)
 	if err != nil {
 		logger.Warn("query params parse error", "err", err)
-		return vo.NewResultJsonResponse(res, vo.SetResponseError(vo.ErrParams)).JSON(fcx)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
 	}
 	res, err = service.BundlerService.GetBundler(ctx, req)
-	return vo.NewResultJsonResponse(res, vo.SetResponseError(err)).JSON(fcx)
+	return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(err)).JSON(fcx)
 }
