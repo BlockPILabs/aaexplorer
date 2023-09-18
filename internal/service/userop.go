@@ -156,6 +156,7 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 		Page:    1,
 	}, dao.UserOpsCondition{
 		UserOperationHash: &req.UserOperationHash,
+		TxHash:            &req.TxHash,
 	})
 	if err != nil {
 		return nil, err
