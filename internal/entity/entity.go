@@ -154,3 +154,11 @@ func SetDialect(ctx context.Context, f func(string), group ...string) {
 	}
 	f(cc.Dialect)
 }
+
+type Option struct {
+}
+
+func (o *Option) Option() *Option {
+
+	return o
+}

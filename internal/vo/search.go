@@ -13,7 +13,8 @@ type SearchAllAccount struct {
 }
 
 type SearchAllTransaction struct {
-	Hash string `json:"txHash"`
+	TxHash string `json:"txHash"`
+	Hash   string `json:"hash"`
 }
 
 type SearchAllBlock struct {
