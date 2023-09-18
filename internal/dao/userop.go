@@ -7,8 +7,10 @@ import (
 	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropsinfo"
+	"github.com/BlockPILabs/aa-scan/internal/log"
 	"github.com/BlockPILabs/aa-scan/internal/utils"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
+	"time"
 )
 
 type userOpDao struct {
@@ -91,6 +93,7 @@ func (dao *userOpDao) Pagination(ctx context.Context, tx *ent.Client, req vo.Get
 			),
 		)
 	}
+	start := time.Now()
 	// sort
 	query = dao.Sort(ctx, query, req.Sort, req.Order)
 	if req.PaginationRequest.TotalCount > 0 {
@@ -98,18 +101,19 @@ func (dao *userOpDao) Pagination(ctx context.Context, tx *ent.Client, req vo.Get
 	} else {
 		total = query.CountX(ctx)
 	}
-	total = query.CountX(ctx)
-
+	log.Context(ctx).Debug("count userops used", "duration", time.Now().Sub(start).Round(time.Millisecond))
 	if total < 1 || req.GetOffset() > total {
 		return
 	}
 
+	start = time.Now()
 	// limit
 	query = query.
 		Offset(req.GetOffset()).
 		Limit(req.PerPage)
 
 	list, err = query.All(ctx)
+	log.Context(ctx).Debug("query userops used", "duration", time.Now().Sub(start).Round(time.Millisecond))
 	return
 }
 
