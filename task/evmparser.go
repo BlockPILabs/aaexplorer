@@ -117,6 +117,7 @@ func InitEvmParse(ctx context.Context, config *config.Config, logger log.Logger)
 func (t *_evmParser) ScanBlock(ctx context.Context) {
 	fiend := true
 	logger := log.Context(ctx)
+	logger.Debug("scan start")
 	pool, err := ants.NewPool(t.config.EvmParser.Batch)
 	if err != nil {
 		logger.Error("network find error", "err", err)
@@ -144,6 +145,14 @@ func (t *_evmParser) ScanBlock(ctx context.Context) {
 		}
 	}
 	wg.Wait()
+
+	logger.Info("scan complete")
+
+	// reset start
+	networks, err := service.NetworkService.GetNetworks(context.Background())
+	for _, network := range networks {
+		t.startBlock[network.ID] = 0
+	}
 
 }
 func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Network, wg *sync.WaitGroup, pool *ants.Pool) (fiend bool) {
