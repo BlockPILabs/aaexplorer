@@ -140,7 +140,10 @@ func networkClientInit(ctx context.Context, logger log.Logger, network *ent.Netw
 				return
 			}
 			defer func() {
-				_cc.Client.Close()
+				if _cc.Client != nil {
+					logger.Warn("close db config", "network", _cc.Network.ID)
+					_cc.Client.Close()
+				}
 			}()
 		}
 	}
