@@ -6,6 +6,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropsinfo"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/taskrecord"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/tokenpriceinfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactiondecode"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactionreceiptdecode"
@@ -21,13 +22,14 @@ import (
 const TimeLayout = "2006-01-02 15:04:05"
 
 func InitDayStatis() {
+	go doDayStatistic()
 	dayScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := dayScheduler.ScheduleWithCron(func(ctx context.Context) {
-		doDayStatistic()
+		//doDayStatistic()
 	}, "0 15 0 * * ?")
 
 	if err == nil {
-		log.Print("dayStatis has been scheduled")
+		log.Print("dayStatistic has been scheduled")
 	}
 
 }
@@ -47,76 +49,91 @@ func doDayStatistic() {
 		if err != nil {
 			continue
 		}
-		now := time.Now()
-		startTime := time.Date(now.Year(), now.Month(), now.Day()-70, 0, 0, 0, 0, now.Location())
-		endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-		opsInfos, err := client.AAUserOpsInfo.
-			Query().
-			Where(
-				aauseropsinfo.TxTimeGTE(startTime.Unix()),
-				aauseropsinfo.TxTimeLT(endTime.Unix()),
-			).
-			All(context.Background())
-		if err != nil {
-			log.Println(err)
+		taskRecords, err := client.TaskRecord.Query().Where(taskrecord.TaskTypeEQ("day"), taskrecord.NetworkEQ(network)).Limit(1).All(context.Background())
+		if len(taskRecords) == 0 {
 			continue
 		}
-
-		txCount, err := client.TransactionDecode.Query().Where(transactiondecode.TimeGTE(startTime), transactiondecode.TimeLT(endTime)).Count(context.Background())
-
-		receiveMap := make(map[string]decimal.Decimal)
-		totalBundleMap := make(map[string]map[string]int)
-		txHashMap := make(map[string]bool)
-
-		for _, opsInfo := range opsInfos {
-			bundler := opsInfo.Bundler
-			txHashMap[opsInfo.TxHash] = true
-
-			bundle, bundleOk := totalBundleMap[bundler]
-			if !bundleOk {
-				bundle = make(map[string]int)
-			}
-			bundle[opsInfo.TxHash] = 1
-			totalBundleMap[bundler] = bundle
-			receive, receiveOk := receiveMap[bundler]
-			if !receiveOk {
-				receive = decimal.Zero
-			}
-			receive = receive.Add(RayDiv(decimal.NewFromInt(opsInfo.ActualGasCost)))
-			receiveMap[bundler] = receive
-
+		lastTime := taskRecords[0].LastTime
+		if lastTime.Add(24*time.Hour).Compare(time.Now()) > 0 {
+			continue
 		}
+		startTime := time.Date(lastTime.Year(), lastTime.Month(), lastTime.Day()+1, 0, 0, 0, 0, lastTime.Location())
+		endTime := time.Date(lastTime.Year(), lastTime.Month(), lastTime.Day()+2, 0, 0, 0, 0, lastTime.Location())
+		now := time.Now()
+		for {
+			if startTime.Compare(now) > 0 {
+				break
+			}
+			opsInfos, err := client.AAUserOpsInfo.Query().
+				Where(
+					aauseropsinfo.TxTimeGTE(startTime.Unix()),
+					aauseropsinfo.TxTimeLT(endTime.Unix())).
+				All(context.Background())
+			if err != nil {
+				log.Println(err)
+				break
+			}
 
-		hashs := getKeySlice(txHashMap)
-		receipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(hashs[:]...)).All(context.Background())
-		costMap := getCostMap(receipts)
-		earnMap := getEarnMap(receiveMap, costMap)
+			txCount, err := client.TransactionDecode.Query().Where(transactiondecode.TimeGTE(startTime), transactiondecode.TimeLT(endTime)).Count(context.Background())
 
-		bundlerMap := make(map[string]map[string][]*ent.AAUserOpsInfo)
-		paymasterMap := make(map[string]map[string][]*ent.AAUserOpsInfo)
-		factoryMap := make(map[string]map[string][]*ent.AAUserOpsInfo)
-		txHashes := make(map[string]map[string]bool)
+			receiveMap := make(map[string]decimal.Decimal)
+			totalBundleMap := make(map[string]map[string]int)
+			txHashMap := make(map[string]bool)
 
-		for _, opsInfo := range opsInfos {
-			addOpsInfo(opsInfo.Bundler, opsInfo, bundlerMap, "day")
-			addOpsInfo(opsInfo.Paymaster, opsInfo, paymasterMap, "day")
-			addOpsInfo(opsInfo.Factory, opsInfo, factoryMap, "day")
+			for _, opsInfo := range opsInfos {
+				bundler := opsInfo.Bundler
+				txHashMap[opsInfo.TxHash] = true
 
-			addTxHash(opsInfo.TxHash, opsInfo, txHashes, "day")
+				bundle, bundleOk := totalBundleMap[bundler]
+				if !bundleOk {
+					bundle = make(map[string]int)
+				}
+				bundle[opsInfo.TxHash] = 1
+				totalBundleMap[bundler] = bundle
+				receive, receiveOk := receiveMap[bundler]
+				if !receiveOk {
+					receive = decimal.Zero
+				}
+				receive = receive.Add(RayDiv(decimal.NewFromInt(opsInfo.ActualGasCost)))
+				receiveMap[bundler] = receive
+
+			}
+
+			hashs := getKeySlice(txHashMap)
+			receipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(hashs[:]...)).All(context.Background())
+			costMap := getCostMap(receipts)
+			earnMap := getEarnMap(receiveMap, costMap)
+
+			bundlerMap := make(map[string]map[string][]*ent.AAUserOpsInfo)
+			paymasterMap := make(map[string]map[string][]*ent.AAUserOpsInfo)
+			factoryMap := make(map[string]map[string][]*ent.AAUserOpsInfo)
+			txHashes := make(map[string]map[string]bool)
+
+			for _, opsInfo := range opsInfos {
+				addOpsInfo(opsInfo.Bundler, opsInfo, bundlerMap, "day")
+				addOpsInfo(opsInfo.Paymaster, opsInfo, paymasterMap, "day")
+				addOpsInfo(opsInfo.Factory, opsInfo, factoryMap, "day")
+
+				addTxHash(opsInfo.TxHash, opsInfo, txHashes, "day")
+			}
+
+			dailyStatisticDays := calDailyStatistic(client, opsInfos, txHashes, network, txCount, startTime)
+
+			bundlerList := calBundlerStatisDay(client, bundlerMap, earnMap, totalBundleMap, startTime, network)
+			paymasterList := calPaymasterStatisDay(client, paymasterMap, startTime, network)
+			factoryList := calFactoryStatisDay(client, factoryMap, startTime, network)
+
+			bulkInsertBundlerStatsDay(context.Background(), client, bundlerList)
+			bulkInsertPaymasterStatsDay(context.Background(), client, paymasterList)
+			bulkInsertFactoryStatsDay(context.Background(), client, factoryList)
+			bulkInsertDailyStatistic(context.Background(), client, dailyStatisticDays)
+
+			//saveWhaleStatisticDay(context.Background(), client, startTime)
+			client.TaskRecord.Update().SetLastTime(startTime).Where(taskrecord.IDEQ(taskRecords[0].ID)).Exec(context.Background())
+			startTime = startTime.Add(24 * time.Hour)
+			endTime = endTime.Add(24 * time.Hour)
+			log.Printf("day task statistic success, day:%s", startTime.String())
 		}
-
-		dailyStatisticDays := calDailyStatistic(client, opsInfos, txHashes, network, txCount, startTime)
-
-		bundlerList := calBundlerStatisDay(client, bundlerMap, earnMap, totalBundleMap, startTime, network)
-		paymasterList := calPaymasterStatisDay(client, paymasterMap, startTime, network)
-		factoryList := calFactoryStatisDay(client, factoryMap, startTime, network)
-
-		bulkInsertBundlerStatsDay(context.Background(), client, bundlerList)
-		bulkInsertPaymasterStatsDay(context.Background(), client, paymasterList)
-		bulkInsertFactoryStatsDay(context.Background(), client, factoryList)
-		bulkInsertDailyStatistic(context.Background(), client, dailyStatisticDays)
-
-		//saveWhaleStatisticDay(context.Background(), client, startTime)
 	}
 
 }
@@ -147,9 +164,9 @@ func bulkInsertDailyStatistic(ctx context.Context, client *ent.Client, data []*e
 func addTxHash(hash string, info *ent.AAUserOpsInfo, hashMap map[string]map[string]bool, s string) {
 	var startOf = ""
 	if s == "day" {
-		startOf = getDayStart(info.TxTime)
+		startOf = getDayStart(info.Time)
 	} else {
-		startOf = getHourStart(info.TxTime)
+		startOf = getHourStart(info.Time)
 	}
 	timeHash, timeHashOk := hashMap[startOf]
 	if !timeHashOk {
@@ -360,36 +377,33 @@ func calBundlerStatisDay(client *ent.Client, bundlerMap map[string]map[string][]
 			continue
 		}
 		for statisticTime, userOpsInfoList := range allTimeUserOpsInfoList {
-			txHashMap := make(map[string]bool)
 			sTime, err := time.Parse(TimeLayout, statisticTime)
 			if err != nil {
 				log.Println(err)
 			}
-			var successMum = 0
-			var failedNum = 0
+			var successMumMap = make(map[string]bool)
+			var failedNumMap = make(map[string]bool)
 			var totalFee = decimal.Zero
 			for _, userOpsInfo := range userOpsInfoList {
 				totalFee = totalFee.Add(RayDiv(userOpsInfo.Fee))
 				if userOpsInfo.Status == 1 {
-					successMum += 1
-					txHashMap[userOpsInfo.TxHash] = true
+					successMumMap[userOpsInfo.TxHash] = true
 				} else {
-					failedNum += 1
+					failedNumMap[userOpsInfo.TxHash] = true
 				}
 			}
-			totalBundleNum := len(bundleMap[key])
 			earnFee := earnMap[key]
 			bundlers = append(bundlers, client.BundlerStatisDay.Create().
 				SetBundler(key).
 				SetNetwork(network).
-				SetBundlesNum(int64(len(txHashMap))).
+				SetBundlesNum(int64(len(successMumMap))).
 				SetGasCollected(totalFee).
-				SetTotalNum(int64(totalBundleNum)).
+				SetTotalNum(int64(len(successMumMap))+int64(len(failedNumMap))).
 				SetFeeEarned(earnFee).
 				SetUserOpsNum(int64(len(userOpsInfoList))).
 				SetStatisTime(sTime).
-				SetSuccessBundlesNum(int64(successMum)).
-				SetFailedBundlesNum(int64(failedNum)),
+				SetSuccessBundlesNum(int64(len(successMumMap))).
+				SetFailedBundlesNum(int64(len(failedNumMap))),
 			)
 		}
 
