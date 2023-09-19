@@ -6,6 +6,10 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropsinfo"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/bundlerstatisday"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/dailystatisticday"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/factorystatisday"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/paymasterstatisday"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/taskrecord"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/tokenpriceinfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactiondecode"
@@ -22,12 +26,10 @@ import (
 const TimeLayout = "2006-01-02 15:04:05"
 
 func InitDayStatis() {
-	go doDayStatistic()
 	dayScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := dayScheduler.ScheduleWithCron(func(ctx context.Context) {
-		//doDayStatistic()
-	}, "0 15 0 * * ?")
-
+		doDayStatistic()
+	}, "0 15 0 * * *")
 	if err == nil {
 		log.Print("dayStatistic has been scheduled")
 	}
@@ -45,6 +47,7 @@ func doDayStatistic() {
 	}
 	for _, record := range records {
 		network := record.ID
+		log.Printf("day-statistic start, network:%s", network)
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			continue
@@ -143,21 +146,19 @@ func bulkInsertDailyStatistic(ctx context.Context, client *ent.Client, data []*e
 		return nil
 	}
 
-	tx, err := client.Tx(ctx)
-	if err != nil {
-		return err
+	for _, one := range data {
+		mutation := one.Mutation()
+		time, _ := mutation.StatisticTime()
+		network, _ := mutation.Network()
+		days, err := client.DailyStatisticDay.Query().Where(dailystatisticday.StatisticTimeEQ(time), dailystatisticday.NetworkEQ(network)).All(context.Background())
+		if err != nil {
+			continue
+		}
+		if len(days) != 0 {
+			client.DailyStatisticDay.Delete().Where(dailystatisticday.IDEQ(days[0].ID)).Exec(context.Background())
+		}
+		one.Save(context.Background())
 	}
-
-	if _, err := client.DailyStatisticDay.CreateBulk(data...).Save(ctx); err != nil {
-		tx.Rollback()
-		log.Println(err)
-		return err
-	}
-
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -302,6 +303,22 @@ func bulkInsertFactoryStatsDay(ctx context.Context, client *ent.Client, data []*
 		return nil
 	}
 
+	for _, one := range data {
+		mutation := one.Mutation()
+		factory, _ := mutation.Factory()
+		time, _ := mutation.StatisTime()
+		network, _ := mutation.Network()
+		factoryDays, err := client.FactoryStatisDay.Query().Where(factorystatisday.FactoryEqualFold(factory), factorystatisday.StatisTimeEQ(time), factorystatisday.NetworkEQ(network)).All(context.Background())
+		if err != nil {
+			continue
+		}
+		if len(factoryDays) != 0 {
+			client.FactoryStatisDay.Delete().Where(factorystatisday.IDEQ(factoryDays[0].ID)).Exec(context.Background())
+		}
+		one.Save(context.Background())
+	}
+	return nil
+	/**
 	tx, err := client.Tx(ctx)
 	if err != nil {
 		return err
@@ -316,8 +333,8 @@ func bulkInsertFactoryStatsDay(ctx context.Context, client *ent.Client, data []*
 	if err := tx.Commit(); err != nil {
 		return err
 	}
+	*/
 
-	return nil
 }
 
 func bulkInsertPaymasterStatsDay(ctx context.Context, client *ent.Client, data []*ent.PaymasterStatisDayCreate) error {
@@ -325,21 +342,20 @@ func bulkInsertPaymasterStatsDay(ctx context.Context, client *ent.Client, data [
 		return nil
 	}
 
-	tx, err := client.Tx(ctx)
-	if err != nil {
-		return err
+	for _, one := range data {
+		mutation := one.Mutation()
+		paymaster, _ := mutation.Paymaster()
+		time, _ := mutation.StatisTime()
+		network, _ := mutation.Network()
+		paymasterDays, err := client.PaymasterStatisDay.Query().Where(paymasterstatisday.PaymasterEqualFold(paymaster), paymasterstatisday.StatisTimeEQ(time), paymasterstatisday.NetworkEQ(network)).All(context.Background())
+		if err != nil {
+			continue
+		}
+		if len(paymasterDays) != 0 {
+			client.PaymasterStatisDay.Delete().Where(paymasterstatisday.IDEQ(paymasterDays[0].ID)).Exec(context.Background())
+		}
+		one.Save(context.Background())
 	}
-
-	if _, err := client.PaymasterStatisDay.CreateBulk(data...).Save(ctx); err != nil {
-		tx.Rollback()
-		log.Println(err)
-		return err
-	}
-
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -348,23 +364,20 @@ func bulkInsertBundlerStatsDay(ctx context.Context, client *ent.Client, data []*
 		return nil
 	}
 
-	tx, err := client.Tx(ctx)
-	if err != nil {
-		return err
+	for _, one := range data {
+		mutation := one.Mutation()
+		bundler, _ := mutation.Bundler()
+		time, _ := mutation.StatisTime()
+		network, _ := mutation.Network()
+		bundlerDays, err := client.BundlerStatisDay.Query().Where(bundlerstatisday.BundlerEqualFold(bundler), bundlerstatisday.StatisTimeEQ(time), bundlerstatisday.NetworkEQ(network)).All(context.Background())
+		if err != nil {
+			continue
+		}
+		if len(bundlerDays) != 0 {
+			client.BundlerStatisDay.Delete().Where(bundlerstatisday.IDEQ(bundlerDays[0].ID)).Exec(context.Background())
+		}
+		one.Save(context.Background())
 	}
-
-	err = client.BundlerStatisDay.CreateBulk(data...).Exec(ctx)
-	if err != nil {
-		tx.Rollback()
-		log.Println(err)
-		return err
-	}
-
-	if err := tx.Commit(); err != nil {
-		log.Println(err)
-		return err
-	}
-
 	return nil
 }
 

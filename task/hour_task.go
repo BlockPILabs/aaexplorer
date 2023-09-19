@@ -6,6 +6,10 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropsinfo"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/bundlerstatishour"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/dailystatistichour"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/factorystatishour"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/paymasterstatishour"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/taskrecord"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/tokenpriceinfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactiondecode"
@@ -22,11 +26,10 @@ import (
 )
 
 func InitHourStatis() {
-	go doHourStatistic()
 	hourScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := hourScheduler.ScheduleWithCron(func(ctx context.Context) {
-		//doHourStatistic()
-	}, "0 5 * * * ?")
+		doHourStatistic()
+	}, "0 5 * * * *")
 
 	if err == nil {
 		log.Print("hourStatistic has been scheduled")
@@ -44,6 +47,7 @@ func doHourStatistic() {
 	}
 	for _, record := range records {
 		network := record.ID
+		log.Printf("hour-statistic start, network:%s", network)
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			continue
@@ -132,7 +136,7 @@ func doHourStatistic() {
 			client.TaskRecord.Update().SetLastTime(startTime).Where(taskrecord.IDEQ(taskRecords[0].ID)).Exec(context.Background())
 			startTime = startTime.Add(1 * time.Hour)
 			endTime = endTime.Add(1 * time.Hour)
-			log.Printf("day task statistic success, day:%s", startTime.String())
+			log.Printf("hour task statistic success, day:%s", startTime.String())
 		}
 	}
 
@@ -143,21 +147,19 @@ func bulkInsertDailyStatisticHour(ctx context.Context, client *ent.Client, data 
 		return nil
 	}
 
-	tx, err := client.Tx(ctx)
-	if err != nil {
-		return err
+	for _, one := range data {
+		mutation := one.Mutation()
+		time, _ := mutation.StatisticTime()
+		network, _ := mutation.Network()
+		hours, err := client.DailyStatisticHour.Query().Where(dailystatistichour.StatisticTimeEQ(time), dailystatistichour.NetworkEQ(network)).All(context.Background())
+		if err != nil {
+			continue
+		}
+		if len(hours) != 0 {
+			client.DailyStatisticHour.Delete().Where(dailystatistichour.IDEQ(hours[0].ID)).Exec(context.Background())
+		}
+		one.Save(context.Background())
 	}
-
-	if _, err := client.DailyStatisticHour.CreateBulk(data...).Save(ctx); err != nil {
-		tx.Rollback()
-		log.Println(err)
-		return err
-	}
-
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -518,23 +520,20 @@ func bulkInsertBundlerStatsHour(ctx context.Context, client *ent.Client, data []
 		return nil
 	}
 
-	tx, err := client.Tx(ctx)
-	if err != nil {
-		return err
+	for _, one := range data {
+		mutation := one.Mutation()
+		bundler, _ := mutation.Bundler()
+		time, _ := mutation.StatisTime()
+		network, _ := mutation.Network()
+		bundlerDays, err := client.BundlerStatisHour.Query().Where(bundlerstatishour.BundlerEqualFold(bundler), bundlerstatishour.StatisTimeEQ(time), bundlerstatishour.NetworkEQ(network)).All(context.Background())
+		if err != nil {
+			continue
+		}
+		if len(bundlerDays) != 0 {
+			client.BundlerStatisHour.Delete().Where(bundlerstatishour.IDEQ(bundlerDays[0].ID)).Exec(context.Background())
+		}
+		one.Save(context.Background())
 	}
-
-	err = client.BundlerStatisHour.CreateBulk(data...).Exec(ctx)
-	if err != nil {
-		tx.Rollback()
-		log.Println(err)
-		return err
-	}
-
-	if err := tx.Commit(); err != nil {
-		log.Println(err)
-		return err
-	}
-
 	return nil
 }
 
@@ -543,21 +542,20 @@ func bulkInsertPaymasterStatsHour(ctx context.Context, client *ent.Client, data 
 		return nil
 	}
 
-	tx, err := client.Tx(ctx)
-	if err != nil {
-		return err
+	for _, one := range data {
+		mutation := one.Mutation()
+		paymaster, _ := mutation.Paymaster()
+		time, _ := mutation.StatisTime()
+		network, _ := mutation.Network()
+		bundlerDays, err := client.PaymasterStatisHour.Query().Where(paymasterstatishour.PaymasterEqualFold(paymaster), paymasterstatishour.StatisTimeEQ(time), paymasterstatishour.NetworkEQ(network)).All(context.Background())
+		if err != nil {
+			continue
+		}
+		if len(bundlerDays) != 0 {
+			client.PaymasterStatisHour.Delete().Where(paymasterstatishour.IDEQ(bundlerDays[0].ID)).Exec(context.Background())
+		}
+		one.Save(context.Background())
 	}
-
-	if _, err := client.PaymasterStatisHour.CreateBulk(data...).Save(ctx); err != nil {
-		tx.Rollback()
-		log.Println(err)
-		return err
-	}
-
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -566,20 +564,23 @@ func bulkInsertFactoryStatsHour(ctx context.Context, client *ent.Client, data []
 		return nil
 	}
 
-	tx, err := client.Tx(ctx)
-	if err != nil {
-		return err
+	if len(data) == 0 {
+		return nil
 	}
 
-	if _, err := client.FactoryStatisHour.CreateBulk(data...).Save(ctx); err != nil {
-		tx.Rollback()
-		log.Println(err)
-		return err
+	for _, one := range data {
+		mutation := one.Mutation()
+		factory, _ := mutation.Factory()
+		time, _ := mutation.StatisTime()
+		network, _ := mutation.Network()
+		bundlerDays, err := client.FactoryStatisHour.Query().Where(factorystatishour.FactoryEqualFold(factory), factorystatishour.StatisTimeEQ(time), factorystatishour.NetworkEQ(network)).All(context.Background())
+		if err != nil {
+			continue
+		}
+		if len(bundlerDays) != 0 {
+			client.FactoryStatisHour.Delete().Where(factorystatishour.IDEQ(bundlerDays[0].ID)).Exec(context.Background())
+		}
+		one.Save(context.Background())
 	}
-
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-
 	return nil
 }

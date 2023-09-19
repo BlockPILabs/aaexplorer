@@ -16,21 +16,15 @@ import (
 
 func InitTask() {
 
-	//hour statistics
-	InitHourStatis()
-
-	//day statistics
+	AccountTask()
 	InitDayStatis()
-
+	InitHourStatis()
 	TopBundlers()
-
 	TopPaymaster()
-
 	TopFactories()
-
-	UserOpTypeTask()
-
 	AAContractInteractTask()
+	UserOpTypeTask()
+	AssetTask()
 
 }
 
@@ -69,15 +63,15 @@ func TopBundlers() {
 
 	_, err := bundlerScheduler.ScheduleWithCron(func(ctx context.Context) {
 		doTopBundlersHour(1)
-		doTopBundlersHour(7)
-		doTopBundlersHour(30)
-	}, "0 5 * * * ?")
+		//doTopBundlersHour(7)
+		//doTopBundlersHour(30)
+	}, "0 5 * * * *")
 
 	bundlerSchedulerDay := chrono.NewDefaultTaskScheduler()
 
 	_, err = bundlerSchedulerDay.ScheduleWithCron(func(ctx context.Context) {
 		doTopBundlersDay()
-	}, "0 10 0 * * ?")
+	}, "0 10 0 * * *")
 	if err == nil {
 		log.Print("TopBundlers has been scheduled")
 	}
@@ -95,6 +89,7 @@ func doTopBundlersDay() {
 	}
 	for _, record := range records {
 		network := record.ID
+		log.Printf("top bundler day statistic start, network:%s", network)
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			continue
@@ -125,7 +120,7 @@ func doTopBundlersDay() {
 		var repeatMap = make(map[string]bool)
 		for _, bundlerStatisDay := range bundlerStatisDays {
 			bundler := bundlerStatisDay.Bundler
-			timeStr := string(bundlerStatisDay.StatisTime.UnixMilli())
+			timeStr := bundlerStatisDay.StatisTime.String()
 			_, exist := repeatMap[bundler+timeStr]
 			if exist {
 				continue
@@ -135,7 +130,7 @@ func doTopBundlersDay() {
 			if !feeOk {
 				feeEarned = decimal.Zero
 			}
-			feeEarnedMap[bundler] = feeEarned.Add(*bundlerStatisDay.FeeEarned)
+			feeEarnedMap[bundler] = feeEarned.Add(bundlerStatisDay.FeeEarned)
 
 			totalBundleNum += bundlerStatisDay.BundlesNum
 			bundleNum, ok := bundleNumMap[bundlerStatisDay.Bundler]
@@ -170,6 +165,7 @@ func doTopBundlersDay() {
 					SuccessBundlesNum: bundlerStatisDay.SuccessBundlesNum,
 					FailedBundlesNum:  bundlerStatisDay.FailedBundlesNum,
 				}
+				bundlerInfoMap[bundler] = bundlerInfo
 			}
 
 			if feeEarnedMap != nil {
@@ -190,6 +186,9 @@ func doTopBundlersDay() {
 			}
 			saveOrUpdateBundlerDay(client, bundler, bundlerInfo)
 		}
+		now1 := time.Now()
+		log.Printf("top bundler day statistic success, network:%s, spent:%d", network, now1.Second()-now.Second())
+
 	}
 }
 
@@ -242,6 +241,9 @@ func saveOrUpdateBundlerDay(client *ent.Client, bundler string, info *ent.Bundle
 			log.Printf("Update bundler day err, %s\n", err)
 		}
 	}
+
+	log.Printf("top bundler day, single statistic sync success, bundler:%s", info.ID)
+
 }
 
 func doTopBundlersHour(timeRange int) {
@@ -255,6 +257,7 @@ func doTopBundlersHour(timeRange int) {
 	}
 	for _, record := range records {
 		network := record.ID
+		log.Printf("top bundler hour statistic start timeRange:%d, network:%s", timeRange, network)
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			continue
@@ -285,7 +288,7 @@ func doTopBundlersHour(timeRange int) {
 		var repeatMap = make(map[string]bool)
 		for _, bundlerStatisHour := range bundlerStatisHours {
 			bundler := bundlerStatisHour.Bundler
-			timeStr := string(bundlerStatisHour.StatisTime.UnixMilli())
+			timeStr := bundlerStatisHour.StatisTime.String()
 			_, exist := repeatMap[bundler+timeStr]
 			if exist {
 				continue
@@ -295,7 +298,7 @@ func doTopBundlersHour(timeRange int) {
 			if !feeOk {
 				feeEarned = decimal.Zero
 			}
-			feeEarnedMap[bundler] = feeEarned.Add(*bundlerStatisHour.FeeEarned)
+			feeEarnedMap[bundler] = feeEarned.Add(bundlerStatisHour.FeeEarned)
 
 			bundleNum, ok := bundleNumMap[bundlerStatisHour.Bundler]
 			if !ok {
@@ -347,6 +350,7 @@ func doTopBundlersHour(timeRange int) {
 					bundlerInfo.BundlesNumD30 = bundlerStatisHour.BundlesNum
 					bundlerInfo.GasCollectedD30 = bundlerStatisHour.GasCollected
 				}
+				bundlerInfoMap[bundler] = bundlerInfo
 			}
 
 			if bundleRateMap != nil {
@@ -396,6 +400,7 @@ func doTopBundlersHour(timeRange int) {
 			}
 			saveOrUpdateBundler(client, bundler, bundlerInfo, timeRange)
 		}
+		log.Printf("top bundler hour statistic success timeRange:%s, network:%s", string(timeRange), network)
 	}
 
 }
@@ -499,4 +504,6 @@ func saveOrUpdateBundler(client *ent.Client, bundler string, info *ent.BundlerIn
 			log.Printf("Update bundler err, %s\n", err)
 		}
 	}
+	log.Printf("top bundler hour, single statistic sync success, bundler:%s", info.ID)
+
 }

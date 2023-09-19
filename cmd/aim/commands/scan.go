@@ -50,16 +50,8 @@ var ScanCmd = &cobra.Command{
 			log.Print("Task: scan block has been scheduled successfully.")
 		}
 
-		//task.AccountTask()
-		task.InitDayStatis()
-		task.InitHourStatis()
-		//task.TopBundlers()
-		//task.TopFactories()
-		//task.TopPaymaster()
-		//task.AAContractInteractTask()
-		//task.UserOpTypeTask()
-		//task.AssetTask()
-		//service.ScanBlock()
+		task.InitTask()
+		service.ScanBlock()
 
 		task.InitEvmParse(cmd.Context(), config, logger.With("module", "task"))
 		aimos.TrapSignal(logger, func() {})
@@ -67,6 +59,10 @@ var ScanCmd = &cobra.Command{
 		// Run forever.
 		select {}
 	},
+}
+
+func test() {
+	fmt.Println("aaaaaaaaa")
 }
 
 func refreshUsd() {
