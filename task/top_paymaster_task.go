@@ -20,13 +20,13 @@ func TopPaymaster() {
 		doTopPaymasterHour(1)
 		//doTopPaymasterHour(7)
 		//doTopPaymasterHour(30)
-	}, "0 5 * * * ?")
+	}, "0 5 * * * *")
 
 	paymasterSchedulerDay := chrono.NewDefaultTaskScheduler()
 
 	_, err = paymasterSchedulerDay.ScheduleWithCron(func(ctx context.Context) {
 		doTopPaymasterDay()
-	}, "0 15 0 * * ?")
+	}, "0 15 0 * * *")
 
 	if err == nil {
 		log.Print("TopPaymaster has been scheduled")

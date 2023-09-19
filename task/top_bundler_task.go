@@ -65,13 +65,13 @@ func TopBundlers() {
 		doTopBundlersHour(1)
 		//doTopBundlersHour(7)
 		//doTopBundlersHour(30)
-	}, "0 5 * * * ?")
+	}, "0 5 * * * *")
 
 	bundlerSchedulerDay := chrono.NewDefaultTaskScheduler()
 
 	_, err = bundlerSchedulerDay.ScheduleWithCron(func(ctx context.Context) {
 		doTopBundlersDay()
-	}, "0 10 0 * * ?")
+	}, "0 10 0 * * *")
 	if err == nil {
 		log.Print("TopBundlers has been scheduled")
 	}

@@ -29,7 +29,7 @@ func InitHourStatis() {
 	hourScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := hourScheduler.ScheduleWithCron(func(ctx context.Context) {
 		doHourStatistic()
-	}, "0 5 * * * ?")
+	}, "0 5 * * * *")
 
 	if err == nil {
 		log.Print("hourStatistic has been scheduled")
@@ -47,6 +47,7 @@ func doHourStatistic() {
 	}
 	for _, record := range records {
 		network := record.ID
+		log.Printf("hour-statistic start, network:%s", network)
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			continue
@@ -135,7 +136,7 @@ func doHourStatistic() {
 			client.TaskRecord.Update().SetLastTime(startTime).Where(taskrecord.IDEQ(taskRecords[0].ID)).Exec(context.Background())
 			startTime = startTime.Add(1 * time.Hour)
 			endTime = endTime.Add(1 * time.Hour)
-			log.Printf("day task statistic success, day:%s", startTime.String())
+			log.Printf("hour task statistic success, day:%s", startTime.String())
 		}
 	}
 

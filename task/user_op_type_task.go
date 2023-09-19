@@ -16,7 +16,7 @@ func UserOpTypeTask() {
 	d1Scheduler := chrono.NewDefaultTaskScheduler()
 	_, err := d1Scheduler.ScheduleWithCron(func(ctx context.Context) {
 		day1Task()
-	}, "0 1 * * * ?")
+	}, "0 1 * * * *")
 	if err != nil {
 		log.Println(err)
 	}
@@ -26,7 +26,7 @@ func UserOpTypeTask() {
 		day7Task()
 		day30Task()
 
-	}, "0 5 0 * * ?")
+	}, "0 5 0 * * *")
 
 }
 

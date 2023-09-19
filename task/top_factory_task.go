@@ -20,13 +20,13 @@ func TopFactories() {
 		doTopFactoryHour(1)
 		//doTopFactoryHour(7)
 		//doTopFactoryHour(30)
-	}, "0 5 * * * ?")
+	}, "0 5 * * * *")
 
 	factorySchedulerDay := chrono.NewDefaultTaskScheduler()
 
 	_, err = factorySchedulerDay.ScheduleWithCron(func(ctx context.Context) {
 		doTopFactoryDay()
-	}, "0 20 0 * * ?")
+	}, "0 20 0 * * *")
 
 	if err == nil {
 		log.Print("TopFactory has been scheduled")

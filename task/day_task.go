@@ -29,8 +29,7 @@ func InitDayStatis() {
 	dayScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := dayScheduler.ScheduleWithCron(func(ctx context.Context) {
 		doDayStatistic()
-	}, "0 15 0 * * ?")
-
+	}, "0 15 0 * * *")
 	if err == nil {
 		log.Print("dayStatistic has been scheduled")
 	}
@@ -48,6 +47,7 @@ func doDayStatistic() {
 	}
 	for _, record := range records {
 		network := record.ID
+		log.Printf("day-statistic start, network:%s", network)
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			continue
