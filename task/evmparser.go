@@ -163,8 +163,8 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 	}()
 
 	logger := log.Context(ctx)
-	logger.Info("start block", "net", network)
-	client, err := entity.Client(ctx, network.ID)
+	logger.Info("start block", "network", network.ID)
+	client, err := entity.NetworkClient(ctx, network)
 	if err != nil {
 		logger.Error("network db client", "err", err)
 		return false
@@ -226,7 +226,7 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 			}
 			wg.Done()
 		}()
-		client, err = entity.Client(ctx, network.ID)
+		client, err = entity.NetworkClient(ctx, network)
 		logger.Debug("pre parse , get parse data")
 		blockDataDecodes, transactionDecodes, receiptDecodes, blocksMap, transactionMap, err := t.getParseData(ctx, client, blockIds...)
 		_ = (blockDataDecodes)

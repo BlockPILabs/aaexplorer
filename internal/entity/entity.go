@@ -3,98 +3,61 @@ package entity
 import (
 	"context"
 	"entgo.io/ent/dialect"
-	entsql "entgo.io/ent/dialect/sql"
 	"errors"
 	"fmt"
-	"github.com/BlockPILabs/aa-scan/internal/log"
-	"strings"
-	"time"
-
 	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"sync"
-
+	"github.com/BlockPILabs/aa-scan/internal/log"
 	_ "github.com/go-sql-driver/mysql" // mysql driver
 	_ "github.com/lib/pq"              // postgres driver
 	_ "github.com/mattn/go-sqlite3"    // sqlite3
+	"github.com/procyon-projects/chrono"
+	"strings"
+	"sync"
+	"time"
 )
-
-type client struct {
-	Client  *ent.Client
-	Config  *config.DbConfig
-	Dialect string
-}
 
 var clients = &sync.Map{}
 
+var clientTick = &sync.Once{}
+
 func Start(logger log.Logger, cfg *config.Config) error {
 	for i, database := range cfg.Databases {
-		dsn, err := database.BuildDsn()
-		if err != nil {
-			return err
-		}
-
-		drv, err := entsql.Open(database.Type, dsn)
-		if err != nil {
-			return err
-		}
-		if database.MaxIdleCount > 0 {
-			drv.DB().SetMaxIdleConns(database.MaxIdleCount)
-		}
-		if database.MaxOpenConns > 0 {
-			drv.DB().SetMaxOpenConns(database.MaxOpenConns)
-		}
-		if database.MaxLifetime > 0 {
-			leftTime := time.Duration(database.MaxLifetime)
-			if leftTime < time.Millisecond {
-				leftTime *= time.Second
-			}
-			drv.DB().SetConnMaxLifetime(leftTime)
-		}
-
-		opts := []ent.Option{
-			ent.Driver(drv),
-			ent.Log(func(a ...any) {
-
-			}),
-		}
-		if database.Debug {
-			opts = append(opts, ent.Debug(), ent.Log(func(a ...any) {
-				if len(a) == 1 {
-					msg := fmt.Sprint(a[0])
-					logger.Debug(msg)
-				} else if len(a) > 1 {
-					msg := fmt.Sprint(a[0])
-					logger.Debug(msg, "args", a[1:])
-				}
-			}))
-		}
-
-		if database.Schema != nil {
-			opts = append(opts, ent.AlternateSchema(*database.Schema))
-		}
-		// connect
-		c := ent.NewClient(opts...)
-		if err != nil {
-			return err
-		}
-
-		_c := &client{
-			Client:  c,
+		c := &client{
+			logger:  logger,
 			Config:  database,
 			Dialect: database.Type,
 		}
+		if database.AutoStart {
+			err := c.start()
+			if err != nil {
+				return err
+			}
+		}
 		if i == 0 {
-			clients.Store(config.Default, _c)
+			clients.Store(config.Default, c)
 		}
 		if len(database.Group) > 0 {
-			clients.Store(database.Group, _c)
+			clients.Store(database.Group, c)
 		}
-
 	}
+	//ctx := context.Background()
+	//err := loadAllNetworksClients(ctx, logger)
+	//if err != nil {
+	//	return err
+	//}
+	clientTick.Do(func() {
+		chrono.NewDefaultTaskScheduler().ScheduleWithFixedDelay(func(ctx context.Context) {
+			loadAllNetworksClients(ctx, logger)
+		}, time.Minute)
+	})
 	return nil
 }
 
+func NetworkClient(ctx context.Context, network *ent.Network) (*ent.Client, error) {
+	_ = networkClientInit(ctx, log.Context(ctx), network)
+	return Client(ctx, network.ID)
+}
 func Client(ctx context.Context, group ...string) (*ent.Client, error) {
 	g := config.Default
 	if len(group) > 0 && len(group[0]) > 0 {
@@ -115,6 +78,10 @@ func Client(ctx context.Context, group ...string) (*ent.Client, error) {
 	if !ok {
 		log.Context(ctx).Error("group error")
 		return nil, errors.New(fmt.Sprintf("group connect error %s", g))
+	}
+	err := cc.start()
+	if err != nil {
+		return nil, err
 	}
 	return cc.Client, nil
 }
