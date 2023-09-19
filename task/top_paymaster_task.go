@@ -18,8 +18,8 @@ func TopPaymaster() {
 
 	_, err := paymasterScheduler.ScheduleWithCron(func(ctx context.Context) {
 		doTopPaymasterHour(1)
-		doTopPaymasterHour(7)
-		doTopPaymasterHour(30)
+		//doTopPaymasterHour(7)
+		//doTopPaymasterHour(30)
 	}, "0 5 * * * ?")
 
 	paymasterSchedulerDay := chrono.NewDefaultTaskScheduler()
@@ -45,6 +45,7 @@ func doTopPaymasterDay() {
 	}
 	for _, record := range records {
 		network := record.ID
+		log.Printf("top paymaster day statistic start, network:%s", network)
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			continue
@@ -72,7 +73,7 @@ func doTopPaymasterDay() {
 		var repeatMap = make(map[string]bool)
 		for _, paymasterStatisDay := range paymasterStatisDays {
 			paymaster := paymasterStatisDay.Paymaster
-			timeStr := string(paymasterStatisDay.StatisTime.UnixMilli())
+			timeStr := paymasterStatisDay.StatisTime.String()
 			_, exist := repeatMap[paymaster+timeStr]
 			if exist {
 				continue
@@ -90,6 +91,7 @@ func doTopPaymasterDay() {
 					GasSponsored:    paymasterStatisDay.GasSponsored,
 					GasSponsoredUsd: paymasterStatisDay.GasSponsored.Mul(price),
 				}
+				paymasterInfoMap[paymaster] = paymasterInfo
 			}
 			paymasterInfo.ID = paymasterStatisDay.Paymaster
 			paymasterInfo.Network = paymasterStatisDay.Network
@@ -109,6 +111,7 @@ func doTopPaymasterDay() {
 			//paymasterInfo.ReserveUsd = price.Mul(nativeBalance)
 			saveOrUpdatePaymasterDay(client, paymaster, paymasterInfo)
 		}
+		log.Printf("top paymaster day statistic success, network:%s", network)
 	}
 }
 
@@ -144,6 +147,7 @@ func saveOrUpdatePaymasterDay(client *ent.Client, paymaster string, info *ent.Pa
 			log.Printf("Update paymaster day err, %s\n", err)
 		}
 	}
+	log.Printf("top paymaster day, single statistic sync success, bundler:%s", info.ID)
 }
 
 func doTopPaymasterHour(timeRange int) {
@@ -157,6 +161,7 @@ func doTopPaymasterHour(timeRange int) {
 	}
 	for _, record := range records {
 		network := record.ID
+		log.Printf("top paymaster hour statistic start, timeRange:%d network:%s", timeRange, network)
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			continue
@@ -184,7 +189,7 @@ func doTopPaymasterHour(timeRange int) {
 		var repeatMap = make(map[string]bool)
 		for _, paymasterStatisHour := range paymasterStatisHours {
 			paymaster := paymasterStatisHour.Paymaster
-			timeStr := string(paymasterStatisHour.StatisTime.UnixMilli())
+			timeStr := paymasterStatisHour.StatisTime.String()
 			_, exist := repeatMap[paymaster+timeStr]
 			if exist {
 				continue
@@ -220,6 +225,7 @@ func doTopPaymasterHour(timeRange int) {
 					paymasterInfo.GasSponsoredD30 = paymasterStatisHour.GasSponsored
 					paymasterInfo.GasSponsoredUsdD30 = paymasterStatisHour.GasSponsored.Mul(price)
 				}
+				paymasterInfoMap[paymaster] = paymasterInfo
 			}
 			paymasterInfo.ID = paymasterStatisHour.Paymaster
 			paymasterInfo.Network = paymasterStatisHour.Network
@@ -238,6 +244,7 @@ func doTopPaymasterHour(timeRange int) {
 			//paymasterInfo.ReserveUsd = price.Mul(nativeBalance)
 			saveOrUpdatePaymaster(client, paymaster, paymasterInfo, timeRange)
 		}
+		log.Printf("top paymaster hour statistic success timeRange:%s, network:%s", string(timeRange), network)
 	}
 
 }
@@ -301,4 +308,5 @@ func saveOrUpdatePaymaster(client *ent.Client, paymaster string, info *ent.Payma
 			log.Printf("Update paymaster err, %s\n", err)
 		}
 	}
+	log.Printf("top paymaster hour, single statistic sync success, bundler:%s", info.ID)
 }

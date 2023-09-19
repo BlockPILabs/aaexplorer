@@ -18,8 +18,8 @@ func TopFactories() {
 
 	_, err := factoryScheduler.ScheduleWithCron(func(ctx context.Context) {
 		doTopFactoryHour(1)
-		doTopFactoryHour(7)
-		doTopFactoryHour(30)
+		//doTopFactoryHour(7)
+		//doTopFactoryHour(30)
 	}, "0 5 * * * ?")
 
 	factorySchedulerDay := chrono.NewDefaultTaskScheduler()
@@ -45,6 +45,7 @@ func doTopFactoryDay() {
 	}
 	for _, record := range records {
 		network := record.ID
+		log.Printf("top factory day statistic start, network:%s", network)
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			continue
@@ -73,7 +74,7 @@ func doTopFactoryDay() {
 		var repeatMap = make(map[string]bool)
 		for _, factory := range factoryStatisDays {
 			factoryAddr := factory.Factory
-			timeStr := string(factory.StatisTime.UnixMilli())
+			timeStr := factory.StatisTime.String()
 			_, exist := repeatMap[factoryAddr+timeStr]
 			if exist {
 				continue
@@ -89,6 +90,7 @@ func doTopFactoryDay() {
 					AccountDeployNum: int(factory.AccountDeployNum),
 					AccountNum:       int(factory.AccountNum),
 				}
+				factoryInfoMap[factoryAddr] = factoryInfo
 			}
 			factoryInfo.ID = factory.Factory
 			factoryInfo.Network = factory.Network
@@ -103,6 +105,9 @@ func doTopFactoryDay() {
 			factoryInfo.Dominance = decimal.NewFromInt(int64(factoryInfo.AccountDeployNum)).DivRound(decimal.NewFromInt(int64(totalNum)), 4)
 			saveOrUpdateFactoryDay(client, factory, factoryInfo)
 		}
+		now1 := time.Now()
+		log.Printf("top factory hour statistic success, network:%s, spent:%d", network, now1.Second()-now.Second())
+
 	}
 
 }
@@ -138,6 +143,7 @@ func saveOrUpdateFactoryDay(client *ent.Client, factory string, info *ent.Factor
 			log.Printf("Update factory day err, %s\n", err)
 		}
 	}
+	log.Printf("top factory day, single statistic sync success, factory:%s", info.ID)
 }
 
 func doTopFactoryHour(timeRange int) {
@@ -151,6 +157,7 @@ func doTopFactoryHour(timeRange int) {
 	}
 	for _, record := range records {
 		network := record.ID
+		log.Printf("top factory hour statistic start timeRange:%d, network:%s", timeRange, network)
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			continue
@@ -179,7 +186,7 @@ func doTopFactoryHour(timeRange int) {
 		var repeatMap = make(map[string]bool)
 		for _, factory := range factoryStatisHours {
 			factoryAddr := factory.Factory
-			timeStr := string(factory.StatisTime.UnixMilli())
+			timeStr := factory.StatisTime.String()
 			_, exist := repeatMap[factoryAddr+timeStr]
 			if exist {
 				continue
@@ -210,6 +217,7 @@ func doTopFactoryHour(timeRange int) {
 					factoryInfo.AccountNumD30 = int(factory.AccountNum)
 					factoryInfo.AccountDeployNumD30 = int(factory.AccountDeployNum)
 				}
+				factoryInfoMap[factoryAddr] = factoryInfo
 			}
 			factoryInfo.ID = factory.Factory
 			factoryInfo.Network = factory.Network
@@ -237,6 +245,7 @@ func doTopFactoryHour(timeRange int) {
 			}
 			saveOrUpdateFactory(client, factory, factoryInfo, timeRange)
 		}
+		log.Printf("top factory hour statistic success timeRange:%s, network:%s", string(timeRange), network)
 	}
 
 }
@@ -298,4 +307,5 @@ func saveOrUpdateFactory(client *ent.Client, factory string, info *ent.FactoryIn
 			log.Printf("Update factory err, %s\n", err)
 		}
 	}
+	log.Printf("top factory hour, single statistic sync success, factory:%s", info.ID)
 }

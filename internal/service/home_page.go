@@ -113,7 +113,7 @@ func getResponseHour(hours []*ent.DailyStatisticHour) *vo.DailyStatisticResponse
 	if len(hours) == 0 {
 		return nil
 	}
-	var resp *vo.DailyStatisticResponse
+	var resp = vo.DailyStatisticResponse{}
 	var details []*vo.DailyStatisticDetail
 	var statisticTimeMap = make(map[int64]bool)
 	for _, statisticHour := range hours {
@@ -145,7 +145,7 @@ func getResponseHour(hours []*ent.DailyStatisticHour) *vo.DailyStatisticResponse
 	}
 	sort.Sort(vo.ByDailyStatisticTime(details))
 	resp.Details = details
-	return resp
+	return &resp
 }
 
 func GetAATxnDominance(ctx context.Context, req vo.AATxnDominanceRequest) (*vo.AATxnDominanceResponse, error) {

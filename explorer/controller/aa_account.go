@@ -62,7 +62,7 @@ func GetAaAccountChains(fcx *fiber.Ctx) error {
 
 	var ret []string
 	for _, network := range networks {
-		client, err := entity.Client(ctx, network.ID)
+		client, err := entity.NetworkClient(ctx, network)
 		if err != nil {
 			return err
 		}

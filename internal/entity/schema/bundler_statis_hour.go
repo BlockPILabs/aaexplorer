@@ -11,18 +11,6 @@ import (
 )
 
 type BundlerStatisHour struct {
-	ID                int64           `json:"id"`
-	Bundler           string          `json:"bundler"`
-	Network           string          `json:"network"`
-	UserOpsNum        int64           `json:"user_ops_num"`
-	BundlesNum        int64           `json:"bundles_num"`
-	GasCollected      decimal.Decimal `json:"gas_collected"`
-	FeeEarned         decimal.Decimal `json:"fee_earned"`
-	TotalNum          int64           `json:"total_num"`
-	StatisTime        time.Time       `json:"statis_time"`
-	SuccessBundlesNum int64           `json:"success_bundles_num"`
-	FailedBundlesNum  int64           `json:"failed_bundles_num"`
-	CreateTime        time.Time       `json:"create_time"`
 	ent.Schema
 }
 
@@ -45,7 +33,7 @@ func (BundlerStatisHour) Fields() []ent.Field {
 		field.Int64("gas_collected").
 			StructTag(`json:"gasCollected"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
 		field.Int64("fee_earned").
-			StructTag(`json:"feeEarned"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}).Optional().Nillable(),
+			StructTag(`json:"feeEarned"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}).Optional(),
 		field.Int64("total_num").
 			StructTag(`json:"totalNum"`).Optional(),
 		field.Int64("success_bundles_num").
