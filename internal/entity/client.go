@@ -108,14 +108,7 @@ func loadAllNetworksClients(ctx context.Context, logger log.Logger) (err error) 
 }
 
 func networkClientInit(ctx context.Context, logger log.Logger, network *ent.Network) (err error) {
-	c, ok := clients.Load(network.ID)
-	if ok {
-		cc, ok := c.(*client)
-		if ok {
-			cc.Network = network
-			return
-		}
-	}
+
 	database := &config.DbConfig{}
 
 	if network.DbConfig == nil {
@@ -132,6 +125,24 @@ func networkClientInit(ctx context.Context, logger log.Logger, network *ent.Netw
 	if err != nil {
 		logger.Warn("network db config Validate error", "network", network.ID, "err", err)
 		return
+	}
+
+	c, ok := clients.Load(network.ID)
+	if ok {
+		_cc, ok := c.(*client)
+		if ok {
+			if _cc.Config.Host == database.Host &&
+				_cc.Config.Port == database.Port &&
+				_cc.Config.Name == database.Name &&
+				_cc.Config.User == database.User &&
+				_cc.Config.Pass == database.Pass {
+				_cc.Network = network
+				return
+			}
+			defer func() {
+				_cc.Client.Close()
+			}()
+		}
 	}
 
 	cc := &client{
