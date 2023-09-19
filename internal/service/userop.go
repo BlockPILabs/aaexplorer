@@ -308,10 +308,10 @@ func (*userOpService) GetUserOpsAnalysisList(ctx context.Context, client *ent.Cl
 		var paymasterLabel []string
 		accs, _ := dao.AccountDao.GetAccountByAddresses(ctx, client, []string{info.Bundler, info.Paymaster})
 		for _, acc := range accs {
-			if acc.ID == info.Bundler {
+			if acc.ID == info.Bundler && bundlerLabel != nil {
 				acc.Label.AssignTo(bundlerLabel)
 			}
-			if acc.ID == info.Paymaster {
+			if acc.ID == info.Paymaster && paymasterLabel != nil {
 				acc.Label.AssignTo(paymasterLabel)
 			}
 		}
