@@ -7,6 +7,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropsinfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/bundlerstatishour"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/dailystatistichour"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/factorystatishour"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/paymasterstatishour"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/taskrecord"
@@ -145,21 +146,19 @@ func bulkInsertDailyStatisticHour(ctx context.Context, client *ent.Client, data 
 		return nil
 	}
 
-	tx, err := client.Tx(ctx)
-	if err != nil {
-		return err
+	for _, one := range data {
+		mutation := one.Mutation()
+		time, _ := mutation.StatisticTime()
+		network, _ := mutation.Network()
+		hours, err := client.DailyStatisticHour.Query().Where(dailystatistichour.StatisticTimeEQ(time), dailystatistichour.NetworkEQ(network)).All(context.Background())
+		if err != nil {
+			continue
+		}
+		if len(hours) != 0 {
+			client.DailyStatisticHour.Delete().Where(dailystatistichour.IDEQ(hours[0].ID)).Exec(context.Background())
+		}
+		one.Save(context.Background())
 	}
-
-	if _, err := client.DailyStatisticHour.CreateBulk(data...).Save(ctx); err != nil {
-		tx.Rollback()
-		log.Println(err)
-		return err
-	}
-
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
