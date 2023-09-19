@@ -24,6 +24,7 @@ type DbConfig struct {
 	MaxOpenConns    int               `mapstructure:"maxOpenConns" toml:"maxOpenConns"`
 	MaxLifetime     int64             `mapstructure:"maxLifetime" toml:"maxLifetime"`
 	Debug           bool              `mapstructure:"debug" toml:"debug"`
+	AutoStart       bool              `mapstructure:"autoStart" toml:"autoStart"`
 	SslMode         string            `mapstructure:"sslMode" toml:"sslMode"`
 }
 
@@ -43,6 +44,7 @@ func DefaultDatabaseConfig() []*DbConfig {
 			MaxOpenConns:    100,
 			MaxLifetime:     int64(time.Hour),
 			Debug:           true,
+			AutoStart:       true,
 		},
 	}
 }

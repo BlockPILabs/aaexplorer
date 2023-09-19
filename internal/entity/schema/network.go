@@ -2,9 +2,11 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
+	"github.com/jackc/pgtype"
 	"time"
 )
 
@@ -31,6 +33,11 @@ func (Network) Fields() []ent.Field {
 		field.String("scan_block").StructTag(`json:"scanBlock"`),
 		field.String("scan_address").StructTag(`json:"scanAddress"`),
 		field.String("scan_name").StructTag(`json:"scanName"`),
+		field.Other("db_config", pgtype.JSONB{}).
+			SchemaType(map[string]string{
+				dialect.Postgres: "jsonb",
+			}).StructTag(`json:"-"`).
+			Optional().Nillable(),
 	}
 }
 

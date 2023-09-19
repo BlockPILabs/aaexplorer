@@ -152,14 +152,17 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 		logger.Error("params error", "req", req, "err", err.Error())
 		return nil, vo.ErrParams.SetData(err)
 	}
-
+	userOpsCondition := dao.UserOpsCondition{}
+	if req.UserOperationHash != "" {
+		userOpsCondition.UserOperationHash = &req.UserOperationHash
+	}
+	if req.TxHash != "" {
+		userOpsCondition.TxHash = &req.TxHash
+	}
 	userOpsList, _, err := dao.UserOpDao.Pages(ctx, client, vo.PaginationRequest{
 		PerPage: 1000,
 		Page:    1,
-	}, dao.UserOpsCondition{
-		UserOperationHash: &req.UserOperationHash,
-		TxHash:            &req.TxHash,
-	})
+	}, userOpsCondition)
 	if err != nil {
 		return nil, err
 	}
@@ -181,10 +184,10 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 	var paymasterLabel []string
 	accs, _ := dao.AccountDao.GetAccountByAddresses(ctx, client, []string{userOps.Bundler, userOps.Paymaster})
 	for _, acc := range accs {
-		if acc.ID == userOps.Bundler {
+		if acc.ID == userOps.Bundler && bundlerLabel != nil {
 			acc.Label.AssignTo(bundlerLabel)
 		}
-		if acc.ID == userOps.Paymaster {
+		if acc.ID == userOps.Paymaster && paymasterLabel != nil {
 			acc.Label.AssignTo(paymasterLabel)
 		}
 	}
