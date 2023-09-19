@@ -184,10 +184,10 @@ func (*userOpService) GetUserOpsAnalysis(ctx context.Context, client *ent.Client
 	var paymasterLabel []string
 	accs, _ := dao.AccountDao.GetAccountByAddresses(ctx, client, []string{userOps.Bundler, userOps.Paymaster})
 	for _, acc := range accs {
-		if acc.ID == userOps.Bundler {
+		if acc.ID == userOps.Bundler && bundlerLabel != nil {
 			acc.Label.AssignTo(bundlerLabel)
 		}
-		if acc.ID == userOps.Paymaster {
+		if acc.ID == userOps.Paymaster && paymasterLabel != nil {
 			acc.Label.AssignTo(paymasterLabel)
 		}
 	}
