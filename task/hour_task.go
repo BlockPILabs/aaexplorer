@@ -58,14 +58,15 @@ func doHourStatistic() {
 			continue
 		}
 		lastTime := taskRecords[0].LastTime
-		if lastTime.Add(1*time.Hour).Compare(time.Now()) > 0 {
+		now := time.Now()
+		hourStart := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, now.Location())
+		if lastTime.Add(1*time.Hour).Compare(hourStart) >= 0 {
 			continue
 		}
 		startTime := time.Date(lastTime.Year(), lastTime.Month(), lastTime.Day(), lastTime.Hour()+1, 0, 0, 0, lastTime.Location())
 		endTime := time.Date(lastTime.Year(), lastTime.Month(), lastTime.Day(), lastTime.Hour()+2, 0, 0, 0, lastTime.Location())
-		now := time.Now()
 		for {
-			if startTime.Compare(now) > 0 {
+			if startTime.Compare(hourStart) >= 0 {
 				break
 			}
 			opsInfos, err := client.AAUserOpsInfo.Query().
@@ -530,9 +531,12 @@ func bulkInsertBundlerStatsHour(ctx context.Context, client *ent.Client, data []
 			continue
 		}
 		if len(bundlerDays) != 0 {
-			client.BundlerStatisHour.Delete().Where(bundlerstatishour.IDEQ(bundlerDays[0].ID)).Exec(context.Background())
+			for _, old := range bundlerDays {
+				client.BundlerStatisHour.Delete().Where(bundlerstatishour.IDEQ(old.ID)).Exec(context.Background())
+			}
 		}
 		one.Save(context.Background())
+		log.Printf("bundler-hour-task statistic success, bundler: %s, day:%s", bundler, time.String())
 	}
 	return nil
 }
@@ -552,9 +556,12 @@ func bulkInsertPaymasterStatsHour(ctx context.Context, client *ent.Client, data 
 			continue
 		}
 		if len(bundlerDays) != 0 {
-			client.PaymasterStatisHour.Delete().Where(paymasterstatishour.IDEQ(bundlerDays[0].ID)).Exec(context.Background())
+			for _, old := range bundlerDays {
+				client.PaymasterStatisHour.Delete().Where(paymasterstatishour.IDEQ(old.ID)).Exec(context.Background())
+			}
 		}
 		one.Save(context.Background())
+		log.Printf("paymaster-hour-task statistic success, paymaster: %s, day:%s", paymaster, time.String())
 	}
 	return nil
 }
@@ -578,7 +585,9 @@ func bulkInsertFactoryStatsHour(ctx context.Context, client *ent.Client, data []
 			continue
 		}
 		if len(bundlerDays) != 0 {
-			client.FactoryStatisHour.Delete().Where(factorystatishour.IDEQ(bundlerDays[0].ID)).Exec(context.Background())
+			for _, old := range bundlerDays {
+				client.FactoryStatisHour.Delete().Where(factorystatishour.IDEQ(old.ID)).Exec(context.Background())
+			}
 		}
 		one.Save(context.Background())
 	}

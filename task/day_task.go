@@ -26,6 +26,7 @@ import (
 const TimeLayout = "2006-01-02 15:04:05"
 
 func InitDayStatis() {
+	go doDayStatistic()
 	dayScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := dayScheduler.ScheduleWithCron(func(ctx context.Context) {
 		doDayStatistic()
@@ -57,14 +58,15 @@ func doDayStatistic() {
 			continue
 		}
 		lastTime := taskRecords[0].LastTime
-		if lastTime.Add(24*time.Hour).Compare(time.Now()) > 0 {
+		now := time.Now()
+		dayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		if lastTime.Add(24*time.Hour).Compare(dayStart) >= 0 {
 			continue
 		}
 		startTime := time.Date(lastTime.Year(), lastTime.Month(), lastTime.Day()+1, 0, 0, 0, 0, lastTime.Location())
 		endTime := time.Date(lastTime.Year(), lastTime.Month(), lastTime.Day()+2, 0, 0, 0, 0, lastTime.Location())
-		now := time.Now()
 		for {
-			if startTime.Compare(now) > 0 {
+			if startTime.Compare(dayStart) >= 0 {
 				break
 			}
 			opsInfos, err := client.AAUserOpsInfo.Query().
@@ -313,7 +315,10 @@ func bulkInsertFactoryStatsDay(ctx context.Context, client *ent.Client, data []*
 			continue
 		}
 		if len(factoryDays) != 0 {
-			client.FactoryStatisDay.Delete().Where(factorystatisday.IDEQ(factoryDays[0].ID)).Exec(context.Background())
+			for _, old := range factoryDays {
+				client.FactoryStatisDay.Delete().Where(factorystatisday.IDEQ(old.ID)).Exec(context.Background())
+			}
+
 		}
 		one.Save(context.Background())
 	}
@@ -352,9 +357,12 @@ func bulkInsertPaymasterStatsDay(ctx context.Context, client *ent.Client, data [
 			continue
 		}
 		if len(paymasterDays) != 0 {
-			client.PaymasterStatisDay.Delete().Where(paymasterstatisday.IDEQ(paymasterDays[0].ID)).Exec(context.Background())
+			for _, old := range paymasterDays {
+				client.PaymasterStatisDay.Delete().Where(paymasterstatisday.IDEQ(old.ID)).Exec(context.Background())
+			}
 		}
 		one.Save(context.Background())
+		log.Printf("paymaster-day-task statistic success, paymaster: %s, day:%s", paymaster, time.String())
 	}
 	return nil
 }
@@ -374,9 +382,12 @@ func bulkInsertBundlerStatsDay(ctx context.Context, client *ent.Client, data []*
 			continue
 		}
 		if len(bundlerDays) != 0 {
-			client.BundlerStatisDay.Delete().Where(bundlerstatisday.IDEQ(bundlerDays[0].ID)).Exec(context.Background())
+			for _, old := range bundlerDays {
+				client.BundlerStatisDay.Delete().Where(bundlerstatisday.IDEQ(old.ID)).Exec(ctx)
+			}
 		}
 		one.Save(context.Background())
+		log.Printf("bundler-day-task statistic success, bundler: %s, day:%s", bundler, time.String())
 	}
 	return nil
 }
