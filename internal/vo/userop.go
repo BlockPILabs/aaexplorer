@@ -45,6 +45,8 @@ type GetUserOpsRequest struct {
 	Network           string `json:"network" params:"network" validate:"required,min=3"`
 	LatestBlockNumber int64  `json:"latestBlockNumber" params:"latestBlockNumber" validate:"min=0"`
 	BlockNumber       int64  `json:"blockNumber" params:"blockNumber" validate:"min=0"`
+	StartTime         int64  `json:"startTime"`
+	EndTime           int64  `json:"endTime"`
 	TxHash            string `json:"txHash" params:"txHash"`
 	Bundler           string `json:"bundler" params:"bundler"`
 	Paymaster         string `json:"paymaster" params:"paymaster"`

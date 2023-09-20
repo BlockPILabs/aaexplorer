@@ -82,6 +82,19 @@ func (dao *userOpDao) Pagination(ctx context.Context, tx *ent.Client, req vo.Get
 			sql.FieldHasPrefix(aauseropsinfo.FieldID, utils.Fix0x(req.HashTerm)),
 		)
 	}
+
+	if req.StartTime > 0 {
+		query = query.Where(
+			aauseropsinfo.TimeGTE(time.UnixMilli(req.StartTime)),
+		)
+	}
+
+	if req.EndTime > 0 {
+		query = query.Where(
+			aauseropsinfo.TimeLTE(time.UnixMilli(req.EndTime)),
+		)
+	}
+
 	if len(req.Account) > 0 && utils.IsHexAddress(req.Account) {
 		query = query.Where(
 			aauseropsinfo.Or(
