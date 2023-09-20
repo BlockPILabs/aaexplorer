@@ -61,10 +61,6 @@ var ScanCmd = &cobra.Command{
 	},
 }
 
-func test() {
-	fmt.Println("aaaaaaaaa")
-}
-
 func refreshUsd() {
 	client, err := entity.Client(context.Background(), "polygon")
 	if err != nil {
