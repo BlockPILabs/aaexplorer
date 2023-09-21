@@ -1,5 +1,24 @@
 -- CREATE
 --     EXTENSION IF NOT EXISTS timescaledb;
+alter table public.aa_account_data
+    add user_ops_num bigint default 0;
+alter table public.aa_account_data
+    add total_balance_usd numeric(50, 20) default 0;
+alter table public.aa_account_data
+    add last_time bigint default 0;
+alter table public.aa_account_data
+    add update_time timestamp with time zone;
+
+
+alter table public.account
+    add update_time timestamp with time zone;
+alter table public.aa_block_info
+    add bundler_profit_usd numeric default 0;
+alter table public.aa_user_ops_info
+    add fee_usd numeric default 0;
+alter table public.aa_user_ops_info
+    add tx_value_usd numeric default 0;
+
 
 create table aa_transaction_info
 (
@@ -115,7 +134,9 @@ create table if not exists public.aa_user_ops_info
     update_time              timestamp with time zone,
     targets                  varchar(128)[],
     aa_index                 integer default 0,
-    targets_count            integer default 0
+    targets_count            integer default 0,
+    fee_usd                  numeric default 0,
+    tx_value_usd             numeric default 0
 ) PARTITION BY RANGE (time);
 
 
@@ -143,10 +164,14 @@ create index aa_user_ops_info_factory_index on aa_user_ops_info (factory);
 -- drop table  if exists  aa_account_data;
 create table aa_account_data
 (
-    address      text primary key,
-    aa_type      text,
-    factory      text,
-    factory_time timestamptz
+    address           text primary key,
+    aa_type           text,
+    factory           text,
+    factory_time      timestamptz,
+    user_ops_num      bigint          default 0,
+    update_time       timestamp with time zone,
+    total_balance_usd numeric(50, 20) default 0,
+    last_time         bigint          default 0
 ) PARTITION BY hash (address);
 create table aa_account_data_p1 partition of aa_account_data for values with (modulus 30, remainder 0);
 create table aa_account_data_p2 partition of aa_account_data for values with (modulus 30, remainder 1);
