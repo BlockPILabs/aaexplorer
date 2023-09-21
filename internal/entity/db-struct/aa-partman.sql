@@ -14,6 +14,8 @@ alter table public.account
     add update_time timestamp with time zone;
 alter table public.aa_block_info
     add bundler_profit_usd numeric default 0;
+alter table public.aa_transaction_info
+    add bundler_profit_usd numeric default 0;
 alter table public.aa_user_ops_info
     add fee_usd numeric default 0;
 alter table public.aa_user_ops_info
@@ -29,7 +31,8 @@ create table aa_transaction_info
     block_number   int8,
     userop_count   int,
     is_mev         boolean,
-    bundler_profit numeric
+    bundler_profit numeric,
+    bundler_profit_usd numeric default 0
 ) PARTITION BY RANGE (time);
 
 
