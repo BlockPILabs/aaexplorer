@@ -37,7 +37,7 @@ type GetBundlersResponse struct {
 
 type GetBundlerRequest struct {
 	Network string `json:"network" params:"network" validate:"required,min=3"`
-	Bundler string `json:"bundler" params:"bundler" validate:"required,len=42"`
+	Bundler string `json:"bundler" params:"bundler" validate:"required,hexAddress"`
 }
 type GetBundlerResponse struct {
 	// FeeEarnedUsdD1 holds the value of the "fee_earned_usd_d1" field.

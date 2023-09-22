@@ -1,6 +1,7 @@
 package vo
 
 import (
+	"github.com/BlockPILabs/aa-scan/internal/utils"
 	english "github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
@@ -41,6 +42,9 @@ func init() {
 		return name
 	})
 
+	Validate.RegisterValidation("hexAddress", hexAddressValidate)
+	Validate.RegisterValidation("txHash", txHashValidate)
+
 }
 
 func ValidateStruct(s interface{}) error {
@@ -70,4 +74,12 @@ func (v *ValidateErrors) Error() string {
 		ms = append(ms, validate.Message)
 	}
 	return strings.Join(ms, "\n")
+}
+
+func hexAddressValidate(fl validator.FieldLevel) bool {
+	return utils.IsHexAddress(fl.Field().String())
+}
+
+func txHashValidate(fl validator.FieldLevel) bool {
+	return utils.IsHashHex(fl.Field().String())
 }
