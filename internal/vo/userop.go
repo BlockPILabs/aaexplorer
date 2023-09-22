@@ -47,11 +47,11 @@ type GetUserOpsRequest struct {
 	BlockNumber       int64  `json:"blockNumber" params:"blockNumber" validate:"min=0"`
 	StartTime         int64  `json:"startTime"`
 	EndTime           int64  `json:"endTime"`
-	TxHash            string `json:"txHash" params:"txHash"`
-	Bundler           string `json:"bundler" params:"bundler"`
-	Paymaster         string `json:"paymaster" params:"paymaster"`
-	Factory           string `json:"factory" params:"factory"`
-	Account           string `json:"account" params:"account"`
+	TxHash            string `json:"txHash" params:"txHash" validate:"omitempty,txHash"`
+	Bundler           string `json:"bundler" params:"bundler" validate:"omitempty,hexAddress"`
+	Paymaster         string `json:"paymaster" params:"paymaster" validate:"omitempty,hexAddress"`
+	Factory           string `json:"factory" params:"factory" validate:"omitempty,hexAddress"`
+	Account           string `json:"account" params:"account" validate:"omitempty,hexAddress"`
 	HashTerm          string `json:"hashTerm" params:"hashTerm"`
 }
 
@@ -62,7 +62,7 @@ type GetUserOpsResponse struct {
 
 type UserOpsAnalysisRequestVo struct {
 	Network           string `json:"network" params:"network" validate:"required,min=3"`
-	UserOperationHash string `json:"userOperationHash" params:"userOperationHash" validate:"required,min=3"`
+	UserOperationHash string `json:"userOperationHash" params:"userOperationHash" validate:"required,txHash"`
 	TxHash            string `json:"txHash" params:"txHash"`
 }
 
