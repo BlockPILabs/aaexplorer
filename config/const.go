@@ -14,7 +14,7 @@ const (
 	EvmDecimal     = 18
 	BscNative      = "bnb"
 	PolygonNative  = "matic"
-	EthNetwork     = "eth"
+	EthNetwork     = "ethereum"
 	BscNetwork     = "bsc"
 	PolygonNetwork = "polygon"
 

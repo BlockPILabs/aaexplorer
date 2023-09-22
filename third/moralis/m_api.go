@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-const ApiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjIxZTBkZmU5LTlkNTItNGQ5ZC05YmQzLTdhZjBhYjAyNDFhYiIsIm9yZ0lkIjoiMzUwOTE1IiwidXNlcklkIjoiMzYwNjcwIiwidHlwZUlkIjoiY2VhNjZmN2MtNTYwMi00NGQzLWE5YzUtNDhjMjA5MmQzNzU5IiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE2OTA3ODgyMDEsImV4cCI6NDg0NjU0ODIwMX0.VxVXZ6z9y3QY9_JfEsQvxBcs2SmFk05OObAptKofGxc"
+const ApiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjIxZDY0Zjg2LWNiMDctNDE3NC04YjM1LTY3NWZmOTkzNzAyNSIsIm9yZ0lkIjoiMzU4MzA1IiwidXNlcklkIjoiMzY4MjQxIiwidHlwZUlkIjoiYmM0YzVlNTctZjI2ZS00Y2E4LWIzMjYtNTliMTUyN2Q2ZmVjIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE2OTUzNzYyMTUsImV4cCI6NDg1MTEzNjIxNX0.eosHdgVpe_QFRtzFn1p0Lz5KvQB05w2I--UHMQzZcg4"
 const MoralisUrl = "https://deep-index.moralis.io/api/v2.2"
 
 type TokenBalance struct {
@@ -67,6 +67,9 @@ type pricePayload struct {
 
 func GetTokenBalance(address string, network string) []*TokenBalance {
 	network = strings.ToLower(network)
+	if network == "ethereum" {
+		network = "eth"
+	}
 	url := MoralisUrl + "/" + address + "/erc20?chain=" + network
 
 	req, _ := http.NewRequest("GET", url, nil)
@@ -146,6 +149,9 @@ func GetTokenPriceBatch(tokens []string) []*TokenPrice {
 
 func GetTokenPrice(token string, network string) *TokenPrice {
 	network = strings.ToLower(network)
+	if network == "ethereum" {
+		network = "eth"
+	}
 	url := MoralisUrl + "/erc20/" + token + "/price?chain=" + network + "&include=percent_change"
 
 	req, _ := http.NewRequest("GET", url, nil)
@@ -187,6 +193,9 @@ func GetNativeTokenBalance(accountAddress string, network string) decimal.Decima
 		return decimal.Zero
 	}
 	network = strings.ToLower(network)
+	if network == "ethereum" {
+		network = "eth"
+	}
 	url := MoralisUrl + "/" + accountAddress + "/balance?chain=" + network
 
 	req, _ := http.NewRequest("GET", url, nil)
