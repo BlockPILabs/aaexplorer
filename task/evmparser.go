@@ -188,6 +188,9 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 	aaBlockSyncs, err := tx.AaBlockSync.Query().
 		Where(
 			aablocksync.Scanned(false),
+			aablocksync.BlockScanned(true),
+			aablocksync.TxScanned(true),
+			aablocksync.TxrScanned(true),
 			aablocksync.IDGT(t.startBlock[network.ID]),
 		).
 		ForUpdate(sql.WithLockAction(sql.SkipLocked)).
