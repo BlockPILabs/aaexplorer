@@ -57,7 +57,7 @@ func doTaskDay(days int) {
 		}
 		now := time.Now()
 		//-days
-		startTime := time.Date(now.Year(), now.Month(), now.Day()-70, 0, 0, 0, 0, now.Location())
+		startTime := time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		opsCalldatas, err := client.AAUserOpsCalldata.
 			Query().
@@ -127,7 +127,7 @@ func day1Task() {
 		}
 		now := time.Now()
 		//-24
-		startTime := time.Date(now.Year(), now.Month(), now.Day()-70, now.Hour()-24, 0, 0, 0, now.Location())
+		startTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-24, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, now.Location())
 		opsCalldatas, err := client.AAUserOpsCalldata.
 			Query().

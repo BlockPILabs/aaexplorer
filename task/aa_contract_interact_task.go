@@ -55,7 +55,7 @@ func doInteractTaskDay(days int) {
 			return
 		}
 		now := time.Now()
-		startTime := time.Date(now.Year(), now.Month(), now.Day()-70, 0, 0, 0, 0, now.Location())
+		startTime := time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		opsCalldatas, err := client.AAUserOpsCalldata.
 			Query().
@@ -122,7 +122,7 @@ func day1InteractTask() {
 			return
 		}
 		now := time.Now()
-		startTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-70, 0, 0, 0, now.Location())
+		startTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-24, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, now.Location())
 		opsCalldatas, err := client.AAUserOpsCalldata.
 			Query().

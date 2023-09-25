@@ -32,7 +32,7 @@ type ReceiptLog struct {
 }
 
 func ScanBlock() {
-	go scanBlock()
+	//go scanBlock()
 }
 
 func scanBlock() {
