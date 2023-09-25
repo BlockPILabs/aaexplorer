@@ -43,6 +43,7 @@ type parserBlock struct {
 	userOpInfo    *ent.AaBlockInfo
 	aaAccounts    *sync.Map
 	aaAccountsLck *sync.Mutex
+	nativePrice   decimal.Decimal
 }
 
 func (b *parserBlock) AaAccountData(address string) *ent.AaAccountData {

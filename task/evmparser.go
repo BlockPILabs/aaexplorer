@@ -265,7 +265,9 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 		var aaBlockInfos ent.AaBlockInfos
 		var setBlockSyncedId []int64
 		var aaAccountDataMap = map[string]*ent.AaAccountData{}
+		nativePrice := ser.GetNativePrice(network.ID)
 		for _, block := range blocksMap {
+			block.nativePrice = nativePrice
 			t.doParse(ctx, client, network, block)
 
 			setBlockSyncedId = append(setBlockSyncedId, block.block.ID)
@@ -486,7 +488,7 @@ func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *e
 		block.userOpInfo.BundlerProfit = block.userOpInfo.BundlerProfit.Add(parserTx.userOpInfo.BundlerProfit)
 		block.userOpInfo.UseropCount += len(parserTx.userops)
 	}
-	block.userOpInfo.BundlerProfitUsd = block.userOpInfo.BundlerProfit.Mul(ser.GetNativePrice(network.ID))
+	block.userOpInfo.BundlerProfitUsd = block.userOpInfo.BundlerProfit.Mul(block.nativePrice)
 }
 
 func (t *_evmParser) getFrom(tx *types.Transaction, client *ethclient.Client) string {
@@ -1070,8 +1072,8 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 			userOpsInfo.TxValue = userOpsInfo.TxValue.Add(callDetail.value)
 		}
 
-		userOpsInfo.FeeUsd = userOpsInfo.Fee.Mul(ser.GetNativePrice(network.ID))
-		userOpsInfo.TxValueUsd = userOpsInfo.TxValue.Mul(ser.GetNativePrice(network.ID))
+		userOpsInfo.FeeUsd = userOpsInfo.Fee.Mul(block.nativePrice)
+		userOpsInfo.TxValueUsd = userOpsInfo.TxValue.Mul(block.nativePrice)
 
 		parserTx.userOpInfo.UseropCount++
 		parserTx.userOpInfo.BundlerProfit = parserTx.userOpInfo.BundlerProfit.Add(userOpsInfo.Fee)
@@ -1080,7 +1082,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 	}
 
 	parserTx.userOpInfo.BundlerProfit = parserTx.userOpInfo.BundlerProfit.Sub(GetReceiptGasRayDiv(parserTx.receipt))
-	parserTx.userOpInfo.BundlerProfitUsd = parserTx.userOpInfo.BundlerProfit.Mul(ser.GetNativePrice(network.ID))
+	parserTx.userOpInfo.BundlerProfitUsd = parserTx.userOpInfo.BundlerProfit.Mul(block.nativePrice)
 	logger.Info("parse success")
 	return nil
 }
