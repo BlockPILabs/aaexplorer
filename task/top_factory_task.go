@@ -83,8 +83,8 @@ func doTopFactoryDay() {
 			factoryInfo, bundlerInfoOk := factoryInfoMap[factoryAddr]
 			if bundlerInfoOk {
 
-				factoryInfo.AccountDeployNum = factoryInfo.AccountNum + int(factory.AccountNum)
-				factoryInfo.AccountNum = factoryInfo.AccountDeployNum + int(factory.AccountDeployNum)
+				factoryInfo.AccountDeployNum = factoryInfo.AccountDeployNum + int(factory.AccountNum)
+				factoryInfo.AccountNum = factoryInfo.AccountNum + int(factory.AccountDeployNum)
 			} else {
 				factoryInfo = &ent.FactoryInfo{
 					AccountDeployNum: int(factory.AccountDeployNum),

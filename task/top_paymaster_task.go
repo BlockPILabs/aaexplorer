@@ -130,7 +130,7 @@ func saveOrUpdatePaymasterDay(client *ent.Client, paymaster string, info *ent.Pa
 			SetNetwork(info.Network).
 			SetUserOpsNum(info.UserOpsNum).
 			SetGasSponsored(info.GasSponsored).
-			SetGasSponsoredUsd(info.GasSponsoredUsdD1).
+			SetGasSponsoredUsd(info.GasSponsoredUsd).
 			SetReserve(info.Reserve).
 			SetReserveUsd(info.ReserveUsd).
 			Save(context.Background())
@@ -142,6 +142,7 @@ func saveOrUpdatePaymasterDay(client *ent.Client, paymaster string, info *ent.Pa
 		err = client.PaymasterInfo.UpdateOneID(oldPaymaster.ID).
 			SetUserOpsNum(oldPaymaster.UserOpsNum + info.UserOpsNum).
 			SetGasSponsored(oldPaymaster.GasSponsored.Add(info.GasSponsored)).
+			SetGasSponsoredUsd(oldPaymaster.GasSponsoredUsd.Add(info.GasSponsoredUsd)).
 			Exec(context.Background())
 		if err != nil {
 			log.Printf("Update paymaster day err, %s\n", err)
