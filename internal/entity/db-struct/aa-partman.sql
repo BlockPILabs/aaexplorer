@@ -1,25 +1,25 @@
 -- CREATE
 --     EXTENSION IF NOT EXISTS timescaledb;
-alter table public.aa_account_data
-    add user_ops_num bigint default 0;
-alter table public.aa_account_data
-    add total_balance_usd numeric(50, 20) default 0;
-alter table public.aa_account_data
-    add last_time bigint default 0;
-alter table public.aa_account_data
-    add update_time timestamp with time zone;
+-- alter table public.aa_account_data
+--     add user_ops_num bigint default 0;
+-- alter table public.aa_account_data
+--     add total_balance_usd numeric(50, 20) default 0;
+-- alter table public.aa_account_data
+--     add last_time bigint default 0;
+-- alter table public.aa_account_data
+--     add update_time timestamp with time zone;
 
 
 alter table public.account
     add update_time timestamp with time zone;
 alter table public.aa_block_info
     add bundler_profit_usd numeric default 0;
-alter table public.aa_transaction_info
-    add bundler_profit_usd numeric default 0;
-alter table public.aa_user_ops_info
-    add fee_usd numeric default 0;
-alter table public.aa_user_ops_info
-    add tx_value_usd numeric default 0;
+-- alter table public.aa_transaction_info
+--     add bundler_profit_usd numeric default 0;
+-- alter table public.aa_user_ops_info
+--     add fee_usd numeric default 0;
+-- alter table public.aa_user_ops_info
+--     add tx_value_usd numeric default 0;
 
 
 create table aa_transaction_info

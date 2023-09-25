@@ -996,15 +996,15 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 		}
 		sender := block.AaAccountData(userOpsInfo.Sender)
 		sender.AaType = config.AaAccountTypeAA
+		factoryAddr, paymaster := t.getAddr(ctx, userOpsInfo.InitCode, userOpsInfo.PaymasterAndData)
+		userOpsInfo.Factory = strings.ToLower(factoryAddr)
+		userOpsInfo.Paymaster = strings.ToLower(paymaster)
+
 		if len(userOpsInfo.Paymaster) > 0 {
 			paymaster := block.AaAccountData(userOpsInfo.Paymaster)
 			paymaster.AaType = config.AaAccountTypePaymaster
 		}
 
-		factoryAddr, paymaster := t.getAddr(ctx, userOpsInfo.InitCode, userOpsInfo.PaymasterAndData)
-
-		userOpsInfo.Factory = strings.ToLower(factoryAddr)
-		userOpsInfo.Paymaster = strings.ToLower(paymaster)
 		if len(userOpsInfo.Factory) > 0 {
 			factory := block.AaAccountData(userOpsInfo.Factory)
 			factory.AaType = config.AaAccountTypeFactory
