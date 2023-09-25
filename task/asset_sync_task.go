@@ -19,11 +19,42 @@ import (
 func AssetTask() {
 	dayScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := dayScheduler.ScheduleWithCron(func(ctx context.Context) {
-		AssetSync()
+		//AssetSync()
 	}, "0 15 0 * * ?")
 
+	nativeScheduler := chrono.NewDefaultTaskScheduler()
+	_, err = nativeScheduler.ScheduleWithCron(func(ctx context.Context) {
+		NativeSync()
+	}, "0 0 0/1 * * ?")
 	if err == nil {
 		log.Print("AssetSyncTask has been scheduled")
+	}
+}
+
+func NativeSync() {
+	cli, err := entity.Client(context.Background())
+	if err != nil {
+		return
+	}
+	networks, err := cli.Network.Query().All(context.Background())
+	if len(networks) == 0 {
+		return
+	}
+	for _, record := range networks {
+		network := record.Name
+		client, err := entity.Client(context.Background(), network)
+		if err != nil {
+			continue
+		}
+		tokenPriceInfos, err := client.TokenPriceInfo.Query().Where(tokenpriceinfo.TypeEqualFold("base")).Limit(1).All(context.Background())
+		if len(tokenPriceInfos) == 0 {
+			continue
+		}
+		token := tokenPriceInfos[0]
+		tokenPrice := moralis.GetTokenPrice(token.ContractAddress, token.Network)
+		if tokenPrice != nil {
+			client.TokenPriceInfo.Update().SetTokenPrice(tokenPrice.UsdPrice).Where(tokenpriceinfo.IDEQ(token.ID)).Exec(context.Background())
+		}
 	}
 }
 
@@ -41,12 +72,13 @@ func AssetSync() {
 		network := record.Name
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
-			return
+			continue
 		}
+	inner:
 		for {
 			changeTraces, err := client.AssetChangeTrace.Query().Where(assetchangetrace.SyncFlagEQ(0), assetchangetrace.LastChangeTimeLT(hour6Ago)).Limit(100).All(context.Background())
 			if err != nil {
-				return
+				break inner
 			}
 			if len(changeTraces) == 0 {
 				return
