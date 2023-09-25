@@ -120,7 +120,7 @@ func (t *_evmParser) ScanBlock(ctx context.Context) {
 	logger.Debug("scan start")
 	pool, err := ants.NewPool(t.config.EvmParser.Batch)
 	if err != nil {
-		logger.Error("network find error", "err", err)
+		logger.Error("network pool err", "err", err)
 		return
 	}
 	defer pool.Release()
@@ -1192,16 +1192,16 @@ func (t *_evmParser) parseCallData(ctx context.Context, client *ent.Client, netw
 			continue
 		}
 
-		accountAbi, err := service.AccountService.GetAbiByAddress(ctx, client, detail.target)
-		if err != nil {
-			continue
-		}
-		detail.source = "0x" + detail.source
-		method, err := accountAbi.MethodById(hexutil.MustDecode(detail.source))
-		if err != nil {
-			continue
-		}
-		detail.source = method.Name
+		//accountAbi, err := service.AccountService.GetAbiByAddress(ctx, client, detail.target)
+		//if err != nil {
+		//	continue
+		//}
+		//detail.source = "0x" + detail.source
+		//method, err := accountAbi.MethodById(hexutil.MustDecode(detail.source))
+		//if err != nil {
+		//	continue
+		//}
+		//detail.source = method.Name
 	}
 
 	if len(callDetails) > 0 {
