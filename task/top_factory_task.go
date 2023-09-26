@@ -95,7 +95,7 @@ func doTopFactoryDay() {
 			factoryInfo.ID = factory.Factory
 			factoryInfo.Network = factory.Network
 			factoryInfoMap[factoryAddr] = factoryInfo
-			totalNum += factoryInfo.AccountNum
+			totalNum += factoryInfo.AccountDeployNum
 		}
 
 		for factory, factoryInfo := range factoryInfoMap {
