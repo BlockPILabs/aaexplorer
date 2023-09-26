@@ -41,12 +41,12 @@ func NativeSync() {
 		return
 	}
 	for _, record := range networks {
-		network := record.Name
+		network := record.ID
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			continue
 		}
-		tokenPriceInfos, err := client.TokenPriceInfo.Query().Where(tokenpriceinfo.TypeEqualFold("base")).Limit(1).All(context.Background())
+		tokenPriceInfos, err := client.TokenPriceInfo.Query().Where(tokenpriceinfo.TypeEqualFold("base"), tokenpriceinfo.NetworkEQ(network)).Limit(1).All(context.Background())
 		if len(tokenPriceInfos) == 0 {
 			continue
 		}
@@ -54,6 +54,7 @@ func NativeSync() {
 		tokenPrice := moralis.GetTokenPrice(token.ContractAddress, token.Network)
 		if tokenPrice != nil {
 			client.TokenPriceInfo.Update().SetTokenPrice(tokenPrice.UsdPrice).Where(tokenpriceinfo.IDEQ(token.ID)).Exec(context.Background())
+			log.Printf("NativeSync token price sync success, network:%s, price:%s", network, tokenPrice.UsdPrice.String())
 		}
 	}
 }
@@ -69,7 +70,7 @@ func AssetSync() {
 	}
 	hour6Ago := time.Now().UnixMilli() - 6*3600*1000
 	for _, record := range networks {
-		network := record.Name
+		network := record.ID
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
 			continue
