@@ -39,6 +39,8 @@ func (PaymasterStatisHour) Fields() []ent.Field {
 			StructTag(`json:"userOpsNum"`).Optional(),
 		field.Int64("gas_sponsored").
 			StructTag(`json:"gasSponsored"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}).Optional(),
+		field.Int64("gas_sponsored_usd").
+			StructTag(`json:"gasSponsoredUsd"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}).Optional(),
 		field.Int64("reserve").
 			StructTag(`json:"reserve"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}).Optional(),
 		field.Int64("reserve_usd").

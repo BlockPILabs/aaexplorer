@@ -468,6 +468,7 @@ func calPaymasterStatistic(client *ent.Client, bundlerMap map[string]map[string]
 				SetNetwork(network).
 				SetUserOpsNum(int64(len(userOpsInfoList))).
 				SetGasSponsored(totalFee).
+				SetGasSponsoredUsd(totalFee.Mul(price)).
 				SetReserve(nativeBalance).
 				SetReserveUsd(price.Mul(nativeBalance)).
 				SetStatisTime(sTime),
