@@ -269,7 +269,7 @@ func GetLatestUserOps(ctx context.Context, req vo.LatestUserOpsRequest) (*vo.Lat
 		return resp, nil
 	}
 
-	averageGas := rayDiv(start).DivRound(decimal.NewFromInt(int64(count)), 4)
+	averageGas := rayDiv(start).DivRound(decimal.NewFromInt(int64(count)), config.FeePrecision)
 	resp.AverageGasCost24h = averageGas
 	return resp, nil
 }

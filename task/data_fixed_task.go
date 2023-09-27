@@ -380,18 +380,18 @@ func FixFactoryDay1() {
 			if len(statisticHours) == 0 {
 				continue
 			}
-			var deployedAccountNum = int64(0)
-			var accountNum = int64(0)
+			var deployedAccountNumD1 = int64(0)
+			var accountNumD1 = int64(0)
 			for _, hour := range statisticHours {
 				if hour.StatisTime.Compare(hourStart) >= 0 {
 					continue
 				}
-				accountNum += hour.AccountNum
-				deployedAccountNum += hour.AccountDeployNum
+				accountNumD1 += hour.AccountNum
+				deployedAccountNumD1 += hour.AccountDeployNum
 			}
-			factory.AccountNum = int(accountNum)
-			factory.AccountDeployNum = int(deployedAccountNum)
-			totalNum += factory.AccountNum
+			factory.AccountNumD1 = int(accountNumD1)
+			factory.AccountDeployNumD1 = int(deployedAccountNumD1)
+			totalNum += factory.AccountNumD1
 
 			client.FactoryInfo.Update().
 				SetAccountNumD1(factory.AccountNumD1).
@@ -402,7 +402,6 @@ func FixFactoryDay1() {
 
 		for _, factory := range factoryInfos {
 			dominanceD1 := getSingleRate(int64(factory.AccountNumD1), int64(totalNum))
-			factory.Dominance = dominanceD1
 			client.FactoryInfo.Update().SetDominanceD1(dominanceD1).Where(factoryinfo.IDEQ(factory.ID)).Exec(context.Background())
 			log.Printf("factory d1 dominance fixed success, %s", factory.ID)
 		}

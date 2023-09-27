@@ -26,7 +26,7 @@ func InitTask() {
 	UserOpTypeTask()
 	AssetTask()
 	//temp
-	//DataFixedTask()
+	DataFixedTask()
 
 }
 
@@ -119,6 +119,7 @@ func doTopBundlersDay() {
 		var totalNumMap = make(map[string]int64)
 		var feeEarnedMap = make(map[string]decimal.Decimal)
 		var repeatMap = make(map[string]bool)
+		var allBundlerNum = int64(0)
 		for _, bundlerStatisDay := range bundlerStatisDays {
 			bundler := bundlerStatisDay.Bundler
 			timeStr := bundlerStatisDay.StatisTime.String()
@@ -138,12 +139,13 @@ func doTopBundlersDay() {
 			if !ok {
 				bundleNum = 0
 			}
-			bundleNumMap[bundlerStatisDay.Bundler] = bundleNum + bundlerStatisDay.BundlesNum
+			bundleNumMap[bundlerStatisDay.Bundler] = bundleNum + bundlerStatisDay.TotalNum
 			totalNum, totalOk := totalNumMap[bundlerStatisDay.Bundler]
 			if !totalOk {
 				totalNum = 0
 			}
 			totalNumMap[bundlerStatisDay.Bundler] = totalNum + bundlerStatisDay.TotalNum
+			allBundlerNum += bundlerStatisDay.TotalNum
 		}
 		price := service.GetNativePrice(network)
 		bundlerInfoMap := make(map[string]*ent.BundlerInfo)
@@ -153,7 +155,7 @@ func doTopBundlersDay() {
 
 			if bundlerInfoOk {
 				bundlerInfo.UserOpsNum = bundlerInfo.UserOpsNum + bundlerStatisDay.UserOpsNum
-				bundlerInfo.BundlesNum = bundlerInfo.BundlesNum + bundlerStatisDay.BundlesNum
+				bundlerInfo.BundlesNum = bundlerInfo.BundlesNum + bundlerStatisDay.TotalNum
 				bundlerInfo.GasCollected = bundlerInfo.GasCollected.Add(bundlerStatisDay.GasCollected)
 				bundlerInfo.SuccessBundlesNum = bundlerInfo.SuccessBundlesNum + bundlerStatisDay.SuccessBundlesNum
 				bundlerInfo.FailedBundlesNum = bundlerInfo.FailedBundlesNum + bundlerStatisDay.FailedBundlesNum
@@ -161,7 +163,7 @@ func doTopBundlersDay() {
 			} else {
 				bundlerInfo = &ent.BundlerInfo{
 					UserOpsNum:        bundlerStatisDay.UserOpsNum,
-					BundlesNum:        bundlerStatisDay.BundlesNum,
+					BundlesNum:        bundlerStatisDay.TotalNum,
 					GasCollected:      bundlerStatisDay.GasCollected,
 					SuccessBundlesNum: bundlerStatisDay.SuccessBundlesNum,
 					FailedBundlesNum:  bundlerStatisDay.FailedBundlesNum,
@@ -185,6 +187,8 @@ func doTopBundlersDay() {
 			if len(bundler) == 0 {
 				continue
 			}
+			bundleRate := getSingleRate(bundlerInfo.BundlesNum, allBundlerNum)
+			bundlerInfo.BundleRate = bundleRate
 			saveOrUpdateBundlerDay(client, bundler, bundlerInfo)
 		}
 		now1 := time.Now()
@@ -305,7 +309,7 @@ func doTopBundlersHour(timeRange int) {
 			if !ok {
 				bundleNum = 0
 			}
-			bundleNumMap[bundler] = bundleNum + bundlerStatisHour.BundlesNum
+			bundleNumMap[bundler] = bundleNum + bundlerStatisHour.TotalNum
 
 			totalNum, totalOk := totalNumMap[bundlerStatisHour.Bundler]
 			if !totalOk {
@@ -323,15 +327,15 @@ func doTopBundlersHour(timeRange int) {
 
 			if bundlerInfoOk {
 				if timeRange == 1 {
-					bundlerInfo.UserOpsNumD1 = bundlerInfo.UserOpsNumD1 + bundlerStatisHour.UserOpsNum
+					bundlerInfo.UserOpsNumD1 = bundlerInfo.UserOpsNumD1 + bundlerStatisHour.TotalNum
 					bundlerInfo.BundlesNumD1 = bundlerInfo.BundlesNumD1 + bundlerStatisHour.BundlesNum
 					bundlerInfo.GasCollectedD1 = bundlerInfo.GasCollectedD1.Add(bundlerStatisHour.GasCollected)
 				} else if timeRange == 7 {
-					bundlerInfo.UserOpsNumD7 = bundlerInfo.UserOpsNumD7 + bundlerStatisHour.UserOpsNum
+					bundlerInfo.UserOpsNumD7 = bundlerInfo.UserOpsNumD7 + bundlerStatisHour.TotalNum
 					bundlerInfo.BundlesNumD7 = bundlerInfo.BundlesNumD7 + bundlerStatisHour.BundlesNum
 					bundlerInfo.GasCollectedD7 = bundlerInfo.GasCollectedD7.Add(bundlerStatisHour.GasCollected)
 				} else if timeRange == 30 {
-					bundlerInfo.UserOpsNumD30 = bundlerInfo.UserOpsNumD30 + bundlerStatisHour.UserOpsNum
+					bundlerInfo.UserOpsNumD30 = bundlerInfo.UserOpsNumD30 + bundlerStatisHour.TotalNum
 					bundlerInfo.BundlesNumD30 = bundlerInfo.BundlesNumD30 + bundlerStatisHour.BundlesNum
 					bundlerInfo.GasCollectedD30 = bundlerInfo.GasCollectedD30.Add(bundlerStatisHour.GasCollected)
 				}
@@ -340,15 +344,15 @@ func doTopBundlersHour(timeRange int) {
 				bundlerInfo = &ent.BundlerInfo{}
 				if timeRange == 1 {
 					bundlerInfo.UserOpsNumD1 = bundlerStatisHour.UserOpsNum
-					bundlerInfo.BundlesNumD1 = bundlerStatisHour.BundlesNum
+					bundlerInfo.BundlesNumD1 = bundlerStatisHour.TotalNum
 					bundlerInfo.GasCollectedD1 = bundlerStatisHour.GasCollected
 				} else if timeRange == 7 {
 					bundlerInfo.UserOpsNumD7 = bundlerStatisHour.UserOpsNum
-					bundlerInfo.BundlesNumD7 = bundlerStatisHour.BundlesNum
+					bundlerInfo.BundlesNumD7 = bundlerStatisHour.TotalNum
 					bundlerInfo.GasCollectedD7 = bundlerStatisHour.GasCollected
 				} else if timeRange == 30 {
 					bundlerInfo.UserOpsNumD30 = bundlerStatisHour.UserOpsNum
-					bundlerInfo.BundlesNumD30 = bundlerStatisHour.BundlesNum
+					bundlerInfo.BundlesNumD30 = bundlerStatisHour.TotalNum
 					bundlerInfo.GasCollectedD30 = bundlerStatisHour.GasCollected
 				}
 				bundlerInfoMap[bundler] = bundlerInfo
