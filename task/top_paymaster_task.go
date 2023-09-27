@@ -21,7 +21,7 @@ func TopPaymaster() {
 		doTopPaymasterHour(1)
 		//doTopPaymasterHour(7)
 		//doTopPaymasterHour(30)
-	}, "0 5 * * * *")
+	}, "0 7 * * * *")
 
 	paymasterSchedulerDay := chrono.NewDefaultTaskScheduler()
 

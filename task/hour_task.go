@@ -29,7 +29,7 @@ func InitHourStatis() {
 	hourScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := hourScheduler.ScheduleWithCron(func(ctx context.Context) {
 		doHourStatistic()
-	}, "0 5 * * * *")
+	}, "0 1 * * * *")
 
 	if err == nil {
 		log.Print("hourStatistic has been scheduled")

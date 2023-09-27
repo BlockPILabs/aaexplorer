@@ -34,8 +34,8 @@ func GetTopBundler(ctx context.Context, req vo.TopBundlerRequest) (*vo.TopBundle
 			Address:         info.ID,
 			Bundles:         info.BundlesNumD1,
 			Success24H:      info.SuccessRateD1,
-			FeeEarned24H:    info.FeeEarnedD1.Round(2),
-			FeeEarnedUsd24H: info.FeeEarnedUsdD1.Round(2),
+			FeeEarned24H:    info.FeeEarnedD1.Round(6),
+			FeeEarnedUsd24H: info.FeeEarnedUsdD1.Round(6),
 		}
 		bundlerDetails = append(bundlerDetails, detail)
 	}
@@ -68,8 +68,8 @@ func GetTopPaymaster(ctx context.Context, req vo.TopPaymasterRequest) (*vo.TopPa
 		detail := &vo.PaymasterDetail{
 			Address:         info.ID,
 			ReserveUsd:      info.ReserveUsd,
-			GasSponsored:    info.GasSponsoredD1.Round(2),
-			GasSponsoredUsd: info.GasSponsoredUsdD1.Round(2),
+			GasSponsored:    info.GasSponsoredD1.Round(6),
+			GasSponsoredUsd: info.GasSponsoredUsdD1.Round(6),
 		}
 		paymasterDetails = append(paymasterDetails, detail)
 	}

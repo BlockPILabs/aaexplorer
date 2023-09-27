@@ -19,7 +19,7 @@ func TopFactories() {
 		doTopFactoryHour(1)
 		//doTopFactoryHour(7)
 		//doTopFactoryHour(30)
-	}, "0 5 * * * *")
+	}, "0 7 * * * *")
 
 	factorySchedulerDay := chrono.NewDefaultTaskScheduler()
 

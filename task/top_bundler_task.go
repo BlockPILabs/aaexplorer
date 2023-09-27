@@ -64,7 +64,7 @@ func TopBundlers() {
 		doTopBundlersHour(1)
 		//doTopBundlersHour(7)
 		//doTopBundlersHour(30)
-	}, "0 5 * * * *")
+	}, "0 7 * * * *")
 
 	bundlerSchedulerDay := chrono.NewDefaultTaskScheduler()
 
