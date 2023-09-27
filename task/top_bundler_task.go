@@ -327,16 +327,16 @@ func doTopBundlersHour(timeRange int) {
 
 			if bundlerInfoOk {
 				if timeRange == 1 {
-					bundlerInfo.UserOpsNumD1 = bundlerInfo.UserOpsNumD1 + bundlerStatisHour.TotalNum
-					bundlerInfo.BundlesNumD1 = bundlerInfo.BundlesNumD1 + bundlerStatisHour.BundlesNum
+					bundlerInfo.UserOpsNumD1 = bundlerInfo.UserOpsNumD1 + bundlerStatisHour.UserOpsNum
+					bundlerInfo.BundlesNumD1 = bundlerInfo.BundlesNumD1 + bundlerStatisHour.TotalNum
 					bundlerInfo.GasCollectedD1 = bundlerInfo.GasCollectedD1.Add(bundlerStatisHour.GasCollected)
 				} else if timeRange == 7 {
-					bundlerInfo.UserOpsNumD7 = bundlerInfo.UserOpsNumD7 + bundlerStatisHour.TotalNum
-					bundlerInfo.BundlesNumD7 = bundlerInfo.BundlesNumD7 + bundlerStatisHour.BundlesNum
+					bundlerInfo.UserOpsNumD7 = bundlerInfo.UserOpsNumD7 + bundlerStatisHour.UserOpsNum
+					bundlerInfo.BundlesNumD7 = bundlerInfo.BundlesNumD7 + bundlerStatisHour.TotalNum
 					bundlerInfo.GasCollectedD7 = bundlerInfo.GasCollectedD7.Add(bundlerStatisHour.GasCollected)
 				} else if timeRange == 30 {
-					bundlerInfo.UserOpsNumD30 = bundlerInfo.UserOpsNumD30 + bundlerStatisHour.TotalNum
-					bundlerInfo.BundlesNumD30 = bundlerInfo.BundlesNumD30 + bundlerStatisHour.BundlesNum
+					bundlerInfo.UserOpsNumD30 = bundlerInfo.UserOpsNumD30 + bundlerStatisHour.UserOpsNum
+					bundlerInfo.BundlesNumD30 = bundlerInfo.BundlesNumD30 + bundlerStatisHour.TotalNum
 					bundlerInfo.GasCollectedD30 = bundlerInfo.GasCollectedD30.Add(bundlerStatisHour.GasCollected)
 				}
 
