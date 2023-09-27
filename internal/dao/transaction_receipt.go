@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"entgo.io/ent/dialect/sql"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactionreceiptdecode"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
@@ -31,6 +32,8 @@ func (dao *transactionReceiptDao) Pages(ctx context.Context, tx *ent.Client, pag
 
 	if page.Sort > 0 {
 		query = query.Order(dao.orderPage(ctx, transactionreceiptdecode.Columns, page))
+	} else {
+		query = query.Order(transactionreceiptdecode.ByTime(sql.OrderDesc()))
 	}
 
 	query = query.Limit(page.GetPerPage()).Offset(page.GetOffset())

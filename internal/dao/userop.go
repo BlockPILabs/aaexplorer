@@ -171,6 +171,8 @@ func (dao *userOpDao) Pages(ctx context.Context, tx *ent.Client, page vo.Paginat
 
 	if page.Sort > 0 {
 		query = query.Order(dao.orderPage(ctx, aauseropsinfo.Columns, page))
+	} else {
+		query = query.Order(aauseropsinfo.ByTime(sql.OrderDesc()))
 	}
 	query = query.Limit(page.GetPerPage()).Offset(page.GetOffset())
 	a, err = query.All(ctx)
