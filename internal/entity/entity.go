@@ -47,10 +47,12 @@ func Start(logger log.Logger, cfg *config.Config) error {
 	//	return err
 	//}
 	clientTick.Do(func() {
+		loadAllNetworksClients(context.Background(), logger)
 		chrono.NewDefaultTaskScheduler().ScheduleWithFixedDelay(func(ctx context.Context) {
 			loadAllNetworksClients(ctx, logger)
-		}, time.Minute)
+		}, time.Minute, chrono.WithTime(time.Now().Add(time.Minute*5)))
 	})
+
 	return nil
 }
 
