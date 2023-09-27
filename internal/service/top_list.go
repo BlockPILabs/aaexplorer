@@ -24,7 +24,7 @@ func GetTopBundler(ctx context.Context, req vo.TopBundlerRequest) (*vo.TopBundle
 		},
 	}
 	total, err := client.BundlerInfo.Query().Count(ctx)
-	bundlerInfos, err := client.BundlerInfo.Query().Order(bundlerinfo.ByFeeEarnedUsdD1(sql.OrderDesc())).Offset(req.GetOffset()).Limit(req.GetPerPage()).All(ctx)
+	bundlerInfos, err := client.BundlerInfo.Query().Order(bundlerinfo.ByBundlesNumD1(sql.OrderDesc())).Offset(req.GetOffset()).Limit(req.GetPerPage()).All(ctx)
 	if len(bundlerInfos) == 0 {
 		return nil, nil
 	}
