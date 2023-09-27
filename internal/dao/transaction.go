@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"entgo.io/ent/dialect/sql"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactiondecode"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
@@ -32,6 +33,8 @@ func (dao *transactionDao) Pages(ctx context.Context, tx *ent.Client, page vo.Pa
 
 	if page.Sort > 0 {
 		query = query.Order(dao.orderPage(ctx, transactiondecode.Columns, page))
+	} else {
+		query = query.Order(transactiondecode.ByTime(sql.OrderDesc()))
 	}
 
 	query = query.Limit(page.GetPerPage()).Offset(page.GetOffset())
@@ -66,6 +69,8 @@ func (dao *transactionDao) PagesWithTxaa(ctx context.Context, tx *ent.Client, pa
 	}
 	if page.Sort > 0 {
 		query = query.Order(dao.orderPage(ctx, transactiondecode.Columns, page))
+	} else {
+		query = query.Order(transactiondecode.ByTime(sql.OrderDesc()))
 	}
 	query = query.Limit(page.GetPerPage()).Offset(page.GetOffset())
 	a, err = query.All(ctx)

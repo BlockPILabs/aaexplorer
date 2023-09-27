@@ -46,6 +46,8 @@ func (dao *aaTransactionDao) Pagination(ctx context.Context, tx *ent.Client, pag
 
 	if page.Sort > 0 {
 		query = query.Order(dao.orderPage(ctx, aatransactioninfo.Columns, page))
+	} else {
+		query = query.Order(aatransactioninfo.ByTime(sql.OrderDesc()))
 	}
 
 	query = query.Limit(page.GetPerPage()).Offset(page.GetOffset())
