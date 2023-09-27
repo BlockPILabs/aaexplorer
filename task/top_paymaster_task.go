@@ -289,19 +289,19 @@ func saveOrUpdatePaymaster(client *ent.Client, paymaster string, info *ent.Payma
 			err = client.PaymasterInfo.UpdateOneID(oldPaymaster.ID).
 				SetUserOpsNumD1(info.UserOpsNumD1).
 				SetGasSponsoredD1(info.GasSponsoredD1).
-				SetGasSponsoredD1(info.GasSponsoredUsdD1).
+				SetGasSponsoredUsdD1(info.GasSponsoredUsdD1).
 				Exec(context.Background())
 		} else if timeRange == 7 {
 			err = client.PaymasterInfo.UpdateOneID(oldPaymaster.ID).
 				SetUserOpsNumD7(info.UserOpsNumD7).
 				SetGasSponsoredD7(info.GasSponsoredD7).
-				SetGasSponsoredD7(info.GasSponsoredUsdD7).
+				SetGasSponsoredUsdD30(info.GasSponsoredUsdD7).
 				Exec(context.Background())
 		} else if timeRange == 30 {
 			err = client.PaymasterInfo.UpdateOneID(oldPaymaster.ID).
 				SetUserOpsNumD30(info.UserOpsNumD30).
 				SetGasSponsoredD30(info.GasSponsoredD30).
-				SetGasSponsoredD30(info.GasSponsoredUsdD30).
+				SetGasSponsoredUsdD30(info.GasSponsoredUsdD30).
 				Exec(context.Background())
 		}
 
