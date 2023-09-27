@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"entgo.io/ent/dialect/sql"
+	"github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/bundlerinfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/factoryinfo"
@@ -34,8 +35,8 @@ func GetTopBundler(ctx context.Context, req vo.TopBundlerRequest) (*vo.TopBundle
 			Address:         info.ID,
 			Bundles:         info.BundlesNumD1,
 			Success24H:      info.SuccessRateD1,
-			FeeEarned24H:    info.FeeEarnedD1.Round(6),
-			FeeEarnedUsd24H: info.FeeEarnedUsdD1.Round(6),
+			FeeEarned24H:    info.FeeEarnedD1.Round(config.FeePrecision),
+			FeeEarnedUsd24H: info.FeeEarnedUsdD1.Round(config.FeePrecision),
 		}
 		bundlerDetails = append(bundlerDetails, detail)
 	}
@@ -68,8 +69,8 @@ func GetTopPaymaster(ctx context.Context, req vo.TopPaymasterRequest) (*vo.TopPa
 		detail := &vo.PaymasterDetail{
 			Address:         info.ID,
 			ReserveUsd:      info.ReserveUsd,
-			GasSponsored:    info.GasSponsoredD1.Round(6),
-			GasSponsoredUsd: info.GasSponsoredUsdD1.Round(6),
+			GasSponsored:    info.GasSponsoredD1.Round(config.FeePrecision),
+			GasSponsoredUsd: info.GasSponsoredUsdD1.Round(config.FeePrecision),
 		}
 		paymasterDetails = append(paymasterDetails, detail)
 	}

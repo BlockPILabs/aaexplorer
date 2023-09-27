@@ -33,6 +33,7 @@ const (
 
 	AssetExpireTime = 2 * 3600 * 1000
 	AnalyzeTop7     = 7
+	FeePrecision    = 6
 )
 
 const (

@@ -13,6 +13,7 @@ import (
 )
 
 func UserOpTypeTask() {
+	day30Task()
 	d1Scheduler := chrono.NewDefaultTaskScheduler()
 	_, err := d1Scheduler.ScheduleWithCron(func(ctx context.Context) {
 		day1Task()
@@ -53,11 +54,11 @@ func doTaskDay(days int) {
 		network := record.ID
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
-			return
+			continue
 		}
 		now := time.Now()
 		//-days
-		startTime := time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, now.Location())
+		startTime := time.Date(now.Year(), now.Month(), now.Day()-days, 0, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		opsCalldatas, err := client.AAUserOpsCalldata.
 			Query().
@@ -71,7 +72,7 @@ func doTaskDay(days int) {
 			log.Println(err)
 		}
 		if len(opsCalldatas) == 0 {
-			return
+			continue
 		}
 
 		sourceMap := make(map[string]int64)
@@ -106,6 +107,7 @@ func doTaskDay(days int) {
 		if err != nil {
 			log.Println(err)
 		}
+		log.Printf("user_op_type task d30 success, network:%s", network)
 	}
 
 }
@@ -170,8 +172,8 @@ func day1Task() {
 		_, err = client.UserOpTypeStatistic.CreateBulk(userOpCreates...).Save(context.Background())
 		if err != nil {
 			log.Println(err)
-
 		}
+		log.Printf("user_op_type task d1 success, network:%s", network)
 	}
 
 }

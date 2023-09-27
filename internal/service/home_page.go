@@ -80,24 +80,24 @@ func getResponseDay(days []*ent.DailyStatisticDay, day int) *vo.DailyStatisticRe
 		if statisticTimeMap[statisticDay.StatisticTime] {
 			continue
 		}
-		resp.AccumulativeGasFeeUsd = resp.AccumulativeGasFeeUsd.Add(statisticDay.GasFeeUsd).Round(2)
-		resp.AccumulativeGasFee = resp.AccumulativeGasFee.Add(statisticDay.GasFee).Round(2)
-		resp.BundlerGasProfit = resp.BundlerGasProfit.Add(statisticDay.BundlerGasProfit).Round(2)
-		resp.BundlerGasProfitUsd = resp.BundlerGasProfitUsd.Add(statisticDay.BundlerGasProfitUsd).Round(2)
-		resp.PaymasterGasPaid = resp.PaymasterGasPaid.Add(statisticDay.PaymasterGasPaid).Round(2)
-		resp.PaymasterGasPaidUsd = resp.PaymasterGasPaidUsd.Add(statisticDay.PaymasterGasPaidUsd).Round(2)
+		resp.AccumulativeGasFeeUsd = resp.AccumulativeGasFeeUsd.Add(statisticDay.GasFeeUsd).Round(config.FeePrecision)
+		resp.AccumulativeGasFee = resp.AccumulativeGasFee.Add(statisticDay.GasFee).Round(config.FeePrecision)
+		resp.BundlerGasProfit = resp.BundlerGasProfit.Add(statisticDay.BundlerGasProfit).Round(config.FeePrecision)
+		resp.BundlerGasProfitUsd = resp.BundlerGasProfitUsd.Add(statisticDay.BundlerGasProfitUsd).Round(config.FeePrecision)
+		resp.PaymasterGasPaid = resp.PaymasterGasPaid.Add(statisticDay.PaymasterGasPaid).Round(config.FeePrecision)
+		resp.PaymasterGasPaidUsd = resp.PaymasterGasPaidUsd.Add(statisticDay.PaymasterGasPaidUsd).Round(config.FeePrecision)
 		resp.UserOpsNum = resp.UserOpsNum + statisticDay.UserOpsNum
 		resp.ActiveAAWallet = resp.ActiveAAWallet + statisticDay.ActiveWallet
 		resp.LastStatisticTime = statisticDay.CreateTime.UnixMilli()
 
 		detail := &vo.DailyStatisticDetail{
 			Time:                  statisticDay.StatisticTime,
-			AccumulativeGasFeeUsd: statisticDay.GasFeeUsd.Round(2),
-			AccumulativeGasFee:    statisticDay.GasFee.Round(2),
-			BundlerGasProfit:      statisticDay.BundlerGasProfit.Round(2),
-			BundlerGasProfitUsd:   statisticDay.BundlerGasProfitUsd.Round(2),
-			PaymasterGasPaid:      statisticDay.PaymasterGasPaid.Round(2),
-			PaymasterGasPaidUsd:   statisticDay.PaymasterGasPaidUsd.Round(2),
+			AccumulativeGasFeeUsd: statisticDay.GasFeeUsd.Round(config.FeePrecision),
+			AccumulativeGasFee:    statisticDay.GasFee.Round(config.FeePrecision),
+			BundlerGasProfit:      statisticDay.BundlerGasProfit.Round(config.FeePrecision),
+			BundlerGasProfitUsd:   statisticDay.BundlerGasProfitUsd.Round(config.FeePrecision),
+			PaymasterGasPaid:      statisticDay.PaymasterGasPaid.Round(config.FeePrecision),
+			PaymasterGasPaidUsd:   statisticDay.PaymasterGasPaidUsd.Round(config.FeePrecision),
 			UserOpsNum:            statisticDay.UserOpsNum,
 			ActiveAAWallet:        statisticDay.ActiveWallet,
 		}
@@ -120,23 +120,23 @@ func getResponseHour(hours []*ent.DailyStatisticHour) *vo.DailyStatisticResponse
 		if statisticTimeMap[statisticHour.StatisticTime] {
 			continue
 		}
-		resp.AccumulativeGasFeeUsd = resp.AccumulativeGasFeeUsd.Add(statisticHour.GasFeeUsd).Round(2)
-		resp.AccumulativeGasFee = resp.AccumulativeGasFee.Add(statisticHour.GasFee).Round(2)
-		resp.BundlerGasProfit = resp.BundlerGasProfit.Add(statisticHour.BundlerGasProfit).Round(2)
-		resp.BundlerGasProfitUsd = resp.BundlerGasProfitUsd.Add(statisticHour.BundlerGasProfitUsd).Round(2)
-		resp.PaymasterGasPaid = resp.PaymasterGasPaid.Add(statisticHour.PaymasterGasPaid).Round(2)
-		resp.PaymasterGasPaidUsd = resp.PaymasterGasPaidUsd.Add(statisticHour.PaymasterGasPaidUsd).Round(2)
+		resp.AccumulativeGasFeeUsd = resp.AccumulativeGasFeeUsd.Add(statisticHour.GasFeeUsd).Round(config.FeePrecision)
+		resp.AccumulativeGasFee = resp.AccumulativeGasFee.Add(statisticHour.GasFee).Round(config.FeePrecision)
+		resp.BundlerGasProfit = resp.BundlerGasProfit.Add(statisticHour.BundlerGasProfit).Round(config.FeePrecision)
+		resp.BundlerGasProfitUsd = resp.BundlerGasProfitUsd.Add(statisticHour.BundlerGasProfitUsd).Round(config.FeePrecision)
+		resp.PaymasterGasPaid = resp.PaymasterGasPaid.Add(statisticHour.PaymasterGasPaid).Round(config.FeePrecision)
+		resp.PaymasterGasPaidUsd = resp.PaymasterGasPaidUsd.Add(statisticHour.PaymasterGasPaidUsd).Round(config.FeePrecision)
 		resp.UserOpsNum = resp.UserOpsNum + statisticHour.UserOpsNum
 		resp.ActiveAAWallet = resp.ActiveAAWallet + statisticHour.ActiveWallet
 
 		detail := &vo.DailyStatisticDetail{
 			Time:                  statisticHour.StatisticTime,
-			AccumulativeGasFeeUsd: statisticHour.GasFeeUsd.Round(2),
-			AccumulativeGasFee:    statisticHour.GasFee.Round(2),
-			BundlerGasProfit:      statisticHour.BundlerGasProfit.Round(2),
-			BundlerGasProfitUsd:   statisticHour.BundlerGasProfitUsd.Round(2),
-			PaymasterGasPaid:      statisticHour.PaymasterGasPaid.Round(2),
-			PaymasterGasPaidUsd:   statisticHour.PaymasterGasPaidUsd.Round(2),
+			AccumulativeGasFeeUsd: statisticHour.GasFeeUsd.Round(config.FeePrecision),
+			AccumulativeGasFee:    statisticHour.GasFee.Round(config.FeePrecision),
+			BundlerGasProfit:      statisticHour.BundlerGasProfit.Round(config.FeePrecision),
+			BundlerGasProfitUsd:   statisticHour.BundlerGasProfitUsd.Round(config.FeePrecision),
+			PaymasterGasPaid:      statisticHour.PaymasterGasPaid.Round(config.FeePrecision),
+			PaymasterGasPaidUsd:   statisticHour.PaymasterGasPaidUsd.Round(config.FeePrecision),
 			UserOpsNum:            statisticHour.UserOpsNum,
 			ActiveAAWallet:        statisticHour.ActiveWallet,
 		}

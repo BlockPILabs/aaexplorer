@@ -13,6 +13,7 @@ import (
 )
 
 func AAContractInteractTask() {
+	day30InteractTask()
 	d1Scheduler := chrono.NewDefaultTaskScheduler()
 	_, err := d1Scheduler.ScheduleWithCron(func(ctx context.Context) {
 		day1InteractTask()
@@ -55,7 +56,7 @@ func doInteractTaskDay(days int) {
 			return
 		}
 		now := time.Now()
-		startTime := time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, now.Location())
+		startTime := time.Date(now.Year(), now.Month(), now.Day()-days, 0, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		opsCalldatas, err := client.AAUserOpsCalldata.
 			Query().
@@ -102,6 +103,8 @@ func doInteractTaskDay(days int) {
 		if err != nil {
 			log.Println(err)
 		}
+
+		log.Printf("aa_contract_interact task d30 success, network:%s", network)
 	}
 
 }
@@ -119,7 +122,7 @@ func day1InteractTask() {
 		network := record.ID
 		client, err := entity.Client(context.Background(), network)
 		if err != nil {
-			return
+			continue
 		}
 		now := time.Now()
 		startTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-24, 0, 0, 0, now.Location())
@@ -136,7 +139,7 @@ func day1InteractTask() {
 			log.Println(err)
 		}
 		if len(opsCalldatas) == 0 {
-			return
+			continue
 		}
 
 		targetMap := make(map[string]int64)
@@ -165,6 +168,7 @@ func day1InteractTask() {
 		if err != nil {
 			log.Println(err)
 		}
+		log.Printf("aa_contract_interact task d1 success, network:%s", network)
 	}
 
 }
