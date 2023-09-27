@@ -244,6 +244,34 @@ func doTopFactoryHour(timeRange int) {
 			}
 			saveOrUpdateFactory(client, factory, factoryInfo, timeRange)
 		}
+
+		allFactory, err := client.FactoryInfo.Query().All(context.Background())
+		if len(allFactory) > 0 {
+			for _, factory := range allFactory {
+				_, ok := factoryInfoMap[factory.ID]
+				if !ok {
+					if timeRange == 1 {
+						err = client.FactoryInfo.UpdateOneID(factory.ID).
+							SetAccountDeployNumD1(0).
+							SetAccountNumD1(0).
+							SetDominanceD1(decimal.Zero).
+							Exec(context.Background())
+					} else if timeRange == 7 {
+						err = client.FactoryInfo.UpdateOneID(factory.ID).
+							SetAccountDeployNumD7(0).
+							SetAccountNumD7(0).
+							SetDominanceD7(decimal.Zero).
+							Exec(context.Background())
+					} else if timeRange == 30 {
+						err = client.FactoryInfo.UpdateOneID(factory.ID).
+							SetAccountDeployNumD30(0).
+							SetAccountNumD30(0).
+							SetDominanceD30(decimal.Zero).
+							Exec(context.Background())
+					}
+				}
+			}
+		}
 		log.Printf("top factory hour statistic success timeRange:%s, network:%s", string(timeRange), network)
 	}
 

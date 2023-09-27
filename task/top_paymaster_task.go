@@ -9,6 +9,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/paymasterstatishour"
 	"github.com/BlockPILabs/aa-scan/service"
 	"github.com/procyon-projects/chrono"
+	"github.com/shopspring/decimal"
 	"log"
 	"time"
 )
@@ -244,6 +245,34 @@ func doTopPaymasterHour(timeRange int) {
 			//paymasterInfo.Reserve = nativeBalance
 			//paymasterInfo.ReserveUsd = price.Mul(nativeBalance)
 			saveOrUpdatePaymaster(client, paymaster, paymasterInfo, timeRange)
+		}
+
+		allPaymaster, err := client.PaymasterInfo.Query().All(context.Background())
+		if len(allPaymaster) > 0 {
+			for _, paymaster := range allPaymaster {
+				_, ok := paymasterInfoMap[paymaster.ID]
+				if !ok {
+					if timeRange == 1 {
+						err = client.PaymasterInfo.UpdateOneID(paymaster.ID).
+							SetUserOpsNumD1(int64(0)).
+							SetGasSponsoredD1(decimal.Zero).
+							SetGasSponsoredUsdD1(decimal.Zero).
+							Exec(context.Background())
+					} else if timeRange == 7 {
+						err = client.PaymasterInfo.UpdateOneID(paymaster.ID).
+							SetUserOpsNumD7(int64(0)).
+							SetGasSponsoredD7(decimal.Zero).
+							SetGasSponsoredUsdD30(decimal.Zero).
+							Exec(context.Background())
+					} else if timeRange == 30 {
+						err = client.PaymasterInfo.UpdateOneID(paymaster.ID).
+							SetUserOpsNumD30(int64(0)).
+							SetGasSponsoredD30(decimal.Zero).
+							SetGasSponsoredUsdD30(decimal.Zero).
+							Exec(context.Background())
+					}
+				}
+			}
 		}
 		log.Printf("top paymaster hour statistic success timeRange:%s, network:%s", string(timeRange), network)
 	}

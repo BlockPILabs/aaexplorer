@@ -60,7 +60,6 @@ func getHourStart(t time.Time) string {
 
 func TopBundlers() {
 	bundlerScheduler := chrono.NewDefaultTaskScheduler()
-
 	_, err := bundlerScheduler.ScheduleWithCron(func(ctx context.Context) {
 		doTopBundlersHour(1)
 		//doTopBundlersHour(7)
@@ -394,11 +393,48 @@ func doTopBundlersHour(timeRange int) {
 			bundlerInfoMap[bundler] = bundlerInfo
 
 		}
+		allBundlers, err := client.BundlerInfo.Query().All(context.Background())
+
 		for bundler, bundlerInfo := range bundlerInfoMap {
 			if len(bundler) == 0 {
 				continue
 			}
 			saveOrUpdateBundler(client, bundler, bundlerInfo, timeRange)
+		}
+		if len(allBundlers) > 0 {
+			for _, bundler := range allBundlers {
+				_, ok := bundlerInfoMap[bundler.ID]
+				if !ok {
+					if timeRange == 1 {
+						err = client.BundlerInfo.UpdateOneID(bundler.ID).
+							SetSuccessRateD1(decimal.Zero).
+							SetBundleRateD1(decimal.Zero).
+							SetFeeEarnedD1(decimal.Zero).
+							SetFeeEarnedUsdD1(decimal.Zero).
+							SetBundlesNumD1(int64(0)).
+							SetUserOpsNumD1(int64(0)).
+							SetGasCollectedD1(decimal.Zero).Exec(context.Background())
+					} else if timeRange == 7 {
+						err = client.BundlerInfo.UpdateOneID(bundler.ID).
+							SetSuccessRateD7(decimal.Zero).
+							SetBundleRateD7(decimal.Zero).
+							SetFeeEarnedD7(decimal.Zero).
+							SetFeeEarnedUsdD7(decimal.Zero).
+							SetBundlesNumD7(int64(0)).
+							SetUserOpsNumD7(int64(0)).
+							SetGasCollectedD7(decimal.Zero).Exec(context.Background())
+					} else if timeRange == 30 {
+						err = client.BundlerInfo.UpdateOneID(bundler.ID).
+							SetSuccessRateD30(decimal.Zero).
+							SetBundleRateD30(decimal.Zero).
+							SetFeeEarnedD30(decimal.Zero).
+							SetFeeEarnedUsdD30(decimal.Zero).
+							SetBundlesNumD30(int64(0)).
+							SetUserOpsNumD30(int64(0)).
+							SetGasCollectedD30(decimal.Zero).Exec(context.Background())
+					}
+				}
+			}
 		}
 		log.Printf("top bundler hour statistic success timeRange:%s, network:%s", string(timeRange), network)
 	}
