@@ -26,7 +26,7 @@ func InitTask() {
 	UserOpTypeTask()
 	AssetTask()
 	//temp
-	DataFixedTask()
+	//DataFixedTask()
 
 }
 
