@@ -15,6 +15,8 @@ type FactoryVo struct {
 	AccountNumD1 int `json:"accountNumD1"`
 	// Dominance holds the value of the "dominance" field.
 	Dominance decimal.Decimal `json:"dominance"`
+	// DominanceD1 holds the value of the "dominance_d1" field.
+	DominanceD1 decimal.Decimal `json:"dominanceD1"`
 }
 type FactoryDbVo struct {
 	// ID of the ent.
