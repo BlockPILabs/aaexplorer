@@ -56,6 +56,8 @@ func (dao *userOpCallDataDao) Pages(ctx context.Context, tx *ent.Client, page vo
 
 	if page.Sort > 0 {
 		query = query.Order(dao.orderPage(ctx, aauseropscalldata.Columns, page))
+	} else {
+		query = query.Order(aauseropscalldata.ByTime(sql.OrderDesc()))
 	}
 
 	count = query.CountX(ctx)

@@ -19,7 +19,7 @@ func TopFactories() {
 		doTopFactoryHour(1)
 		//doTopFactoryHour(7)
 		//doTopFactoryHour(30)
-	}, "0 5 * * * *")
+	}, "0 7 * * * *")
 
 	factorySchedulerDay := chrono.NewDefaultTaskScheduler()
 
@@ -236,11 +236,11 @@ func doTopFactoryHour(timeRange int) {
 				continue
 			}
 			if timeRange == 1 {
-				factoryInfo.DominanceD1 = getSingleRate(int64(factoryInfo.AccountDeployNumD1), int64(totalNum))
+				factoryInfo.DominanceD1 = getSingleRate(int64(factoryInfo.AccountNumD1), int64(totalNum))
 			} else if timeRange == 7 {
-				factoryInfo.DominanceD7 = getSingleRate(int64(factoryInfo.AccountDeployNumD7), int64(totalNum))
+				factoryInfo.DominanceD7 = getSingleRate(int64(factoryInfo.AccountNumD7), int64(totalNum))
 			} else if timeRange == 30 {
-				factoryInfo.DominanceD30 = getSingleRate(int64(factoryInfo.AccountDeployNumD30), int64(totalNum))
+				factoryInfo.DominanceD30 = getSingleRate(int64(factoryInfo.AccountNumD30), int64(totalNum))
 			}
 			saveOrUpdateFactory(client, factory, factoryInfo, timeRange)
 		}
