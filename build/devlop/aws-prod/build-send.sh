@@ -24,7 +24,7 @@ ssh root@ec2-3-85-212-210.compute-1.amazonaws.com mkdir -p ${version_dir} || exi
 scp ./dist/aim root@ec2-3-85-212-210.compute-1.amazonaws.com:"${version_dir}/${version}" || exit 1
 ssh root@ec2-3-85-212-210.compute-1.amazonaws.com ln -f -s ${version_dir}/${version} /blockpi/aa-scan/aim || exit 1
 
-#ssh root@ec2-3-85-212-210.compute-1.amazonaws.com supervisorctl restart aim
+ssh root@ec2-3-85-212-210.compute-1.amazonaws.com supervisorctl restart aim
 #ssh root@ec2-3-85-212-210.compute-1.amazonaws.com supervisorctl start aim-task
 #ssh root@ec2-3-85-212-210.compute-1.amazonaws.com systemctl start aim
 #ssh root@ec2-3-85-212-210.compute-1.amazonaws.com systemctl start aim-task
