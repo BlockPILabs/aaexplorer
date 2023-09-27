@@ -25,6 +25,8 @@ func InitTask() {
 	AAContractInteractTask()
 	UserOpTypeTask()
 	AssetTask()
+	//temp
+	DataFixedTask()
 
 }
 
