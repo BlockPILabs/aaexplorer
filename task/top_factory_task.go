@@ -14,7 +14,8 @@ import (
 )
 
 func TopFactories() {
-	doTopFactoryHour(1)
+	go doTopFactoryHour(1)
+	go doTopFactoryDay()
 	factoryScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := factoryScheduler.ScheduleWithCron(func(ctx context.Context) {
 		doTopFactoryHour(1)
@@ -51,7 +52,7 @@ func doTopFactoryDay() {
 			continue
 		}
 		now := time.Now()
-		startTime := time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, now.Location())
+		startTime := time.Date(now.Year(), now.Month(), now.Day()-30, 0, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		factoryStatisDays, err := client.FactoryStatisDay.
 			Query().
