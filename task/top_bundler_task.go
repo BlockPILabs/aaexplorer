@@ -26,7 +26,7 @@ func InitTask() {
 	UserOpTypeTask()
 	AssetTask()
 	//temp
-	//DataFixedTask()
+	DataFixedTask()
 
 }
 
@@ -61,8 +61,6 @@ func getHourStart(t time.Time) string {
 }
 
 func TopBundlers() {
-	go doTopBundlersHour(1)
-	go doTopBundlersDay()
 	bundlerScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := bundlerScheduler.ScheduleWithCron(func(ctx context.Context) {
 		doTopBundlersHour(1)
@@ -98,7 +96,7 @@ func doTopBundlersDay() {
 			continue
 		}
 		now := time.Now()
-		startTime := time.Date(now.Year(), now.Month(), now.Day()-30, 0, 0, 0, 0, now.Location())
+		startTime := time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		bundlerStatisDays, err := client.BundlerStatisDay.
 			Query().
