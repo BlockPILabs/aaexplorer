@@ -14,6 +14,7 @@ import (
 )
 
 func TopFactories() {
+	doTopFactoryHour(1)
 	factoryScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := factoryScheduler.ScheduleWithCron(func(ctx context.Context) {
 		doTopFactoryHour(1)
@@ -69,7 +70,7 @@ func doTopFactoryDay() {
 		}
 
 		factoryInfoMap := make(map[string]*ent.FactoryInfo)
-		var totalNum = 0
+		var totalNum = int64(0)
 		var repeatMap = make(map[string]bool)
 		for _, factory := range factoryStatisDays {
 			factoryAddr := factory.Factory
@@ -94,14 +95,14 @@ func doTopFactoryDay() {
 			factoryInfo.ID = factory.Factory
 			factoryInfo.Network = factory.Network
 			factoryInfoMap[factoryAddr] = factoryInfo
-			totalNum += factoryInfo.AccountDeployNum
+			totalNum += factory.AccountDeployNum
 		}
 
 		for factory, factoryInfo := range factoryInfoMap {
 			if len(factory) == 0 {
 				continue
 			}
-			factoryInfo.Dominance = decimal.NewFromInt(int64(factoryInfo.AccountDeployNum)).DivRound(decimal.NewFromInt(int64(totalNum)), 4)
+			factoryInfo.Dominance = decimal.NewFromInt(int64(factoryInfo.AccountDeployNum)).DivRound(decimal.NewFromInt(totalNum), 4)
 			saveOrUpdateFactoryDay(client, factory, factoryInfo)
 		}
 		now1 := time.Now()
@@ -181,7 +182,7 @@ func doTopFactoryHour(timeRange int) {
 		}
 
 		factoryInfoMap := make(map[string]*ent.FactoryInfo)
-		var totalNum = 0
+		var totalNum = int64(0)
 		var repeatMap = make(map[string]bool)
 		for _, factory := range factoryStatisHours {
 			factoryAddr := factory.Factory
@@ -222,11 +223,11 @@ func doTopFactoryHour(timeRange int) {
 			factoryInfo.Network = factory.Network
 			factoryInfoMap[factoryAddr] = factoryInfo
 			if timeRange == 1 {
-				totalNum += factoryInfo.AccountNumD1
+				totalNum += factory.AccountNum
 			} else if timeRange == 7 {
-				totalNum += factoryInfo.AccountNumD7
+				totalNum += factory.AccountNum
 			} else if timeRange == 30 {
-				totalNum += factoryInfo.AccountNumD30
+				totalNum += factory.AccountNum
 			}
 
 		}
@@ -236,11 +237,11 @@ func doTopFactoryHour(timeRange int) {
 				continue
 			}
 			if timeRange == 1 {
-				factoryInfo.DominanceD1 = getSingleRate(int64(factoryInfo.AccountNumD1), int64(totalNum))
+				factoryInfo.DominanceD1 = getSingleRate(int64(factoryInfo.AccountNumD1), totalNum)
 			} else if timeRange == 7 {
-				factoryInfo.DominanceD7 = getSingleRate(int64(factoryInfo.AccountNumD7), int64(totalNum))
+				factoryInfo.DominanceD7 = getSingleRate(int64(factoryInfo.AccountNumD7), totalNum)
 			} else if timeRange == 30 {
-				factoryInfo.DominanceD30 = getSingleRate(int64(factoryInfo.AccountNumD30), int64(totalNum))
+				factoryInfo.DominanceD30 = getSingleRate(int64(factoryInfo.AccountNumD30), totalNum)
 			}
 			saveOrUpdateFactory(client, factory, factoryInfo, timeRange)
 		}

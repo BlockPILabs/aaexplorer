@@ -16,17 +16,17 @@ import (
 
 func InitTask() {
 
-	AccountTask()
+	//AccountTask()
 	InitDayStatis()
 	InitHourStatis()
-	TopBundlers()
-	TopPaymaster()
-	TopFactories()
-	AAContractInteractTask()
-	UserOpTypeTask()
-	AssetTask()
+	//TopBundlers()
+	//TopPaymaster()
+	//TopFactories()
+	//AAContractInteractTask()
+	//UserOpTypeTask()
+	//AssetTask()
 	//temp
-	DataFixedTask()
+	//DataFixedTask()
 
 }
 
@@ -61,6 +61,7 @@ func getHourStart(t time.Time) string {
 }
 
 func TopBundlers() {
+	doTopBundlersHour(1)
 	bundlerScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := bundlerScheduler.ScheduleWithCron(func(ctx context.Context) {
 		doTopBundlersHour(1)
@@ -287,7 +288,7 @@ func doTopBundlersHour(timeRange int) {
 		}
 
 		var totalBundleNum = int64(0)
-		var bundleNumMap = make(map[string]int64)
+		var successBundleNumMap = make(map[string]int64)
 		var totalNumMap = make(map[string]int64)
 		var feeEarnedMap = make(map[string]decimal.Decimal)
 		var repeatMap = make(map[string]bool)
@@ -305,11 +306,11 @@ func doTopBundlersHour(timeRange int) {
 			}
 			feeEarnedMap[bundler] = feeEarned.Add(bundlerStatisHour.FeeEarned)
 
-			bundleNum, ok := bundleNumMap[bundlerStatisHour.Bundler]
+			bundleNum, ok := successBundleNumMap[bundlerStatisHour.Bundler]
 			if !ok {
 				bundleNum = 0
 			}
-			bundleNumMap[bundler] = bundleNum + bundlerStatisHour.TotalNum
+			successBundleNumMap[bundler] = bundleNum + bundlerStatisHour.SuccessBundlesNum
 
 			totalNum, totalOk := totalNumMap[bundlerStatisHour.Bundler]
 			if !totalOk {
@@ -318,7 +319,7 @@ func doTopBundlersHour(timeRange int) {
 			totalNumMap[bundler] = totalNum + bundlerStatisHour.TotalNum
 			totalBundleNum += bundlerStatisHour.TotalNum
 		}
-		bundleRateMap, sucRateMap := getRate(totalBundleNum, bundleNumMap, totalNumMap)
+		bundleRateMap, sucRateMap := getRate(totalBundleNum, successBundleNumMap, totalNumMap)
 		price := service.GetNativePrice(network)
 		bundlerInfoMap := make(map[string]*ent.BundlerInfo)
 		for _, bundlerStatisHour := range bundlerStatisHours {
