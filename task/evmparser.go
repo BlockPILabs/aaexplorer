@@ -267,10 +267,14 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 		var aaAccountDataMap = map[string]*ent.AaAccountData{}
 		nativePrice := ser.GetNativePrice(network.ID)
 		for _, block := range blocksMap {
-			block.nativePrice = nativePrice
-			t.doParse(ctx, client, network, block)
-
 			setBlockSyncedId = append(setBlockSyncedId, block.block.ID)
+			block.nativePrice = nativePrice
+
+			if block.block.TransactionCount.LessThanOrEqual(decimal.Zero) {
+				continue
+			}
+
+			t.doParse(ctx, client, network, block)
 
 			if block.userOpInfo == nil || block.userOpInfo.UseropCount < 1 {
 				continue
@@ -431,6 +435,10 @@ func (t *_evmParser) getParseData(ctx context.Context, client *ent.Client, block
 	// filter blocks
 	delKeys := []int64{}
 	for blockNumber, block := range blocksMap {
+		// empty block
+		if block.block.TransactionCount.LessThanOrEqual(decimal.Zero) {
+			continue
+		}
 		if len(block.transitions) < 1 {
 			delKeys = append(delKeys, blockNumber)
 			continue
