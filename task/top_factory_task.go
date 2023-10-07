@@ -25,7 +25,7 @@ func TopFactories() {
 
 	_, err = factorySchedulerDay.ScheduleWithCron(func(ctx context.Context) {
 		doTopFactoryDay()
-	}, "0 20 0 * * *")
+	}, "0 20 5 * * *")
 
 	if err == nil {
 		log.Print("TopFactory has been scheduled")

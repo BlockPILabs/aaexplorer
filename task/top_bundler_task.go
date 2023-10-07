@@ -72,7 +72,7 @@ func TopBundlers() {
 
 	_, err = bundlerSchedulerDay.ScheduleWithCron(func(ctx context.Context) {
 		doTopBundlersDay()
-	}, "0 10 0 * * *")
+	}, "0 10 5 * * *")
 	if err == nil {
 		log.Print("TopBundlers has been scheduled")
 	}

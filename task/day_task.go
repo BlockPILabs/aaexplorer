@@ -501,7 +501,7 @@ func calFactoryStatisDay(client *ent.Client, bundlerMap map[string]map[string][]
 				SetFactory(key).
 				SetNetwork(network).
 				SetStatisTime(sTime).
-				SetAccountNum(int64(len(accountMap))).
+				SetAccountNum(int64(accountDeployNum)).
 				SetAccountDeployNum(int64(accountDeployNum)),
 			)
 		}
