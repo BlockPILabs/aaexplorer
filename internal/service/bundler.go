@@ -95,7 +95,7 @@ func (*bundlerService) GetBundler(ctx context.Context, req vo.GetBundlerRequest)
 		client.BundlerInfo.Query().Where(
 			bundlerinfo.BundlesNumGT(info.BundlesNum),
 		).CountX(ctx),
-	)
+	) + 1
 	addresses, _ := dao.AccountDao.GetAccountByAddresses(ctx, client, []string{req.Bundler})
 	if len(addresses) > 0 {
 		addresses[0].Label.AssignTo(&res.Label)
