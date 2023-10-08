@@ -84,7 +84,7 @@ func HexToDecimal(hexStr string) *big.Int {
 	decimal := new(big.Int)
 	_, success := decimal.SetString(hexStr, 16)
 	if !success {
-		return nil
+		return big.NewInt(0)
 	}
 
 	return decimal

@@ -327,7 +327,7 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 				SetScanned(true).
 				SetUpdateTime(time.Now()).Save(ctx)
 			if err != nil {
-				logger.Warn("set block sync status error", "err", err)
+				logger.Warn("set block sync status error", "ids", setBlockSyncedId, "err", err)
 			} else {
 				logger.Info("set block scanned", "ids", setBlockSyncedId, "num", affected)
 			}
