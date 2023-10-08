@@ -106,8 +106,11 @@ func InitEvmParse(ctx context.Context, config *config.Config, logger log.Logger)
 	}
 
 	_, err = dayScheduler.ScheduleWithCron(func(ctx context.Context) {
-		t.ScanBlock(log.WithContext(ctx, logger.With("action", "ScanBlock")))
+		t.ScanBlock(log.WithContext(ctx, logger.With("action", "ScanBlock", "latest", false)), false)
 	}, "*/10 * * * * *")
+	_, err = dayScheduler.ScheduleWithCron(func(ctx context.Context) {
+		t.ScanBlock(log.WithContext(ctx, logger.With("action", "ScanBlock", "latest", true)), true)
+	}, "*/1 * * * * *")
 	if err != nil {
 		logger.Error("Schedule error", "err", err)
 
@@ -117,7 +120,7 @@ func InitEvmParse(ctx context.Context, config *config.Config, logger log.Logger)
 	return err
 }
 
-func (t *_evmParser) ScanBlock(ctx context.Context) {
+func (t *_evmParser) ScanBlock(ctx context.Context, latest bool) {
 	fiend := true
 	logger := log.Context(ctx)
 	logger.Debug("scan start")
@@ -141,15 +144,23 @@ func (t *_evmParser) ScanBlock(ctx context.Context) {
 				t.startBlock[network.ID] = 0
 			}
 			wg.Add(1)
-			t.ScanBlockByNetwork(ctx, network, wg, pool, true)
-			wg.Add(1)
 			ctx := log.WithContext(context.Background(), logger.With("network", network.ID))
-			if t.ScanBlockByNetwork(ctx, network, wg, pool, false) {
-				fiend = true
+			if latest {
+				t.ScanBlockByNetwork(ctx, network, wg, pool, latest)
+				//fiend = true
+			} else {
+				if t.ScanBlockByNetwork(ctx, network, wg, pool, latest) {
+					fiend = true
+				}
 			}
+
 		}
 	}
 	wg.Wait()
+
+	if latest {
+		return
+	}
 
 	logger.Info("scan complete")
 
