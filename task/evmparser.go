@@ -63,9 +63,10 @@ func InitEvmParse(ctx context.Context, config *config.Config, logger log.Logger)
 	logger = logger.With("task", "evmparser")
 	dayScheduler := chrono.NewDefaultTaskScheduler()
 	t := _evmParser{
-		logger:     logger,
-		config:     config,
-		startBlock: map[string]int64{},
+		logger:      logger,
+		config:      config,
+		startBlock:  map[string]int64{},
+		latestBlock: map[string]int64{},
 	}
 
 	for network, blockNumber := range t.config.EvmParser.StartBlock {
@@ -82,6 +83,8 @@ func InitEvmParse(ctx context.Context, config *config.Config, logger log.Logger)
 				log.Context(ctx).Warn("GetLatestBlock error", "err", err, "network", network)
 				continue
 			}
+
+			t.latestBlock[network] = latestBlock.ID
 			t.startBlock[network] = latestBlock.ID - int64(math.Max(float64(config.EvmParser.Multi*config.EvmParser.Batch), 10))
 
 		}
@@ -139,9 +142,11 @@ func (t *_evmParser) ScanBlock(ctx context.Context) {
 			}
 			wg.Add(1)
 			ctx := log.WithContext(context.Background(), logger.With("network", network.ID))
-			if t.ScanBlockByNetwork(ctx, network, wg, pool) {
+			if t.ScanBlockByNetwork(ctx, network, wg, pool, false) {
 				fiend = true
 			}
+			wg.Add(1)
+			t.ScanBlockByNetwork(ctx, network, wg, pool, true)
 		}
 	}
 	wg.Wait()
@@ -155,7 +160,7 @@ func (t *_evmParser) ScanBlock(ctx context.Context) {
 	}
 
 }
-func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Network, wg *sync.WaitGroup, pool *ants.Pool) (fiend bool) {
+func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Network, wg *sync.WaitGroup, pool *ants.Pool, latest bool) (fiend bool) {
 	defer func() {
 		if !fiend {
 			wg.Done()
@@ -184,6 +189,14 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 			}
 		}
 	}()
+	startBlock := t.startBlock[network.ID]
+
+	if lb, ok := t.latestBlock[network.ID]; latest && ok && lb > 0 {
+		if startBlock >= lb {
+			return false
+		}
+		startBlock = t.latestBlock[network.ID]
+	}
 
 	aaBlockSyncs, err := tx.AaBlockSync.Query().
 		Where(
@@ -195,7 +208,7 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 			aablocksync.TxScanned(true),
 			aablocksync.TxrScannedNotNil(),
 			aablocksync.TxrScanned(true),
-			aablocksync.IDGT(t.startBlock[network.ID]),
+			aablocksync.IDGT(startBlock),
 			aablocksync.ScanCountLT(10),
 		).
 		ForUpdate(sql.WithLockAction(sql.SkipLocked)).
@@ -220,7 +233,12 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 	blockIds := make([]int64, len(aaBlockSyncs))
 	for i, blockSync := range aaBlockSyncs {
 		blockIds[i] = blockSync.ID
-		t.startBlock[network.ID] = blockSync.ID
+		if !latest {
+			t.startBlock[network.ID] = blockSync.ID
+		}
+		if lb, ok := t.latestBlock[network.ID]; !ok || lb < blockSync.ID {
+			t.latestBlock[network.ID] = blockSync.ID
+		}
 	}
 
 	err = pool.Submit(func() {

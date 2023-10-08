@@ -33,6 +33,7 @@ type _evmParser struct {
 	logger          log.Logger
 	config          *config.Config
 	startBlock      map[string]int64
+	latestBlock     map[string]int64
 	abi             abi.ABI
 	handleOpsMethod *abi.Method
 }
