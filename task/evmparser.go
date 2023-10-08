@@ -110,7 +110,7 @@ func InitEvmParse(ctx context.Context, config *config.Config, logger log.Logger)
 	}, "*/10 * * * * *")
 	_, err = dayScheduler.ScheduleWithCron(func(ctx context.Context) {
 		t.ScanBlock(log.WithContext(ctx, logger.With("action", "ScanBlock", "latest", true)), true)
-	}, "*/1 * * * * *")
+	}, "*/2 * * * * *")
 	if err != nil {
 		logger.Error("Schedule error", "err", err)
 
