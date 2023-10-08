@@ -141,12 +141,12 @@ func (t *_evmParser) ScanBlock(ctx context.Context) {
 				t.startBlock[network.ID] = 0
 			}
 			wg.Add(1)
+			t.ScanBlockByNetwork(ctx, network, wg, pool, true)
+			wg.Add(1)
 			ctx := log.WithContext(context.Background(), logger.With("network", network.ID))
 			if t.ScanBlockByNetwork(ctx, network, wg, pool, false) {
 				fiend = true
 			}
-			wg.Add(1)
-			t.ScanBlockByNetwork(ctx, network, wg, pool, true)
 		}
 	}
 	wg.Wait()
