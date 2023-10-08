@@ -196,6 +196,7 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 			aablocksync.TxrScannedNotNil(),
 			aablocksync.TxrScanned(true),
 			aablocksync.IDGT(t.startBlock[network.ID]),
+			aablocksync.ScanCountLT(10),
 		).
 		ForUpdate(sql.WithLockAction(sql.SkipLocked)).
 		Order(
@@ -332,6 +333,10 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 				logger.Info("set block scanned", "ids", setBlockSyncedId, "num", affected)
 			}
 		}
+
+		tx.AaBlockSync.Update().Where(
+			aablocksync.IDIn(blockIds...),
+		).AddScanCount(1).SetUpdateTime(time.Now()).Save(ctx)
 
 	})
 	if err != nil {
