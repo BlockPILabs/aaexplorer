@@ -334,9 +334,13 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 			}
 		}
 
-		tx.AaBlockSync.Update().Where(
+		affected, err := tx.AaBlockSync.Update().Where(
 			aablocksync.IDIn(blockIds...),
 		).AddScanCount(1).SetUpdateTime(time.Now()).Save(ctx)
+		logger.Info("set block scanned count", "ids", blockIds, "num", affected)
+		if err != nil {
+			return
+		}
 
 	})
 	if err != nil {

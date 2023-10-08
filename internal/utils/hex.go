@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"math/big"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -118,12 +120,24 @@ func HexToAddress(hexStr string) string {
 	return address
 }
 
-func Substring(input string, start, end int) string {
+func Substring(input string, start, end int) (str string) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			str = ""
+			buf := make([]byte, 8192)
+			runtime.Stack(buf, false)
+			fmt.Println(string(buf))
+		}
+	}()
 	if start < 0 {
 		start = 0
 	}
 	if end > len(input) {
 		end = len(input)
+	}
+
+	if start > len(input) {
+		return ""
 	}
 
 	return input[start:end]
