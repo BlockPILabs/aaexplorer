@@ -32,9 +32,9 @@ func (AaTransactionInfo) Annotations() []schema.Annotation {
 	}
 }
 
-/*func (AaTransactionInfo) Edges() []ent.Edge {
-	return []ent.Edge{
-		edge.From("aatx", TransactionDecode.Type).StorageKey().Field("id").Unique(),
-	}
-}
-*/
+//func (AaTransactionInfo) Edges() []ent.Edge {
+//	return []ent.Edge{
+//		edge.To("aatx", TransactionDecode.Type).StorageKey(edge.Symbol("hash")).Unique(),
+//		edge.From("ftxaa", TransactionDecode.Type).Ref("txaa").Field("hash").Unique(),
+//	}
+//}

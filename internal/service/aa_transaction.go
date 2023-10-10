@@ -122,7 +122,7 @@ func (*aaTransactionService) GetPages(ctx context.Context, client *ent.Client, r
 	}
 	res := vo.AaTransactionListResponse{
 		Pagination: vo.Pagination{
-			TotalCount: 0,
+			TotalCount: 10,
 			PerPage:    req.GetPerPage(),
 			Page:       req.GetPage(),
 		},
@@ -156,20 +156,20 @@ func (*aaTransactionService) GetPages(ctx context.Context, client *ent.Client, r
 		//if len(txlist) < 1 {
 		//	tx = *txlist[0]
 		//}
-		aa := record.Edges.Txaa
-		if aa == nil {
-			aa = &ent.AaTransactionInfo{}
-		}
+		//aa := record.Edges.Txaa
+		//if aa == nil {
+		//	aa = &ent.AaTransactionInfo{}
+		//}
 
 		ret := &vo.AaTransactionRecord{
 			Hash:                 record.ID,
 			Time:                 record.Time.UnixMilli(),
 			BlockHash:            record.BlockHash,
 			BlockNumber:          record.BlockNumber,
-			UseropCount:          aa.UseropCount,
-			IsMev:                aa.IsMev,
-			BundlerProfit:        aa.BundlerProfit,
-			BundlerProfitUsd:     aa.BundlerProfitUsd,
+			UseropCount:          record.UseropCount,
+			IsMev:                record.IsMev,
+			BundlerProfit:        record.BundlerProfit,
+			BundlerProfitUsd:     record.BundlerProfitUsd,
 			Nonce:                record.Nonce,
 			TransactionIndex:     record.TransactionIndex,
 			FromAddr:             record.FromAddr,
