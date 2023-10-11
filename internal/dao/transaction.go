@@ -101,7 +101,6 @@ type TxPages struct {
 }
 
 func (dao *transactionDao) PagesWithTxaa(ctx context.Context, tx *ent.Client, page vo.PaginationRequest, condition TransactionCondition) (a []*TxPages, count int, err error) {
-
 	query := tx.AaTransactionInfo.Query().
 		Modify(func(s *sql.Selector) {
 			d := sql.Dialect(s.Dialect())
