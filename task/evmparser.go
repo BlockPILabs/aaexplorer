@@ -566,7 +566,31 @@ func (t *_evmParser) insertTransactions(ctx context.Context, client *ent.Client,
 			SetBundlerProfit(tx.BundlerProfit).
 			SetCreateTime(tx.CreateTime).
 			SetBundlerProfitUsd(tx.BundlerProfitUsd).
-			SetID(tx.ID)
+			SetID(tx.ID).
+			SetNonce(*tx.Nonce).
+			SetTransactionIndex(*tx.TransactionIndex).
+			SetFromAddr(*tx.FromAddr).
+			SetToAddr(*tx.ToAddr).
+			SetValue(*tx.Value).
+			SetGasPrice(*tx.GasPrice).
+			SetGas(*tx.Gas).
+			SetInput(*tx.Input).
+			SetR(*tx.R).
+			SetS(*tx.S).
+			SetV(*tx.V).
+			SetChainID(*tx.ChainID).
+			SetType(*tx.Type).
+			SetMaxFeePerGas(*tx.MaxFeePerGas).
+			SetMaxPriorityFeePerGas(*tx.MaxPriorityFeePerGas).
+			SetAccessList(tx.AccessList).
+			SetMethod(*tx.Method).
+			SetContractAddress(*tx.ContractAddress).
+			SetCumulativeGasUsed(*tx.CumulativeGasUsed).
+			SetEffectiveGasPrice(*tx.EffectiveGasPrice).
+			SetGasUsed(*tx.GasUsed).
+			SetLogs(*tx.Logs).
+			SetLogsBloom(*tx.LogsBloom).
+			SetStatus(*tx.Status)
 
 		transactionInfoCreates = append(transactionInfoCreates, txCreate)
 	}
@@ -580,7 +604,31 @@ func (t *_evmParser) insertTransactions(ctx context.Context, client *ent.Client,
 				UpdateUseropCount().
 				UpdateIsMev().
 				UpdateBundlerProfit().
-				UpdateBundlerProfitUsd()
+				UpdateBundlerProfitUsd().
+				UpdateNonce().
+				UpdateTransactionIndex().
+				UpdateFromAddr().
+				UpdateToAddr().
+				UpdateValue().
+				UpdateGasPrice().
+				UpdateGas().
+				UpdateInput().
+				UpdateR().
+				UpdateS().
+				UpdateV().
+				UpdateChainID().
+				UpdateType().
+				UpdateMaxFeePerGas().
+				UpdateMaxPriorityFeePerGas().
+				UpdateAccessList().
+				UpdateMethod().
+				UpdateContractAddress().
+				UpdateCumulativeGasUsed().
+				UpdateEffectiveGasPrice().
+				UpdateGasUsed().
+				UpdateLogs().
+				UpdateLogsBloom().
+				UpdateStatus()
 		}).
 		Exec(context.Background())
 	if err != nil {
