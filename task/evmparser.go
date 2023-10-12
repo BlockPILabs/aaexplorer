@@ -104,7 +104,6 @@ func InitEvmParse(ctx context.Context, config *config.Config, logger log.Logger)
 		logger.Error("abi method parse error", "err", err)
 		return err
 	}
-	t.ScanBlock(log.WithContext(ctx, logger.With("action", "ScanBlock")))
 	_, err = dayScheduler.ScheduleWithCron(func(ctx context.Context) {
 		t.ScanBlock(log.WithContext(ctx, logger.With("action", "ScanBlock", "latest", true)), true)
 	}, "*/2 * * * * *")
