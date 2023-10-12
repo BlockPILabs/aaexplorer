@@ -41,11 +41,8 @@ func (TransactionReceiptDecode) Fields() []ent.Field {
 			StructTag(`json:"from"`),
 		field.Int64("gas_used").
 			StructTag(`json:"gasUsed"`).GoType(decimal.Decimal{}),
-		field.String("logs").
-			MaxLen(255).
-			StructTag(`json:"logs"`),
-		field.String("logs_bloom").
-			MaxLen(255).
+		field.Text("logs").StructTag(`json:"logs"`),
+		field.Text("logs_bloom").
 			StructTag(`json:"logsBloom"`),
 		field.String("status").
 			MaxLen(255).

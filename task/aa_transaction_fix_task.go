@@ -43,10 +43,10 @@ func AATransactionFix() {
 				continue
 			}
 			txInfo := txInfos[0]
-			copyTxProperties(aaInfo, txInfo)
+			//copyTxProperties(aaInfo, txInfo)
 			receiptInfos, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDEQ(txHash)).All(context.Background())
 			if len(receiptInfos) == 0 {
-				client.AaTransactionInfo.Update().
+				err = client.AaTransactionInfo.Update().
 					SetNonce(txInfo.Nonce).
 					SetTransactionIndex(txInfo.TransactionIndex).
 					SetFromAddr(txInfo.FromAddr).
@@ -57,7 +57,7 @@ func AATransactionFix() {
 					SetInput(txInfo.Input).
 					SetR(txInfo.R).
 					SetS(txInfo.S).
-					SetValue(txInfo.V).
+					SetV(txInfo.V).
 					SetChainID(txInfo.ChainID).
 					SetType(txInfo.Type).
 					SetMaxFeePerGas(*txInfo.MaxFeePerGas).
@@ -69,8 +69,8 @@ func AATransactionFix() {
 				continue
 			}
 			receiptInfo := receiptInfos[0]
-			copyReceiptProperties(aaInfo, receiptInfo)
-			client.AaTransactionInfo.Update().
+			//copyReceiptProperties(aaInfo, receiptInfo)
+			err = client.AaTransactionInfo.Update().
 				SetNonce(txInfo.Nonce).
 				SetTransactionIndex(txInfo.TransactionIndex).
 				SetFromAddr(txInfo.FromAddr).
@@ -81,7 +81,7 @@ func AATransactionFix() {
 				SetInput(txInfo.Input).
 				SetR(txInfo.R).
 				SetS(txInfo.S).
-				SetValue(txInfo.V).
+				SetV(txInfo.V).
 				SetChainID(txInfo.ChainID).
 				SetType(txInfo.Type).
 				SetMaxFeePerGas(*txInfo.MaxFeePerGas).
@@ -103,31 +103,31 @@ func AATransactionFix() {
 }
 
 func copyReceiptProperties(aaInfo *ent.AaTransactionInfo, receiptInfo *ent.TransactionReceiptDecode) {
-	aaInfo.ContractAddress = receiptInfo.ContractAddress
-	aaInfo.CumulativeGasUsed = receiptInfo.CumulativeGasUsed
-	aaInfo.EffectiveGasPrice = receiptInfo.EffectiveGasPrice
-	aaInfo.GasUsed = receiptInfo.GasUsed
-	aaInfo.Logs = receiptInfo.Logs
-	aaInfo.LogsBloom = receiptInfo.LogsBloom
-	aaInfo.Status = receiptInfo.Status
+	aaInfo.ContractAddress = &receiptInfo.ContractAddress
+	aaInfo.CumulativeGasUsed = &receiptInfo.CumulativeGasUsed
+	aaInfo.EffectiveGasPrice = &receiptInfo.EffectiveGasPrice
+	aaInfo.GasUsed = &receiptInfo.GasUsed
+	aaInfo.Logs = &receiptInfo.Logs
+	aaInfo.LogsBloom = &receiptInfo.LogsBloom
+	aaInfo.Status = &receiptInfo.Status
 }
 
 func copyTxProperties(aaInfo *ent.AaTransactionInfo, txInfo *ent.TransactionDecode) {
-	aaInfo.Nonce = txInfo.Nonce
-	aaInfo.TransactionIndex = txInfo.TransactionIndex
-	aaInfo.FromAddr = txInfo.FromAddr
-	aaInfo.ToAddr = txInfo.ToAddr
-	aaInfo.Value = txInfo.Value
-	aaInfo.GasPrice = txInfo.GasPrice
-	aaInfo.Gas = txInfo.Gas
-	aaInfo.Input = txInfo.Input
-	aaInfo.R = txInfo.R
-	aaInfo.S = txInfo.S
-	aaInfo.V = txInfo.V
-	aaInfo.ChainID = txInfo.ChainID
-	aaInfo.Type = txInfo.Type
+	aaInfo.Nonce = &txInfo.Nonce
+	aaInfo.TransactionIndex = &txInfo.TransactionIndex
+	aaInfo.FromAddr = &txInfo.FromAddr
+	aaInfo.ToAddr = &txInfo.ToAddr
+	aaInfo.Value = &txInfo.Value
+	aaInfo.GasPrice = &txInfo.GasPrice
+	aaInfo.Gas = &txInfo.Gas
+	aaInfo.Input = &txInfo.Input
+	aaInfo.R = &txInfo.R
+	aaInfo.S = &txInfo.S
+	aaInfo.V = &txInfo.V
+	aaInfo.ChainID = &txInfo.ChainID
+	aaInfo.Type = &txInfo.Type
 	aaInfo.MaxFeePerGas = txInfo.MaxFeePerGas
 	aaInfo.MaxPriorityFeePerGas = txInfo.MaxPriorityFeePerGas
 	aaInfo.AccessList = txInfo.AccessList
-	aaInfo.Method = txInfo.Method
+	aaInfo.Method = &txInfo.Method
 }

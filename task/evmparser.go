@@ -936,36 +936,36 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 		Time:                 parserTx.transaction.Time,
 		BlockHash:            parserTx.transaction.BlockHash,
 		BlockNumber:          parserTx.transaction.BlockNumber,
-		Nonce:                tx.Nonce,
-		TransactionIndex:     tx.TransactionIndex,
-		FromAddr:             tx.FromAddr,
-		ToAddr:               tx.ToAddr,
-		Value:                tx.Value,
-		GasPrice:             tx.GasPrice,
-		Gas:                  tx.Gas,
-		Input:                tx.Input,
-		R:                    tx.R,
-		S:                    tx.S,
-		V:                    tx.V,
-		ChainID:              tx.ChainID,
-		Type:                 tx.Type,
+		Nonce:                &tx.Nonce,
+		TransactionIndex:     &tx.TransactionIndex,
+		FromAddr:             &tx.FromAddr,
+		ToAddr:               &tx.ToAddr,
+		Value:                &tx.Value,
+		GasPrice:             &tx.GasPrice,
+		Gas:                  &tx.Gas,
+		Input:                &tx.Input,
+		R:                    &tx.R,
+		S:                    &tx.S,
+		V:                    &tx.V,
+		ChainID:              &tx.ChainID,
+		Type:                 &tx.Type,
 		MaxFeePerGas:         tx.MaxFeePerGas,
 		MaxPriorityFeePerGas: tx.MaxPriorityFeePerGas,
 		AccessList:           tx.AccessList,
-		Method:               tx.Method,
+		Method:               &tx.Method,
 		UseropCount:          0,
 		IsMev:                false,
 		BundlerProfit:        decimal.Decimal{},
 		CreateTime:           time.Now(),
 	}
 	if receipt != nil {
-		parserTx.userOpInfo.ContractAddress = receipt.ContractAddress
-		parserTx.userOpInfo.CumulativeGasUsed = receipt.CumulativeGasUsed
-		parserTx.userOpInfo.EffectiveGasPrice = receipt.EffectiveGasPrice
-		parserTx.userOpInfo.GasUsed = receipt.GasUsed
-		parserTx.userOpInfo.Logs = receipt.Logs
-		parserTx.userOpInfo.LogsBloom = receipt.LogsBloom
-		parserTx.userOpInfo.Status = receipt.Status
+		parserTx.userOpInfo.ContractAddress = &receipt.ContractAddress
+		parserTx.userOpInfo.CumulativeGasUsed = &receipt.CumulativeGasUsed
+		parserTx.userOpInfo.EffectiveGasPrice = &receipt.EffectiveGasPrice
+		parserTx.userOpInfo.GasUsed = &receipt.GasUsed
+		parserTx.userOpInfo.Logs = &receipt.Logs
+		parserTx.userOpInfo.LogsBloom = &receipt.LogsBloom
+		parserTx.userOpInfo.Status = &receipt.Status
 	}
 
 	bundler := block.AaAccountData(parserTx.transaction.FromAddr)
