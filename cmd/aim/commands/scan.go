@@ -16,7 +16,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/procyon-projects/chrono"
 	"github.com/spf13/cobra"
 	"io"
 	"io/ioutil"
@@ -31,7 +30,6 @@ var ScanCmd = &cobra.Command{
 	Use:   "scan",
 	Short: "scan block",
 	Run: func(cmd *cobra.Command, args []string) {
-		taskScheduler := chrono.NewDefaultTaskScheduler()
 		// db start
 		err := entity.Start(logger.With("lib", "ent"), config)
 		if err != nil {
@@ -42,14 +40,6 @@ var ScanCmd = &cobra.Command{
 		if err != nil {
 			return
 		}
-		_, err = taskScheduler.ScheduleWithFixedDelay(func(ctx context.Context) {
-			//parser.ScanBlock()
-		}, 5*time.Second)
-
-		if err == nil {
-			log.Print("Task: scan block has been scheduled successfully.")
-		}
-
 		task.InitTask()
 		service.ScanBlock()
 
