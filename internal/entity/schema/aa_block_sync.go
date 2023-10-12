@@ -20,6 +20,7 @@ func (AaBlockSync) Fields() []ent.Field {
 		field.Bool("scanned").Optional().Nillable(),
 		field.Time("create_time"),
 		field.Time("update_time"),
+		field.Int64("scan_count"),
 	}
 }
 

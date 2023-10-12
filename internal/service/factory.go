@@ -95,7 +95,7 @@ func (*factoryService) GetFactory(ctx context.Context, req vo.GetFactoryRequest)
 		client.FactoryInfo.Query().Where(
 			factoryinfo.AccountDeployNumGT(info.AccountDeployNum),
 		).CountX(ctx),
-	)
+	) + 1
 	res.TotalNumber = int64(
 		client.FactoryInfo.Query().CountX(ctx),
 	)

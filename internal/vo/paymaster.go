@@ -59,6 +59,7 @@ type GetPaymasterOverviewResponse struct {
 	UserOpsNumTotal       int64           `json:"userOpsNumTotal"`
 	Dominance             decimal.Decimal `json:"dominance"`
 	Rank                  int             `json:"rank"`
+	TotalNumber           int64           `json:"totalNumber"`
 	AccountBalance        decimal.Decimal `json:"accountBalance"`
 	EstimateTxnNum        int             `json:"estimateTxnNum"`
 	Label                 []string        `json:"label"`

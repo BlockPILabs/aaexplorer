@@ -8,7 +8,7 @@ type logContextKey struct {
 var _defaultLogger = NewNopLogger()
 
 func SetDefaultLogger(logger Logger) {
-	_testingLogger = logger
+	_defaultLogger = logger
 }
 
 func Context(ctx context.Context) Logger {
@@ -31,4 +31,8 @@ func With(ctx context.Context, keyvals ...interface{}) (context.Context, Logger)
 	logger := Context(ctx).With(keyvals...)
 	ctx = WithContext(ctx, logger)
 	return ctx, logger
+}
+
+func L() Logger {
+	return _defaultLogger
 }

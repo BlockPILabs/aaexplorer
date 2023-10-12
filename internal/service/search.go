@@ -37,6 +37,7 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 
 	var paymasters []*vo.SearchAllAccount
 	var bundlers []*vo.SearchAllAccount
+	var factories []*vo.SearchAllAccount
 	var walletAccounts []*vo.SearchAllAccount
 	var blocks []*vo.SearchAllBlock
 	var userops []*vo.SearchAllTransaction
@@ -69,6 +70,10 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 				case config.AaAccountTypeBundler:
 					if len(bundlers) < maxResult {
 						bundlers = append(bundlers, sa)
+					}
+				case config.AaAccountTypeFactory:
+					if len(factories) < maxResult {
+						factories = append(factories, sa)
 					}
 				default:
 					if len(walletAccounts) < maxResult {
@@ -216,6 +221,15 @@ func (s *searchService) SearchAll(ctx context.Context, req vo.SearchAllRequest) 
 			&vo.SearchAllResponseData{
 				Type:    "Bundler",
 				Records: bundlers,
+			},
+		)
+	}
+
+	if len(factories) > 0 {
+		res.Data = append(res.Data,
+			&vo.SearchAllResponseData{
+				Type:    "Factory",
+				Records: factories,
 			},
 		)
 	}
