@@ -8,6 +8,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aatransactioninfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactiondecode"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactionreceiptdecode"
+	"github.com/shopspring/decimal"
 	"log"
 	"time"
 )
@@ -49,6 +50,14 @@ func AATransactionFix() {
 				continue
 			}
 			txInfo := txInfos[0]
+			maxFeePerGas := txInfo.MaxFeePerGas
+			if maxFeePerGas == nil {
+				maxFeePerGas = &decimal.Zero
+			}
+			maxPriorityFeePerGas := txInfo.MaxPriorityFeePerGas
+			if maxPriorityFeePerGas == nil {
+				maxPriorityFeePerGas = &decimal.Zero
+			}
 			//copyTxProperties(aaInfo, txInfo)
 			receiptInfos, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDEQ(txHash)).All(context.Background())
 			if len(receiptInfos) == 0 {
@@ -66,8 +75,8 @@ func AATransactionFix() {
 					SetV(txInfo.V).
 					SetChainID(txInfo.ChainID).
 					SetType(txInfo.Type).
-					SetMaxFeePerGas(*txInfo.MaxFeePerGas).
-					SetMaxPriorityFeePerGas(*txInfo.MaxPriorityFeePerGas).
+					SetMaxFeePerGas(*maxFeePerGas).
+					SetMaxPriorityFeePerGas(*maxPriorityFeePerGas).
 					SetAccessList(txInfo.AccessList).
 					SetMethod(txInfo.Method).
 					SetStatus("0").Where(aatransactioninfo.IDEQ(aaInfo.ID)).Exec(context.Background())
@@ -90,8 +99,8 @@ func AATransactionFix() {
 				SetV(txInfo.V).
 				SetChainID(txInfo.ChainID).
 				SetType(txInfo.Type).
-				SetMaxFeePerGas(*txInfo.MaxFeePerGas).
-				SetMaxPriorityFeePerGas(*txInfo.MaxPriorityFeePerGas).
+				SetMaxFeePerGas(*maxFeePerGas).
+				SetMaxPriorityFeePerGas(*maxPriorityFeePerGas).
 				SetAccessList(txInfo.AccessList).
 				SetMethod(txInfo.Method).
 				SetContractAddress(receiptInfo.ContractAddress).
