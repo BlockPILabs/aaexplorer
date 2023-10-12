@@ -29,17 +29,14 @@ func AATransactionFix() {
 			continue
 		}
 		now := time.Now()
-		var i = 0
 		for {
-			aaInfos, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.NonceIsNil()).Order(aatransactioninfo.ByTime(sql.OrderAsc())).Limit(1).Offset(i).All(context.Background())
+			aaInfos, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.NonceIsNil()).Order(aatransactioninfo.ByTime(sql.OrderAsc())).Limit(1).All(context.Background())
 			if err != nil {
-				i += 1
 				continue
 			}
 			if len(aaInfos) == 0 {
 				break
 			}
-			i += 1
 			aaInfo := aaInfos[0]
 			if aaInfo.Time.Compare(now) > 0 {
 				break
