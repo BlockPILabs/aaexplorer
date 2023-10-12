@@ -19,14 +19,14 @@ version="${version_num}.${COMMIT_HASH}"
 
 make build
 
-ssh -o StrictHostKeyChecking=no  root@ec2-3-85-212-210.compute-1.amazonaws.com mkdir -p /blockpi/aa-scan/log/ || exit 1
-ssh -o StrictHostKeyChecking=no  root@ec2-3-85-212-210.compute-1.amazonaws.com mkdir -p ${version_dir} || exit 1
-scp -o StrictHostKeyChecking=no  ./dist/aim root@ec2-3-85-212-210.compute-1.amazonaws.com:"${version_dir}/${version}" || exit 1
-ssh -o StrictHostKeyChecking=no  root@ec2-3-85-212-210.compute-1.amazonaws.com ln -f -s ${version_dir}/${version} /blockpi/aa-scan/aim || exit 1
+ssh -o StrictHostKeyChecking=no  root@ec2-54-85-44-73.compute-1.amazonaws.com mkdir -p /blockpi/aa-scan/log/ || exit 1
+ssh -o StrictHostKeyChecking=no  root@ec2-54-85-44-73.compute-1.amazonaws.com mkdir -p ${version_dir} || exit 1
+scp -o StrictHostKeyChecking=no  ./dist/aim root@ec2-54-85-44-73.compute-1.amazonaws.com:"${version_dir}/${version}" || exit 1
+ssh -o StrictHostKeyChecking=no  root@ec2-54-85-44-73.compute-1.amazonaws.com ln -f -s ${version_dir}/${version} /blockpi/aa-scan/aim || exit 1
 
-ssh -o StrictHostKeyChecking=no  root@ec2-3-85-212-210.compute-1.amazonaws.com supervisorctl restart aim
-#ssh -o StrictHostKeyChecking=no  root@ec2-3-85-212-210.compute-1.amazonaws.com supervisorctl start aim-task
-#ssh -o StrictHostKeyChecking=no  root@ec2-3-85-212-210.compute-1.amazonaws.com systemctl start aim
-#ssh -o StrictHostKeyChecking=no  root@ec2-3-85-212-210.compute-1.amazonaws.com systemctl start aim-task
+ssh -o StrictHostKeyChecking=no  root@ec2-54-85-44-73.compute-1.amazonaws.com supervisorctl restart aim
+#ssh -o StrictHostKeyChecking=no  root@ec2-54-85-44-73.compute-1.amazonaws.com supervisorctl start aim-task
+#ssh -o StrictHostKeyChecking=no  root@ec2-54-85-44-73.compute-1.amazonaws.com systemctl start aim
+#ssh -o StrictHostKeyChecking=no  root@ec2-54-85-44-73.compute-1.amazonaws.com systemctl start aim-task
 
 #./aim --home ./.aim start
