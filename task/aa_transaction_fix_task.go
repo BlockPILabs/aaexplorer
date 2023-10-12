@@ -9,6 +9,7 @@ import (
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactiondecode"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactionreceiptdecode"
 	"log"
+	"time"
 )
 
 func AATransactionFix() {
@@ -26,17 +27,22 @@ func AATransactionFix() {
 		if err != nil {
 			continue
 		}
+		now := time.Now()
 		var i = 0
 		for {
-			aaInfos, err := client.AaTransactionInfo.Query().Order(aatransactioninfo.ByTime(sql.OrderAsc())).Limit(1).Offset(i).All(context.Background())
+			aaInfos, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.NonceIsNil()).Order(aatransactioninfo.ByTime(sql.OrderAsc())).Limit(1).Offset(i).All(context.Background())
 			if err != nil {
-				break
+				i += 1
+				continue
 			}
 			if len(aaInfos) == 0 {
 				break
 			}
 			i += 1
 			aaInfo := aaInfos[0]
+			if aaInfo.Time.Compare(now) > 0 {
+				break
+			}
 			txHash := aaInfo.ID
 			txInfos, err := client.TransactionDecode.Query().Where(transactiondecode.IDEQ(txHash)).All(context.Background())
 			if len(txInfos) == 0 {
