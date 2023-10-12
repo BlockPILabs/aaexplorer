@@ -132,5 +132,9 @@ func GetPaymasterOverview(ctx context.Context, req vo.GetPaymasterOverviewReques
 	if len(addresses) > 0 {
 		addresses[0].Label.AssignTo(&res.Label)
 	}
+
+	res.TotalNumber = int64(
+		client.PaymasterInfo.Query().CountX(ctx),
+	)
 	return &res, nil
 }

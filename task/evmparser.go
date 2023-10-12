@@ -104,7 +104,6 @@ func InitEvmParse(ctx context.Context, config *config.Config, logger log.Logger)
 		logger.Error("abi method parse error", "err", err)
 		return err
 	}
-
 	_, err = dayScheduler.ScheduleWithCron(func(ctx context.Context) {
 		t.ScanBlock(log.WithContext(ctx, logger.With("action", "ScanBlock", "latest", true)), true)
 	}, "*/2 * * * * *")
@@ -975,15 +974,43 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 
 	events, _ := t.parseLogs(ctx, parserTx.logs)
 
+	tx := parserTx.transaction
+	receipt := parserTx.receipt
 	parserTx.userOpInfo = &ent.AaTransactionInfo{
-		ID:            parserTx.transaction.ID,
-		Time:          parserTx.transaction.Time,
-		BlockHash:     parserTx.transaction.BlockHash,
-		BlockNumber:   parserTx.transaction.BlockNumber,
-		UseropCount:   0,
-		IsMev:         false,
-		BundlerProfit: decimal.Decimal{},
-		CreateTime:    time.Now(),
+		ID:                   parserTx.transaction.ID,
+		Time:                 parserTx.transaction.Time,
+		BlockHash:            parserTx.transaction.BlockHash,
+		BlockNumber:          parserTx.transaction.BlockNumber,
+		Nonce:                &tx.Nonce,
+		TransactionIndex:     &tx.TransactionIndex,
+		FromAddr:             &tx.FromAddr,
+		ToAddr:               &tx.ToAddr,
+		Value:                &tx.Value,
+		GasPrice:             &tx.GasPrice,
+		Gas:                  &tx.Gas,
+		Input:                &tx.Input,
+		R:                    &tx.R,
+		S:                    &tx.S,
+		V:                    &tx.V,
+		ChainID:              &tx.ChainID,
+		Type:                 &tx.Type,
+		MaxFeePerGas:         tx.MaxFeePerGas,
+		MaxPriorityFeePerGas: tx.MaxPriorityFeePerGas,
+		AccessList:           tx.AccessList,
+		Method:               &tx.Method,
+		UseropCount:          0,
+		IsMev:                false,
+		BundlerProfit:        decimal.Decimal{},
+		CreateTime:           time.Now(),
+	}
+	if receipt != nil {
+		parserTx.userOpInfo.ContractAddress = &receipt.ContractAddress
+		parserTx.userOpInfo.CumulativeGasUsed = &receipt.CumulativeGasUsed
+		parserTx.userOpInfo.EffectiveGasPrice = &receipt.EffectiveGasPrice
+		parserTx.userOpInfo.GasUsed = &receipt.GasUsed
+		parserTx.userOpInfo.Logs = &receipt.Logs
+		parserTx.userOpInfo.LogsBloom = &receipt.LogsBloom
+		parserTx.userOpInfo.Status = &receipt.Status
 	}
 
 	bundler := block.AaAccountData(parserTx.transaction.FromAddr)

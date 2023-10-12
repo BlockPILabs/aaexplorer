@@ -5,7 +5,6 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
-	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/jackc/pgtype"
 	"github.com/shopspring/decimal"
@@ -24,7 +23,7 @@ func (TransactionDecode) Fields() []ent.Field {
 		//hash                     text,
 		field.String("id").StorageKey("hash").StructTag(`json:"hash"`),
 		//block_hash               text,
-		field.String("block_hash").StructTag(`json:"blockHash"`),
+		field.String("block_hash").StructTag(`json:"blockHash"`).Optional(),
 		//block_number             numeric,
 		field.Int64("block_number").StructTag(`json:"blockNumber"`),
 		//nonce                    numeric,
@@ -65,11 +64,12 @@ func (TransactionDecode) Fields() []ent.Field {
 	}
 }
 
-func (TransactionDecode) Edges() []ent.Edge {
-	return []ent.Edge{
-		edge.To("txaa", AaTransactionInfo.Type).StorageKey(edge.Column("hash")).Unique(),
-	}
-}
+//func (TransactionDecode) Edges() []ent.Edge {
+//	return []ent.Edge{
+//		//edge.To("txaa", AaTransactionInfo.Type).StorageKey(edge.Symbol("hash")).Unique(),
+//		//edge.From("faatx", AaTransactionInfo.Type).Ref("aatx").Field("hash").Unique(),
+//	}
+//}
 
 func (TransactionDecode) Annotations() []schema.Annotation {
 	return []schema.Annotation{
