@@ -30,88 +30,121 @@ func AATransactionFix() {
 		}
 		now := time.Now()
 		for {
-			aaInfos, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.NonceIsNil()).Order(aatransactioninfo.ByTime(sql.OrderAsc())).Limit(1).All(context.Background())
+			aaInfos, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.NonceIsNil()).Order(aatransactioninfo.ByTime(sql.OrderAsc())).Limit(200).All(context.Background())
 			if err != nil {
 				continue
 			}
 			if len(aaInfos) == 0 {
 				break
 			}
-			aaInfo := aaInfos[0]
-			if aaInfo.Time.Compare(now) > 0 {
+			lastAaInfo := aaInfos[len(aaInfos)-1]
+			if lastAaInfo.Time.Compare(now) > 0 {
 				break
 			}
-			txHash := aaInfo.ID
-			txInfos, err := client.TransactionDecode.Query().Where(transactiondecode.IDEQ(txHash)).All(context.Background())
+			hashes, aaMap := getHashes(aaInfos)
+			txInfos, err := client.TransactionDecode.Query().Where(transactiondecode.IDIn(hashes[:]...)).All(context.Background())
 			if len(txInfos) == 0 {
 				continue
 			}
-			txInfo := txInfos[0]
-			maxFeePerGas := txInfo.MaxFeePerGas
-			if maxFeePerGas == nil {
-				maxFeePerGas = &decimal.Zero
+			txMap := getTxMap(txInfos)
+			receiptInfos, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(hashes[:]...)).All(context.Background())
+			receiptMap := getReceiptMap(receiptInfos)
+
+			for _, hash := range hashes {
+
+				txInfo := txMap[hash]
+				aaInfo := aaMap[hash]
+				var receiptInfo *ent.TransactionReceiptDecode
+				if receiptMap == nil {
+					receiptInfo = nil
+				} else {
+					receiptInfo = receiptMap[hash]
+				}
+				maxFeePerGas := txInfo.MaxFeePerGas
+				if maxFeePerGas == nil {
+					maxFeePerGas = &decimal.Zero
+				}
+				maxPriorityFeePerGas := txInfo.MaxPriorityFeePerGas
+				if maxPriorityFeePerGas == nil {
+					maxPriorityFeePerGas = &decimal.Zero
+				}
+				if receiptInfo == nil {
+					err = client.AaTransactionInfo.Update().
+						SetNonce(txInfo.Nonce).
+						SetTransactionIndex(txInfo.TransactionIndex).
+						SetFromAddr(txInfo.FromAddr).
+						SetToAddr(txInfo.ToAddr).
+						SetValue(txInfo.Value).
+						SetGasPrice(txInfo.GasPrice).
+						SetGas(txInfo.Gas).
+						SetInput(txInfo.Input).
+						SetR(txInfo.R).
+						SetS(txInfo.S).
+						SetV(txInfo.V).
+						SetChainID(txInfo.ChainID).
+						SetType(txInfo.Type).
+						SetMaxFeePerGas(*maxFeePerGas).
+						SetMaxPriorityFeePerGas(*maxPriorityFeePerGas).
+						SetAccessList(txInfo.AccessList).
+						SetMethod(txInfo.Method).
+						SetStatus("0").Where(aatransactioninfo.IDEQ(aaInfo.ID)).Exec(context.Background())
+					log.Printf("aa-transaction sync success part, hash:%s, network:%s", hash, network)
+				} else {
+					err = client.AaTransactionInfo.Update().
+						SetNonce(txInfo.Nonce).
+						SetTransactionIndex(txInfo.TransactionIndex).
+						SetFromAddr(txInfo.FromAddr).
+						SetToAddr(txInfo.ToAddr).
+						SetValue(txInfo.Value).
+						SetGasPrice(txInfo.GasPrice).
+						SetGas(txInfo.Gas).
+						SetInput(txInfo.Input).
+						SetR(txInfo.R).
+						SetS(txInfo.S).
+						SetV(txInfo.V).
+						SetChainID(txInfo.ChainID).
+						SetType(txInfo.Type).
+						SetMaxFeePerGas(*maxFeePerGas).
+						SetMaxPriorityFeePerGas(*maxPriorityFeePerGas).
+						SetAccessList(txInfo.AccessList).
+						SetMethod(txInfo.Method).
+						SetContractAddress(receiptInfo.ContractAddress).
+						SetCumulativeGasUsed(receiptInfo.CumulativeGasUsed).
+						SetEffectiveGasPrice(receiptInfo.EffectiveGasPrice).
+						SetGasUsed(receiptInfo.GasUsed).
+						SetLogs(receiptInfo.Logs).
+						SetLogsBloom(receiptInfo.LogsBloom).
+						SetStatus(receiptInfo.Status).
+						Where(aatransactioninfo.IDEQ(aaInfo.ID)).Exec(context.Background())
+					log.Printf("aa-transaction sync success, hash:%s, network:%s", hash, network)
+				}
 			}
-			maxPriorityFeePerGas := txInfo.MaxPriorityFeePerGas
-			if maxPriorityFeePerGas == nil {
-				maxPriorityFeePerGas = &decimal.Zero
-			}
-			//copyTxProperties(aaInfo, txInfo)
-			receiptInfos, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDEQ(txHash)).All(context.Background())
-			if len(receiptInfos) == 0 {
-				err = client.AaTransactionInfo.Update().
-					SetNonce(txInfo.Nonce).
-					SetTransactionIndex(txInfo.TransactionIndex).
-					SetFromAddr(txInfo.FromAddr).
-					SetToAddr(txInfo.ToAddr).
-					SetValue(txInfo.Value).
-					SetGasPrice(txInfo.GasPrice).
-					SetGas(txInfo.Gas).
-					SetInput(txInfo.Input).
-					SetR(txInfo.R).
-					SetS(txInfo.S).
-					SetV(txInfo.V).
-					SetChainID(txInfo.ChainID).
-					SetType(txInfo.Type).
-					SetMaxFeePerGas(*maxFeePerGas).
-					SetMaxPriorityFeePerGas(*maxPriorityFeePerGas).
-					SetAccessList(txInfo.AccessList).
-					SetMethod(txInfo.Method).
-					SetStatus("0").Where(aatransactioninfo.IDEQ(aaInfo.ID)).Exec(context.Background())
-				log.Printf("aa-transaction sync success part, hash:%s, network:%s", txHash, network)
-				continue
-			}
-			receiptInfo := receiptInfos[0]
-			//copyReceiptProperties(aaInfo, receiptInfo)
-			err = client.AaTransactionInfo.Update().
-				SetNonce(txInfo.Nonce).
-				SetTransactionIndex(txInfo.TransactionIndex).
-				SetFromAddr(txInfo.FromAddr).
-				SetToAddr(txInfo.ToAddr).
-				SetValue(txInfo.Value).
-				SetGasPrice(txInfo.GasPrice).
-				SetGas(txInfo.Gas).
-				SetInput(txInfo.Input).
-				SetR(txInfo.R).
-				SetS(txInfo.S).
-				SetV(txInfo.V).
-				SetChainID(txInfo.ChainID).
-				SetType(txInfo.Type).
-				SetMaxFeePerGas(*maxFeePerGas).
-				SetMaxPriorityFeePerGas(*maxPriorityFeePerGas).
-				SetAccessList(txInfo.AccessList).
-				SetMethod(txInfo.Method).
-				SetContractAddress(receiptInfo.ContractAddress).
-				SetCumulativeGasUsed(receiptInfo.CumulativeGasUsed).
-				SetEffectiveGasPrice(receiptInfo.EffectiveGasPrice).
-				SetGasUsed(receiptInfo.GasUsed).
-				SetLogs(receiptInfo.Logs).
-				SetLogsBloom(receiptInfo.LogsBloom).
-				SetStatus(receiptInfo.Status).
-				Where(aatransactioninfo.IDEQ(aaInfo.ID)).Exec(context.Background())
-			log.Printf("aa-transaction sync success, hash:%s, network:%s", txHash, network)
+
 		}
 
 	}
+}
+
+func getTxMap(infos []*ent.TransactionDecode) map[string]*ent.TransactionDecode {
+	txMap := make(map[string]*ent.TransactionDecode)
+	if len(infos) == 0 {
+		return txMap
+	}
+	for _, info := range infos {
+		txMap[info.ID] = info
+	}
+	return txMap
+}
+
+func getHashes(infos []*ent.AaTransactionInfo) ([]string, map[string]*ent.AaTransactionInfo) {
+	var hashArray []string
+	hashMap := make(map[string]*ent.AaTransactionInfo)
+	for _, info := range infos {
+		hashArray = append(hashArray, info.ID)
+		hashMap[info.ID] = info
+	}
+
+	return hashArray, hashMap
 }
 
 func copyReceiptProperties(aaInfo *ent.AaTransactionInfo, receiptInfo *ent.TransactionReceiptDecode) {
