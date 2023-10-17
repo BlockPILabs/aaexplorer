@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aatransactioninfo"
+	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropsinfo"
 	"github.com/BlockPILabs/aa-scan/internal/utils"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
 )
@@ -37,11 +38,34 @@ func (dao *aaTransactionDao) Pagination(ctx context.Context, tx *ent.Client, pag
 	}
 
 	if condition.Address != nil && len(*(condition.Address)) > 0 {
-		query = query.Where(
-			aatransactioninfo.Or(
-				aatransactioninfo.FromAddrEQ(*condition.Address),
-				aatransactioninfo.ToAddrEQ(*condition.Address),
-			))
+		query = query.Where(func(s *sql.Selector) {
+
+			sub := sql.Dialect(s.Dialect()).
+				Select(sql.Distinct(aauseropsinfo.FieldTxHash), aauseropsinfo.FieldTime).
+				From(sql.Dialect(s.Dialect()).Table(aauseropsinfo.Table)).
+				Where(
+					sql.Or(
+						sql.EQ(aauseropsinfo.FieldSender, *condition.Address),
+						sql.EQ(aauseropsinfo.FieldTarget, *condition.Address),
+					),
+				).
+				OrderBy(sql.Desc(aauseropsinfo.FieldTime)).
+				Limit(page.GetPerPage()).
+				Offset(page.GetOffset()).As("sub")
+
+			s.Where(
+				sql.In(s.C(aatransactioninfo.FieldID),
+					sql.Dialect(s.Dialect()).
+						Select(aauseropsinfo.FieldTxHash).
+						From(sub),
+				),
+			)
+		})
+		//query = query.Where(
+		//	aatransactioninfo.Or(
+		//		aatransactioninfo.FromAddrEQ(*condition.Address),
+		//		aatransactioninfo.ToAddrEQ(*condition.Address),
+		//	))
 	}
 
 	if page.TotalCount > 0 {
