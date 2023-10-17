@@ -187,6 +187,11 @@ func (*aaTransactionService) GetPages(ctx context.Context, client *ent.Client, r
 			MaxPriorityFeePerGas: record.MaxPriorityFeePerGas,
 			AccessList:           record.AccessList,
 			Method:               *record.Method,
+			ContractAddress:      *record.ContractAddress,
+			CumulativeGasUsed:    *record.CumulativeGasUsed,
+			EffectiveGasPrice:    *record.EffectiveGasPrice,
+			GasUsed:              *record.GasUsed,
+			Status:               *record.Status,
 		}
 		res.Records = append(res.Records, ret)
 	}

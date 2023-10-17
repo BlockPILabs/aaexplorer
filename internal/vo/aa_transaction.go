@@ -47,16 +47,12 @@ type AaTransactionRecord struct {
 	MaxPriorityFeePerGas *decimal.Decimal `json:"maxPriorityFeePerGas"`
 	AccessList           *pgtype.JSONB    `json:"accessList"`
 	Method               string           `json:"method"`
-
-	ContractAddress   string          `json:"contractAddress"`
-	CumulativeGasUsed int64           `json:"cumulativeGasUsed"`
-	EffectiveGasPrice string          `json:"effective_gas_price"`
-	GasUsed           decimal.Decimal `json:"gasUsed"`
-	//Logs              string          `json:"logs"`
-	//LogsBloom         string          `json:"logsBloom"`
-	Status string `json:"status"`
-
-	TokenPriceUsd decimal.Decimal `json:"tokenPriceUsd"`
-	GasPriceUsd   decimal.Decimal `json:"gasPriceUsd"`
-	ValueUsd      decimal.Decimal `json:"valueUsd"`
+	ContractAddress      string           `json:"contractAddress"`
+	CumulativeGasUsed    int64            `json:"cumulativeGasUsed"`
+	EffectiveGasPrice    string           `json:"effective_gas_price"`
+	GasUsed              decimal.Decimal  `json:"gasUsed"`
+	Status               string           `json:"status"`
+	TokenPriceUsd        decimal.Decimal  `json:"tokenPriceUsd"`
+	GasPriceUsd          decimal.Decimal  `json:"gasPriceUsd"`
+	ValueUsd             decimal.Decimal  `json:"valueUsd"`
 }
