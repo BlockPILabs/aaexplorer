@@ -4,12 +4,8 @@ import (
 	"context"
 	"entgo.io/ent/dialect/sql"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aatransactioninfo"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactiondecode"
 	"github.com/BlockPILabs/aa-scan/internal/vo"
-	"github.com/jackc/pgtype"
-	"github.com/shopspring/decimal"
-	"time"
 )
 
 type transactionDao struct {
@@ -46,7 +42,7 @@ func (dao *transactionDao) Pages(ctx context.Context, tx *ent.Client, page vo.Pa
 	return
 }
 
-type TxPages struct {
+/*type TxPages struct {
 	ID string `json:"hash"`
 	// Time holds the value of the "time" field.
 	Time time.Time `json:"time"`
@@ -99,8 +95,8 @@ type TxPages struct {
 	// BundlerProfitUsd holds the value of the "bundler_profit_usd" field.
 	BundlerProfitUsd decimal.Decimal `json:"bundler_profit_usd,omitempty"`
 }
-
-func (dao *transactionDao) PagesWithTxaa(ctx context.Context, tx *ent.Client, page vo.PaginationRequest, condition TransactionCondition) (a []*TxPages, count int, err error) {
+*/
+/*func (dao *transactionDao) PagesWithTxaa(ctx context.Context, tx *ent.Client, page vo.PaginationRequest, condition TransactionCondition) (a []*TxPages, count int, err error) {
 	query := tx.AaTransactionInfo.Query().
 		Modify(func(s *sql.Selector) {
 			d := sql.Dialect(s.Dialect())
@@ -160,4 +156,4 @@ func (dao *transactionDao) PagesWithTxaa(ctx context.Context, tx *ent.Client, pa
 	})
 	err = query.Scan(ctx, a)
 	return
-}
+}*/

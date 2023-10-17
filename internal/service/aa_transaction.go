@@ -36,34 +36,34 @@ func (*aaTransactionService) GetRecord(ctx context.Context, client *ent.Client, 
 	}
 	aatx := aatxlist[0]
 
-	txlist, _, err := dao.TransactionDao.Pages(ctx, client, vo.PaginationRequest{
-		PerPage: 1,
-		Page:    1,
-	}, dao.TransactionCondition{
-		TxHash: &req.TxHash,
-	})
+	/*	txlist, _, err := dao.TransactionDao.Pages(ctx, client, vo.PaginationRequest{
+			PerPage: 1,
+			Page:    1,
+		}, dao.TransactionCondition{
+			TxHash: &req.TxHash,
+		})
 
-	if err != nil {
-		return nil, err
-	}
-	if len(txlist) != 1 {
-		return nil, nil
-	}
-	tx := txlist[0]
+		if err != nil {
+			return nil, err
+		}
+		if len(txlist) != 1 {
+			return nil, nil
+		}
+		tx := txlist[0]
 
-	txrlist, _, err := dao.TransactionReceiptDao.Pages(ctx, client, vo.PaginationRequest{
-		PerPage: 1,
-		Page:    1,
-	}, dao.TransactionReceiptCondition{
-		TxHash: &req.TxHash,
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(txrlist) != 1 {
-		return nil, nil
-	}
-	txr := txrlist[0]
+		txrlist, _, err := dao.TransactionReceiptDao.Pages(ctx, client, vo.PaginationRequest{
+			PerPage: 1,
+			Page:    1,
+		}, dao.TransactionReceiptCondition{
+			TxHash: &req.TxHash,
+		})
+		if err != nil {
+			return nil, err
+		}
+		if len(txrlist) != 1 {
+			return nil, nil
+		}
+		txr := txrlist[0]*/
 
 	tokenPrice, err := dao.TokenPriceInfoDao.GetBaseTokenPrice(ctx, client)
 	if err != nil {
@@ -79,34 +79,34 @@ func (*aaTransactionService) GetRecord(ctx context.Context, client *ent.Client, 
 		IsMev:                aatx.IsMev,
 		BundlerProfit:        aatx.BundlerProfit,
 		BundlerProfitUsd:     aatx.BundlerProfitUsd,
-		Nonce:                tx.Nonce,
-		TransactionIndex:     tx.TransactionIndex,
-		FromAddr:             tx.FromAddr,
-		ToAddr:               tx.ToAddr,
-		Value:                tx.Value,
-		GasPrice:             tx.GasPrice,
-		Gas:                  tx.Gas,
-		Input:                tx.Input,
-		R:                    tx.R,
-		S:                    tx.S,
-		V:                    tx.V,
-		ChainID:              tx.ChainID,
-		Type:                 tx.Type,
-		MaxFeePerGas:         tx.MaxFeePerGas,
-		MaxPriorityFeePerGas: tx.MaxPriorityFeePerGas,
-		AccessList:           tx.AccessList,
-		Method:               tx.Method,
-		ContractAddress:      txr.ContractAddress,
-		CumulativeGasUsed:    txr.CumulativeGasUsed,
-		EffectiveGasPrice:    txr.EffectiveGasPrice,
-		GasUsed:              txr.GasUsed,
+		Nonce:                aatx.Nonce,
+		TransactionIndex:     aatx.TransactionIndex,
+		FromAddr:             aatx.FromAddr,
+		ToAddr:               aatx.ToAddr,
+		Value:                aatx.Value,
+		GasPrice:             aatx.GasPrice,
+		Gas:                  aatx.Gas,
+		Input:                aatx.Input,
+		R:                    aatx.R,
+		S:                    aatx.S,
+		V:                    aatx.V,
+		ChainID:              aatx.ChainID,
+		Type:                 aatx.Type,
+		MaxFeePerGas:         aatx.MaxFeePerGas,
+		MaxPriorityFeePerGas: aatx.MaxPriorityFeePerGas,
+		AccessList:           aatx.AccessList,
+		Method:               *aatx.Method,
+		ContractAddress:      *aatx.ContractAddress,
+		CumulativeGasUsed:    *aatx.CumulativeGasUsed,
+		EffectiveGasPrice:    *aatx.EffectiveGasPrice,
+		GasUsed:              *aatx.GasUsed,
 		//Logs:                 txr.Logs,
 		//LogsBloom:            txr.LogsBloom,
-		Status: txr.Status,
+		Status: *aatx.Status,
 
 		TokenPriceUsd: tokenPrice.TokenPrice,
-		GasPriceUsd:   tx.GasPrice.Mul(tokenPrice.TokenPrice).Mul(decimal.NewFromInt(10).Pow(decimal.NewFromInt(18))),
-		ValueUsd:      tx.Value.Mul(tokenPrice.TokenPrice).Mul(decimal.NewFromInt(10).Pow(decimal.NewFromInt(18))),
+		GasPriceUsd:   aatx.GasPrice.Mul(tokenPrice.TokenPrice).Mul(decimal.NewFromInt(10).Pow(decimal.NewFromInt(18))),
+		ValueUsd:      aatx.Value.Mul(tokenPrice.TokenPrice).Mul(decimal.NewFromInt(10).Pow(decimal.NewFromInt(18))),
 	}
 
 	return ret, nil
@@ -128,7 +128,7 @@ func (*aaTransactionService) GetPages(ctx context.Context, client *ent.Client, r
 		},
 	}
 
-	condition := dao.TransactionCondition{}
+	condition := dao.AaTransactionCondition{}
 	if req.TxHash != "" {
 		condition.TxHash = &req.TxHash
 	}
@@ -137,7 +137,7 @@ func (*aaTransactionService) GetPages(ctx context.Context, client *ent.Client, r
 		condition.Address = &req.Address
 	}
 
-	list, total, err := dao.TransactionDao.PagesWithTxaa(ctx, client, req.PaginationRequest, condition)
+	list, total, err := dao.AaTransactionDao.Pagination(ctx, client, req.PaginationRequest, condition)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +186,7 @@ func (*aaTransactionService) GetPages(ctx context.Context, client *ent.Client, r
 			MaxFeePerGas:         record.MaxFeePerGas,
 			MaxPriorityFeePerGas: record.MaxPriorityFeePerGas,
 			AccessList:           record.AccessList,
-			Method:               record.Method,
+			Method:               *record.Method,
 		}
 		res.Records = append(res.Records, ret)
 	}

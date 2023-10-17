@@ -30,19 +30,19 @@ type AaTransactionRecord struct {
 	IsMev                bool             `json:"isMev"`
 	BundlerProfit        decimal.Decimal  `json:"bundlerProfit"`
 	BundlerProfitUsd     decimal.Decimal  `json:"bundlerProfitUsd"`
-	Nonce                decimal.Decimal  `json:"nonce"`
-	TransactionIndex     decimal.Decimal  `json:"transactionIndex"`
-	FromAddr             string           `json:"fromAddr"`
-	ToAddr               string           `json:"toAddr"`
-	Value                decimal.Decimal  `json:"value"`
-	GasPrice             decimal.Decimal  `json:"gasPrice"`
-	Gas                  decimal.Decimal  `json:"gas"`
-	Input                string           `json:"input"`
-	R                    string           `json:"r"`
-	S                    string           `json:"s"`
-	V                    decimal.Decimal  `json:"v"`
-	ChainID              int64            `json:"chainID"`
-	Type                 string           `json:"type"`
+	Nonce                *decimal.Decimal `json:"nonce"`
+	TransactionIndex     *decimal.Decimal `json:"transactionIndex"`
+	FromAddr             *string          `json:"fromAddr"`
+	ToAddr               *string          `json:"toAddr"`
+	Value                *decimal.Decimal `json:"value"`
+	GasPrice             *decimal.Decimal `json:"gasPrice"`
+	Gas                  *decimal.Decimal `json:"gas"`
+	Input                *string          `json:"input"`
+	R                    *string          `json:"r"`
+	S                    *string          `json:"s"`
+	V                    *decimal.Decimal `json:"v"`
+	ChainID              *int64           `json:"chainID"`
+	Type                 *string          `json:"type"`
 	MaxFeePerGas         *decimal.Decimal `json:"maxFeePerGas"`
 	MaxPriorityFeePerGas *decimal.Decimal `json:"maxPriorityFeePerGas"`
 	AccessList           *pgtype.JSONB    `json:"accessList"`

@@ -18,6 +18,7 @@ var AaTransactionDao = &aaTransactionDao{}
 type AaTransactionCondition struct {
 	TxHashTerm string
 	TxHash     *string
+	Address    *string
 }
 
 func (dao *aaTransactionDao) Pagination(ctx context.Context, tx *ent.Client, page vo.PaginationRequest, condition AaTransactionCondition) (a ent.AaTransactionInfos, count int, err error) {
@@ -33,6 +34,14 @@ func (dao *aaTransactionDao) Pagination(ctx context.Context, tx *ent.Client, pag
 
 	if condition.TxHash != nil && len(*(condition.TxHash)) > 0 {
 		query = query.Where(aatransactioninfo.IDEQ(*condition.TxHash))
+	}
+
+	if condition.Address != nil && len(*(condition.Address)) > 0 {
+		query = query.Where(
+			aatransactioninfo.Or(
+				aatransactioninfo.FromAddrEQ(*condition.Address),
+				aatransactioninfo.ToAddrEQ(*condition.Address),
+			))
 	}
 
 	if page.TotalCount > 0 {
