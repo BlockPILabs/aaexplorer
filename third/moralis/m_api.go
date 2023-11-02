@@ -38,6 +38,10 @@ type NativeTokenBalance struct {
 	Balance decimal.Decimal
 }
 
+func SetConfig(conf *cfg.Config) {
+	config = conf
+}
+
 type TokenPrice struct {
 	TokenName        string          `json:"tokenName"`
 	TokenSymbol      string          `json:"tokenSymbol"`

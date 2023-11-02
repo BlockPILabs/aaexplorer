@@ -11,6 +11,7 @@ import (
 	aimos "github.com/BlockPILabs/aa-scan/internal/os"
 	"github.com/BlockPILabs/aa-scan/service"
 	"github.com/BlockPILabs/aa-scan/task"
+	"github.com/BlockPILabs/aa-scan/third/moralis"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -40,6 +41,7 @@ var ScanCmd = &cobra.Command{
 		if err != nil {
 			return
 		}
+		moralis.SetConfig(config)
 		task.InitTask()
 		service.ScanBlock()
 
