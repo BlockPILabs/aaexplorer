@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"entgo.io/ent/dialect/sql"
 	"fmt"
-	"github.com/BlockPILabs/aa-scan/config"
+	cfg "github.com/BlockPILabs/aa-scan/config"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/predicate"
@@ -19,8 +19,9 @@ import (
 	"time"
 )
 
-const ApiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjIxZDY0Zjg2LWNiMDctNDE3NC04YjM1LTY3NWZmOTkzNzAyNSIsIm9yZ0lkIjoiMzU4MzA1IiwidXNlcklkIjoiMzY4MjQxIiwidHlwZUlkIjoiYmM0YzVlNTctZjI2ZS00Y2E4LWIzMjYtNTliMTUyN2Q2ZmVjIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE2OTUzNzYyMTUsImV4cCI6NDg1MTEzNjIxNX0.eosHdgVpe_QFRtzFn1p0Lz5KvQB05w2I--UHMQzZcg4"
 const MoralisUrl = "https://deep-index.moralis.io/api/v2.2"
+
+var config = cfg.DefaultConfig()
 
 type TokenBalance struct {
 	TokenAddress string          `json:"token_address"`
@@ -75,7 +76,7 @@ func GetTokenBalance(address string, network string) []*TokenBalance {
 	req, _ := http.NewRequest("GET", url, nil)
 
 	req.Header.Add("Accept", "application/json")
-	req.Header.Add("X-API-Key", ApiKey)
+	req.Header.Add("X-API-Key", config.MoralisApiKey)
 
 	res, _ := http.DefaultClient.Do(req)
 	checkStatus(res)
@@ -125,7 +126,7 @@ func GetTokenPriceBatch(tokens []string) []*TokenPrice {
 
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("X-API-Key", ApiKey)
+	req.Header.Add("X-API-Key", config.MoralisApiKey)
 
 	res, _ := http.DefaultClient.Do(req)
 	checkStatus(res)
@@ -158,7 +159,7 @@ func GetTokenPrice(token string, network string) *TokenPrice {
 
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("X-API-Key", ApiKey)
+	req.Header.Add("X-API-Key", config.MoralisApiKey)
 
 	res, _ := http.DefaultClient.Do(req)
 	checkStatus(res)
@@ -201,7 +202,7 @@ func GetNativeTokenBalance(accountAddress string, network string) decimal.Decima
 	req, _ := http.NewRequest("GET", url, nil)
 
 	req.Header.Add("Accept", "application/json")
-	req.Header.Add("X-API-Key", ApiKey)
+	req.Header.Add("X-API-Key", config.MoralisApiKey)
 
 	res, _ := http.DefaultClient.Do(req)
 	checkStatus(res)
@@ -294,7 +295,7 @@ func GetUserAsset(accountAddress string, network string) []*ent.UserAssetInfo {
 	curTime := time.Now().UnixMilli()
 	if len(userAssetInfos) != 0 {
 		lastTime := userAssetInfos[0].LastTime
-		if curTime-lastTime < config.AssetExpireTime {
+		if curTime-lastTime < cfg.AssetExpireTime {
 			return userAssetInfos
 		}
 	}
@@ -306,12 +307,12 @@ func GetUserAsset(accountAddress string, network string) []*ent.UserAssetInfo {
 	}
 	if native != decimal.Zero {
 		nativeToken := &TokenBalance{
-			TokenAddress: config.ZeroAddress,
+			TokenAddress: cfg.ZeroAddress,
 			Symbol:       GetNativeName(network),
 			Name:         GetNativeName(network),
 			Logo:         "",
 			Thumbnail:    "",
-			Decimals:     config.EvmDecimal,
+			Decimals:     cfg.EvmDecimal,
 			Balance:      native.DivRound(decimal.NewFromFloat(math.Pow10(18)), 18),
 		}
 		if tokenBalances == nil {
@@ -347,12 +348,12 @@ func GetUserAsset(accountAddress string, network string) []*ent.UserAssetInfo {
 
 func GetNativeName(network string) string {
 
-	if network == config.EthNetwork {
-		return config.EthNative
-	} else if network == config.BscNetwork {
-		return config.BscNative
-	} else if network == config.PolygonNetwork {
-		return config.PolygonNative
+	if network == cfg.EthNetwork {
+		return cfg.EthNative
+	} else if network == cfg.BscNetwork {
+		return cfg.BscNative
+	} else if network == cfg.PolygonNetwork {
+		return cfg.PolygonNative
 	}
 
 	return ""

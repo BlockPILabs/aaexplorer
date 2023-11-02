@@ -54,6 +54,8 @@ type BaseConfig struct { //nolint: maligned
 
 	// Output level for logging
 	LogLevel string `mapstructure:"log_level" toml:"log_level"`
+
+	MoralisApiKey string `mapstructure:"moralis_api_key" toml:"moralis_api_key"`
 }
 
 // ValidateBasic performs basic validation (checking param bounds, etc.) and
