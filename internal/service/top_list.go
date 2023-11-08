@@ -3,12 +3,12 @@ package service
 import (
 	"context"
 	"entgo.io/ent/dialect/sql"
-	"github.com/BlockPILabs/aa-scan/config"
-	"github.com/BlockPILabs/aa-scan/internal/entity"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/bundlerinfo"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/factoryinfo"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/paymasterinfo"
-	"github.com/BlockPILabs/aa-scan/internal/vo"
+	"github.com/BlockPILabs/aaexplorer/config"
+	"github.com/BlockPILabs/aaexplorer/internal/entity"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/bundlerinfo"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/factoryinfo"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/paymasterinfo"
+	"github.com/BlockPILabs/aaexplorer/internal/vo"
 )
 
 func GetTopBundler(ctx context.Context, req vo.TopBundlerRequest) (*vo.TopBundlerResponse, error) {

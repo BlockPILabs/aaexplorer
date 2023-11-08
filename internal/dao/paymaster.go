@@ -3,10 +3,10 @@ package dao
 import (
 	"context"
 	"entgo.io/ent/dialect/sql"
-	"github.com/BlockPILabs/aa-scan/config"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/paymasterinfo"
-	"github.com/BlockPILabs/aa-scan/internal/vo"
+	"github.com/BlockPILabs/aaexplorer/config"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/paymasterinfo"
+	"github.com/BlockPILabs/aaexplorer/internal/vo"
 )
 
 type paymasterDao struct {

@@ -1,8 +1,8 @@
 package memo
 
 import (
-	"github.com/BlockPILabs/aa-scan/config"
-	"github.com/BlockPILabs/aa-scan/internal/log"
+	"github.com/BlockPILabs/aaexplorer/config"
+	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/dgraph-io/ristretto"
 	"sync"
 	"time"

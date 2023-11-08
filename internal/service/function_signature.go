@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 	"errors"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/functionsignature"
-	"github.com/BlockPILabs/aa-scan/internal/memo"
-	"github.com/BlockPILabs/aa-scan/internal/utils"
-	"github.com/BlockPILabs/aa-scan/service"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/functionsignature"
+	"github.com/BlockPILabs/aaexplorer/internal/memo"
+	"github.com/BlockPILabs/aaexplorer/internal/utils"
+	"github.com/BlockPILabs/aaexplorer/service"
 	"time"
 )
 

@@ -2,10 +2,10 @@ package dao
 
 import (
 	"context"
-	"github.com/BlockPILabs/aa-scan/internal/entity"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/network"
-	"github.com/BlockPILabs/aa-scan/internal/log"
+	"github.com/BlockPILabs/aaexplorer/internal/entity"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/network"
+	"github.com/BlockPILabs/aaexplorer/internal/log"
 )
 
 type networkDao struct {

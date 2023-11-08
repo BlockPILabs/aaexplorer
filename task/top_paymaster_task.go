@@ -2,12 +2,12 @@ package task
 
 import (
 	"context"
-	"github.com/BlockPILabs/aa-scan/internal/entity"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/paymasterinfo"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/paymasterstatisday"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/paymasterstatishour"
-	"github.com/BlockPILabs/aa-scan/service"
+	"github.com/BlockPILabs/aaexplorer/internal/entity"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/paymasterinfo"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/paymasterstatisday"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/paymasterstatishour"
+	"github.com/BlockPILabs/aaexplorer/service"
 	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
 	"log"

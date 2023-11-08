@@ -3,7 +3,7 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/BlockPILabs/aa-scan/version"
+	"github.com/BlockPILabs/aaexplorer/version"
 	"github.com/spf13/cobra"
 )
 

@@ -2,9 +2,9 @@ package dao
 
 import (
 	"context"
-	"github.com/BlockPILabs/aa-scan/config"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/tokenpriceinfo"
+	"github.com/BlockPILabs/aaexplorer/config"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/tokenpriceinfo"
 )
 
 type tokenPriceInfoDao struct {

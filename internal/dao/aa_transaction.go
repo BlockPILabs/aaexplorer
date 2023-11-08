@@ -3,11 +3,11 @@ package dao
 import (
 	"context"
 	"entgo.io/ent/dialect/sql"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aatransactioninfo"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropsinfo"
-	"github.com/BlockPILabs/aa-scan/internal/utils"
-	"github.com/BlockPILabs/aa-scan/internal/vo"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aatransactioninfo"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aauseropsinfo"
+	"github.com/BlockPILabs/aaexplorer/internal/utils"
+	"github.com/BlockPILabs/aaexplorer/internal/vo"
 )
 
 type aaTransactionDao struct {

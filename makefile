@@ -10,7 +10,7 @@ BUILD_TAGS?=$(NAME)
 
 
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
-LD_FLAGS = -X github.com/BlockPILabs/aa-scan/version.GitCommitHash="$(COMMIT_HASH)"
+LD_FLAGS = -X github.com/BlockPILabs/aaexplorer/version.GitCommitHash="$(COMMIT_HASH)"
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
 
 CGO_ENABLED ?= 0

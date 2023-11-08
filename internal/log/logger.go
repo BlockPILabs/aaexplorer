@@ -6,7 +6,7 @@ import (
 	kitlog "github.com/go-kit/log"
 )
 
-// Logger is what any AA-Scan library should take.
+// Logger is what any aaexplorer library should take.
 type Logger interface {
 	Debug(msg string, keyvals ...interface{})
 	Info(msg string, keyvals ...interface{})

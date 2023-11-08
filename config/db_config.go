@@ -3,8 +3,8 @@ package config
 import (
 	"entgo.io/ent/dialect"
 	"fmt"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/version"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/version"
 	"strconv"
 	"strings"
 	"time"

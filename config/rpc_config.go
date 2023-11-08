@@ -96,20 +96,20 @@ type ApiConfig struct {
 	MaxHeaderBytes int `mapstructure:"max_header_bytes" toml:"max_header_bytes"`
 
 	// The path to a file containing certificate that is used to create the HTTPS server.
-	// Might be either absolute path or path related to AA-Scan config directory.
+	// Might be either absolute path or path related to aaexplorer config directory.
 	//
 	// If the certificate is signed by a certificate authority,
 	// the certFile should be the concatenation of the server's certificate, any intermediates,
 	// and the CA's certificate.
 	//
-	// NOTE: both tls_cert_file and tls_key_file must be present for AA-Scan to create HTTPS server.
+	// NOTE: both tls_cert_file and tls_key_file must be present for aaexplorer to create HTTPS server.
 	// Otherwise, HTTP server is run.
 	TLSCertFile string `mapstructure:"tls_cert_file" toml:"tls_cert_file"`
 
 	// The path to a file containing matching private key that is used to create the HTTPS server.
-	// Might be either absolute path or path related to AA-Scan config directory.
+	// Might be either absolute path or path related to aaexplorer config directory.
 	//
-	// NOTE: both tls_cert_file and tls_key_file must be present for AA-Scan to create HTTPS server.
+	// NOTE: both tls_cert_file and tls_key_file must be present for aaexplorer to create HTTPS server.
 	// Otherwise, HTTP server is run.
 	TLSKeyFile string `mapstructure:"tls_key_file" toml:"tls_key_file"`
 

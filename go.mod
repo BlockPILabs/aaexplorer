@@ -1,4 +1,4 @@
-module github.com/BlockPILabs/aa-scan
+module github.com/BlockPILabs/aaexplorer
 
 go 1.20
 

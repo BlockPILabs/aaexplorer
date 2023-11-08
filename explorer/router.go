@@ -1,7 +1,7 @@
 package explorer
 
 import (
-	"github.com/BlockPILabs/aa-scan/explorer/controller"
+	"github.com/BlockPILabs/aaexplorer/explorer/controller"
 	"github.com/gofiber/fiber/v2"
 )
 

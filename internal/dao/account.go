@@ -2,9 +2,9 @@ package dao
 
 import (
 	"context"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/account"
-	"github.com/BlockPILabs/aa-scan/internal/memo"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/account"
+	"github.com/BlockPILabs/aaexplorer/internal/memo"
 	"time"
 )
 

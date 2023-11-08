@@ -4,9 +4,9 @@ import (
 	"context"
 	entsql "entgo.io/ent/dialect/sql"
 	"fmt"
-	"github.com/BlockPILabs/aa-scan/config"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/log"
+	"github.com/BlockPILabs/aaexplorer/config"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"sync"
 	"time"
 

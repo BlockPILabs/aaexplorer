@@ -3,7 +3,7 @@ package service
 import (
 	"encoding/json"
 	"errors"
-	"github.com/BlockPILabs/aa-scan/internal/utils"
+	"github.com/BlockPILabs/aaexplorer/internal/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/valyala/fastjson"
 	"strings"

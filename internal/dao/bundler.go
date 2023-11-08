@@ -3,10 +3,10 @@ package dao
 import (
 	"context"
 	"entgo.io/ent/dialect/sql"
-	"github.com/BlockPILabs/aa-scan/config"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/bundlerinfo"
-	"github.com/BlockPILabs/aa-scan/internal/vo"
+	"github.com/BlockPILabs/aaexplorer/config"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/bundlerinfo"
+	"github.com/BlockPILabs/aaexplorer/internal/vo"
 )
 
 type bundlerDao struct {
