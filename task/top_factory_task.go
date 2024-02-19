@@ -2,12 +2,11 @@ package task
 
 import (
 	"context"
-	"fmt"
-	"github.com/BlockPILabs/aa-scan/internal/entity"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/factoryinfo"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/factorystatisday"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/factorystatishour"
+	"github.com/BlockPILabs/aaexplorer/internal/entity"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/factoryinfo"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/factorystatisday"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/factorystatishour"
 	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
 	"log"
@@ -97,8 +96,6 @@ func doTopFactoryDay() {
 			factoryInfoMap[factoryAddr] = factoryInfo
 			totalNum += factory.AccountDeployNum
 		}
-
-		fmt.Println(totalNum)
 
 		for factory, factoryInfo := range factoryInfoMap {
 			if len(factory) == 0 {
