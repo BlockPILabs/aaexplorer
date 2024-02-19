@@ -3,9 +3,9 @@ package dao
 import (
 	"context"
 	"entgo.io/ent/dialect/sql"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/transactionreceiptdecode"
-	"github.com/BlockPILabs/aa-scan/internal/vo"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactionreceiptdecode"
+	"github.com/BlockPILabs/aaexplorer/internal/vo"
 )
 
 type transactionReceiptDao struct {

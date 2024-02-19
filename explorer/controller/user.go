@@ -1,9 +1,9 @@
 package controller
 
 import (
-	"github.com/BlockPILabs/aa-scan/internal/log"
-	"github.com/BlockPILabs/aa-scan/internal/service"
-	"github.com/BlockPILabs/aa-scan/internal/vo"
+	"github.com/BlockPILabs/aaexplorer/internal/log"
+	"github.com/BlockPILabs/aaexplorer/internal/service"
+	"github.com/BlockPILabs/aaexplorer/internal/vo"
 	"github.com/gofiber/fiber/v2"
 )
 

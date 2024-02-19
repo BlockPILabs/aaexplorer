@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	aimos "github.com/BlockPILabs/aa-scan/internal/os"
+	aimos "github.com/BlockPILabs/aaexplorer/internal/os"
 	"github.com/pelletier/go-toml"
 	"github.com/pkg/errors"
 	"path/filepath"

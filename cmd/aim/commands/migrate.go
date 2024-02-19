@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/BlockPILabs/aa-scan/internal/entity"
+	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/spf13/cobra"
 )
 

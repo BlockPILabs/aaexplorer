@@ -11,7 +11,7 @@ import (
 	kitlog "github.com/go-kit/log"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/BlockPILabs/aa-scan/internal/log"
+	"github.com/BlockPILabs/aaexplorer/internal/log"
 )
 
 func TestTMFmtLogger(t *testing.T) {

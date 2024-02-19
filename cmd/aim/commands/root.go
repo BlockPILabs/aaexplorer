@@ -2,10 +2,10 @@ package commands
 
 import (
 	"fmt"
-	cfg "github.com/BlockPILabs/aa-scan/config"
-	"github.com/BlockPILabs/aa-scan/config/cli"
-	"github.com/BlockPILabs/aa-scan/internal/log"
-	"github.com/BlockPILabs/aa-scan/version"
+	cfg "github.com/BlockPILabs/aaexplorer/config"
+	"github.com/BlockPILabs/aaexplorer/config/cli"
+	"github.com/BlockPILabs/aaexplorer/internal/log"
+	"github.com/BlockPILabs/aaexplorer/version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"os"

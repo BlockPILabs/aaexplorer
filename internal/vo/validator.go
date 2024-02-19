@@ -1,7 +1,7 @@
 package vo
 
 import (
-	"github.com/BlockPILabs/aa-scan/internal/utils"
+	"github.com/BlockPILabs/aaexplorer/internal/utils"
 	english "github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"

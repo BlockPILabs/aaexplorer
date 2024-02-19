@@ -4,10 +4,10 @@
 # sudo systemctl restart aim-task
 [Unit]
 Description=aa scan api service 
-Documentation=https://aa-scan-api.testnet.204001.xyz/
+Documentation=https://aaexplorer-api.testnet.204001.xyz/
 
 [Service]
 Type=simple
-WorkingDirectory=/blockpi/aa-scan
-ExecStart=/blockpi/aa-scan/aim --home ./.aim scan
+WorkingDirectory=/blockpi/aaexplorer
+ExecStart=/blockpi/aaexplorer/aim --home ./.aim scan
 PrivateTmp=true

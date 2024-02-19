@@ -2,9 +2,9 @@ package dao
 
 import (
 	"context"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropscalldata"
-	"github.com/BlockPILabs/aa-scan/internal/vo"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aauseropscalldata"
+	"github.com/BlockPILabs/aaexplorer/internal/vo"
 )
 
 import (

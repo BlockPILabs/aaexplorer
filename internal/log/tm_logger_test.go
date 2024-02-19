@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/BlockPILabs/aa-scan/internal/log"
+	"github.com/BlockPILabs/aaexplorer/internal/log"
 )
 
 func TestLoggerLogsItsErrors(t *testing.T) {

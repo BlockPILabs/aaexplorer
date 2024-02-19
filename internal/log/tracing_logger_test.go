@@ -4,7 +4,7 @@ import (
 	"bytes"
 	stderr "errors"
 	"fmt"
-	"github.com/BlockPILabs/aa-scan/internal/log"
+	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"strings"
 	"testing"
 

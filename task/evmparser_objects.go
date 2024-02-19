@@ -1,10 +1,10 @@
 package task
 
 import (
-	"github.com/BlockPILabs/aa-scan/config"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/log"
-	"github.com/BlockPILabs/aa-scan/task/aa"
+	"github.com/BlockPILabs/aaexplorer/config"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/log"
+	"github.com/BlockPILabs/aaexplorer/task/aa"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/shopspring/decimal"
 	"sync"

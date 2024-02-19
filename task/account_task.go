@@ -2,10 +2,10 @@ package task
 
 import (
 	"context"
-	"github.com/BlockPILabs/aa-scan/internal/entity"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aaaccountdata"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/aauseropsinfo"
-	"github.com/BlockPILabs/aa-scan/service"
+	"github.com/BlockPILabs/aaexplorer/internal/entity"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaaccountdata"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aauseropsinfo"
+	"github.com/BlockPILabs/aaexplorer/service"
 	"github.com/procyon-projects/chrono"
 	"log"
 	"time"

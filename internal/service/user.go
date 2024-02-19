@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	"github.com/BlockPILabs/aa-scan/internal/vo"
-	"github.com/BlockPILabs/aa-scan/service"
+	"github.com/BlockPILabs/aaexplorer/internal/vo"
+	"github.com/BlockPILabs/aaexplorer/service"
 	"github.com/shopspring/decimal"
 )
 

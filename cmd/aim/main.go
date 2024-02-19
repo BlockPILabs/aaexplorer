@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/BlockPILabs/aa-scan/cmd/aim/commands"
-	"github.com/BlockPILabs/aa-scan/config"
-	"github.com/BlockPILabs/aa-scan/config/cli"
+	"github.com/BlockPILabs/aaexplorer/cmd/aim/commands"
+	"github.com/BlockPILabs/aaexplorer/config"
+	"github.com/BlockPILabs/aaexplorer/config/cli"
 	"os"
 	"path/filepath"
 )

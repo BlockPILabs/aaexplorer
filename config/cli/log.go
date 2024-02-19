@@ -2,7 +2,7 @@ package cli
 
 import (
 	"fmt"
-	"github.com/BlockPILabs/aa-scan/internal/log"
+	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/pkg/errors"
 	"strings"
 )

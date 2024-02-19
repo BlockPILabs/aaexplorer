@@ -2,7 +2,7 @@ package log_test
 
 import (
 	"bytes"
-	"github.com/BlockPILabs/aa-scan/internal/log"
+	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"strings"
 	"testing"
 )

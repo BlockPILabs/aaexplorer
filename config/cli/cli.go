@@ -23,7 +23,7 @@ type Executable interface {
 	Execute() error
 }
 
-// PrepareBaseCmd is meant for AA-Scan and other servers
+// PrepareBaseCmd is meant for aaexplorer and other servers
 func PrepareBaseCmd(cmd *cobra.Command, envPrefix, defaultHome string) Executor {
 	cobra.OnInitialize(func() { initEnv(envPrefix) })
 	cmd.PersistentFlags().StringP(HomeFlag, "", defaultHome, "directory for config and data")

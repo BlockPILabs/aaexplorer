@@ -5,9 +5,9 @@ import (
 	"entgo.io/ent/dialect"
 	"errors"
 	"fmt"
-	"github.com/BlockPILabs/aa-scan/config"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/log"
+	"github.com/BlockPILabs/aaexplorer/config"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/log"
 	_ "github.com/go-sql-driver/mysql" // mysql driver
 	_ "github.com/lib/pq"              // postgres driver
 	_ "github.com/mattn/go-sqlite3"    // sqlite3

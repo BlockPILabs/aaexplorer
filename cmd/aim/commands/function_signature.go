@@ -2,11 +2,11 @@ package commands
 
 import (
 	"encoding/json"
-	"github.com/BlockPILabs/aa-scan/internal/entity"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
-	"github.com/BlockPILabs/aa-scan/internal/entity/ent/functionsignature"
-	"github.com/BlockPILabs/aa-scan/internal/memo"
-	out_service "github.com/BlockPILabs/aa-scan/service"
+	"github.com/BlockPILabs/aaexplorer/internal/entity"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/functionsignature"
+	"github.com/BlockPILabs/aaexplorer/internal/memo"
+	out_service "github.com/BlockPILabs/aaexplorer/service"
 	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/cobra"
 	"github.com/valyala/fastjson"

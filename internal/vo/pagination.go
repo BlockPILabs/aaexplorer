@@ -1,6 +1,6 @@
 package vo
 
-import "github.com/BlockPILabs/aa-scan/config"
+import "github.com/BlockPILabs/aaexplorer/config"
 
 type Pagination struct {
 	TotalCount int `json:"totalCount"`
