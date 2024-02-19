@@ -57,7 +57,7 @@ func (*paymasterService) GetPaymasters(ctx context.Context, req vo.GetPaymasters
 			Paymaster:       info.ID,
 			UserOpsNum:      info.UserOpsNum,
 			UserOpsNumD1:    info.UserOpsNumD1,
-			Reserve:         info.Reserve,
+			Reserve:         info.ReserveUsd,
 			GasSponsored:    info.GasSponsored,
 			GasSponsoredUsd: info.GasSponsoredUsd,
 			PaymasterLabel:  label,

@@ -53,8 +53,10 @@ func doAccountTask() {
 				address := accountData.ID
 				totalBalance := service.GetTotalBalance(address, network)
 				userOpsNum, _ := client.AAUserOpsInfo.Query().Where(aauseropsinfo.SenderEqualFold(address)).Count(context.Background())
-				client.AaAccountData.Update().SetLastTime(time.Now().UnixMilli()).SetTotalBalanceUsd(totalBalance).SetUserOpsNum(int64(userOpsNum)).Where(aaaccountdata.IDEQ(address)).Exec(context.Background())
-
+				err := client.AaAccountData.Update().SetLastTime(time.Now().UnixMilli()).SetTotalBalanceUsd(totalBalance).SetUserOpsNum(int64(userOpsNum)).Where(aaaccountdata.IDEQ(address)).Exec(context.Background())
+				if err != nil {
+					log.Printf("update data err %s", err)
+				}
 			}
 			time.Sleep(1 * time.Second)
 		}

@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"fmt"
 	"github.com/BlockPILabs/aa-scan/internal/entity"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent"
 	"github.com/BlockPILabs/aa-scan/internal/entity/ent/factoryinfo"
@@ -97,6 +98,8 @@ func doTopFactoryDay() {
 			totalNum += factory.AccountDeployNum
 		}
 
+		fmt.Println(totalNum)
+
 		for factory, factoryInfo := range factoryInfoMap {
 			if len(factory) == 0 {
 				continue
@@ -107,8 +110,34 @@ func doTopFactoryDay() {
 		now1 := time.Now()
 		log.Printf("top factory hour statistic success, network:%s, spent:%d", network, now1.Second()-now.Second())
 
+		refreshDominance(client)
 	}
 
+}
+
+func refreshDominance(client *ent.Client) {
+	factoryInfos, err := client.FactoryInfo.Query().All(context.Background())
+	if err != nil {
+		return
+	}
+
+	if len(factoryInfos) == 0 {
+		return
+	}
+
+	var totalNum = 0
+	for _, info := range factoryInfos {
+		totalNum += info.AccountDeployNum
+	}
+	for _, info := range factoryInfos {
+		dominance := decimal.NewFromInt(int64(info.AccountDeployNum)).DivRound(decimal.NewFromInt(int64(totalNum)), 4)
+		err = client.FactoryInfo.UpdateOneID(info.ID).
+			SetDominance(dominance).
+			Exec(context.Background())
+		if err != nil {
+			log.Printf("Update factory day err, %s\n", err)
+		}
+	}
 }
 
 func saveOrUpdateFactoryDay(client *ent.Client, factory string, info *ent.FactoryInfo) {
