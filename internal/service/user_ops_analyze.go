@@ -6,6 +6,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aacontractinteract"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/functionsignature"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/useroptypestatistic"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
 	"github.com/shopspring/decimal"
@@ -60,9 +61,18 @@ func getUserOpTypeResponse(types []*ent.UserOpTypeStatistic) *vo.UserOpsTypeResp
 	sort.Sort(vo.ByUserOpsTypeNum(userOpsInfos))
 	var finalOpsInfos []*vo.UserOpsType
 	var totalRate = decimal.Zero
+	client, err := entity.Client(context.Background())
+	if err != nil {
+		return nil
+	}
+
 	for i, userOpsInfo := range userOpsInfos {
 		if i >= config.AnalyzeTop7 {
 			break
+		}
+		funcSig, _ := client.FunctionSignature.Query().Where(functionsignature.IDEqualFold("0x" + userOpsInfo.UserOpType)).All(context.Background())
+		if len(funcSig) > 0 {
+			userOpsInfo.UserOpType = funcSig[0].Name
 		}
 		finalOpsInfos = append(finalOpsInfos, userOpsInfo)
 		totalRate = totalRate.Add(userOpsInfo.Rate)
