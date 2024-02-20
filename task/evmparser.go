@@ -557,6 +557,14 @@ func (t *_evmParser) insertTransactions(ctx context.Context, client *ent.Client,
 
 	var transactionInfoCreates []*ent.AaTransactionInfoCreate
 	for _, tx := range infos {
+		var maxFeePerGas = decimal.Zero
+		var maxPriorityFeePerGas = decimal.Zero
+		if tx.MaxFeePerGas != nil {
+			maxFeePerGas = *tx.MaxFeePerGas
+		}
+		if tx.MaxPriorityFeePerGas != nil {
+			maxPriorityFeePerGas = *tx.MaxPriorityFeePerGas
+		}
 		txCreate := client.AaTransactionInfo.Create().
 			SetTime(tx.Time).
 			SetBlockHash(tx.BlockHash).
@@ -580,8 +588,8 @@ func (t *_evmParser) insertTransactions(ctx context.Context, client *ent.Client,
 			SetV(*tx.V).
 			SetChainID(*tx.ChainID).
 			SetType(*tx.Type).
-			SetMaxFeePerGas(*tx.MaxFeePerGas).
-			SetMaxPriorityFeePerGas(*tx.MaxPriorityFeePerGas).
+			SetMaxFeePerGas(maxFeePerGas).
+			SetMaxPriorityFeePerGas(maxPriorityFeePerGas).
 			SetAccessList(tx.AccessList).
 			SetMethod(*tx.Method).
 			SetContractAddress(*tx.ContractAddress).
