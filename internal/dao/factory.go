@@ -20,6 +20,7 @@ func (*factoryDao) GetSortFields(ctx context.Context) []string {
 		config.Default,
 		factoryinfo.FieldAccountNum,
 		factoryinfo.FieldAccountNumD1,
+		factoryinfo.FieldDominance,
 	}
 }
 func (dao *factoryDao) Sort(ctx context.Context, query *ent.FactoryInfoQuery, sort int, order int) *ent.FactoryInfoQuery {

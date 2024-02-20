@@ -14,6 +14,8 @@ import (
 )
 
 func TopFactories() {
+	client, _ := entity.Client(context.Background(), "ethereum")
+	go refreshDominance(client)
 	factoryScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := factoryScheduler.ScheduleWithCron(func(ctx context.Context) {
 		doTopFactoryHour(1)
