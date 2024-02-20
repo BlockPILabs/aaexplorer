@@ -10,7 +10,7 @@ func AAHotTokenTask() {
 	d1Scheduler := chrono.NewDefaultTaskScheduler()
 	_, err := d1Scheduler.ScheduleWithCron(func(ctx context.Context) {
 		//day1TokenTask()
-	}, "0 1 * * * ?")
+	}, "0 1 * * * *")
 	if err != nil {
 		log.Println(err)
 	}
@@ -20,7 +20,7 @@ func AAHotTokenTask() {
 		day7TokenTask()
 		day30TokenTask()
 
-	}, "0 5 0 * * ?")
+	}, "0 5 0 * * *")
 
 }
 

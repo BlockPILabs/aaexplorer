@@ -15,7 +15,7 @@ func AccountTask() {
 	d1Scheduler := chrono.NewDefaultTaskScheduler()
 	_, err := d1Scheduler.ScheduleWithCron(func(ctx context.Context) {
 		doAccountTask()
-	}, "0 30 0 * * ?")
+	}, "0 30 0 * * *")
 	if err != nil {
 		log.Println(err)
 	}
@@ -23,6 +23,7 @@ func AccountTask() {
 }
 
 func doAccountTask() {
+	log.Println("account-task start ")
 	cli, err := entity.Client(context.Background())
 	if err != nil {
 		return

@@ -20,12 +20,12 @@ func AssetTask() {
 	dayScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := dayScheduler.ScheduleWithCron(func(ctx context.Context) {
 		//AssetSync()
-	}, "0 15 0 * * ?")
+	}, "0 15 0 * * *")
 
 	nativeScheduler := chrono.NewDefaultTaskScheduler()
 	_, err = nativeScheduler.ScheduleWithCron(func(ctx context.Context) {
 		NativeSync()
-	}, "0 0 0/1 * * ?")
+	}, "0 0 0/1 * * *")
 	if err == nil {
 		log.Print("AssetSyncTask has been scheduled")
 	}
