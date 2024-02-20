@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/BlockPILabs/aaexplorer/internal/dao"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaaccountdata"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/factoryinfo"
 	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
@@ -79,15 +80,22 @@ func (*factoryService) GetFactory(ctx context.Context, req vo.GetFactoryRequest)
 		return
 	}
 
-	acc, err := client.AaAccountData.Get(ctx, req.Factory)
+	//acc, err := client.AaAccountData.Get(ctx, req.Factory)
+	var totalOpsNum = int64(0)
+	entities, err := client.AaAccountData.Query().Where(aaaccountdata.FactoryEqualFold(req.Factory)).All(context.Background())
 	if err != nil {
 		return
+	}
+	if len(entities) > 0 {
+		for _, acc := range entities {
+			totalOpsNum += acc.UserOpsNum
+		}
 	}
 	res = &vo.GetFactoryResponse{
 		TotalAccountDeployNum: info.AccountDeployNum,
 		AccountDeployNumD1:    info.AccountDeployNumD1,
 		Dominance:             info.Dominance,
-		UserOpsNum:            acc.UserOpsNum,
+		UserOpsNum:            totalOpsNum,
 		Rank:                  0,
 	}
 

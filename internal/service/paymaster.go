@@ -119,6 +119,7 @@ func GetPaymasterOverview(ctx context.Context, req vo.GetPaymasterOverviewReques
 	res.SponsorGasFeeUsd24h = info.GasSponsoredUsdD1.RoundDown(2)
 	res.UserOpsNumTotal = info.UserOpsNum
 	res.UserOpsNum24h = info.UserOpsNumD1
+	res.AccountBalance = info.ReserveUsd
 	allNum := allUserOpsNum[0]
 	if allNum != 0 {
 		res.Dominance = getRate(int64(allNum), res.UserOpsNumTotal)
