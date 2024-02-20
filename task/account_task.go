@@ -5,13 +5,18 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaaccountdata"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aauseropsinfo"
+	interlog "github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/BlockPILabs/aaexplorer/service"
 	"github.com/procyon-projects/chrono"
 	"log"
+	"os"
 	"time"
 )
 
+var logger = interlog.NewTMLogger(interlog.NewSyncWriter(os.Stdout))
+
 func AccountTask() {
+	logger.Info("account-task init ")
 	go doAccountTask()
 	d1Scheduler := chrono.NewDefaultTaskScheduler()
 	_, err := d1Scheduler.ScheduleWithCron(func(ctx context.Context) {
@@ -24,7 +29,7 @@ func AccountTask() {
 }
 
 func doAccountTask() {
-	log.Println("account-task start ")
+	logger.Info("account-task start ")
 	cli, err := entity.Client(context.Background())
 	if err != nil {
 		return
@@ -62,6 +67,6 @@ func doAccountTask() {
 			}
 			time.Sleep(1 * time.Second)
 		}
-
+		logger.Info("account-task update success  ", "network", network)
 	}
 }
