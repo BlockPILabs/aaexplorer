@@ -8,7 +8,6 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/paymasterinfo"
 	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
-	"github.com/BlockPILabs/aaexplorer/service"
 )
 
 type paymasterService struct {
@@ -119,15 +118,15 @@ func GetPaymasterOverview(ctx context.Context, req vo.GetPaymasterOverviewReques
 	res.SponsorGasFeeUsd24h = info.GasSponsoredUsdD1.RoundDown(2)
 	res.UserOpsNumTotal = info.UserOpsNum
 	res.UserOpsNum24h = info.UserOpsNumD1
-	res.AccountBalance = info.ReserveUsd
 	allNum := allUserOpsNum[0]
 	if allNum != 0 {
 		res.Dominance = getRate(int64(allNum), res.UserOpsNumTotal)
 	}
 	highCount, err := client.PaymasterInfo.Query().Where(paymasterinfo.UserOpsNumGT(res.UserOpsNumTotal)).Count(context.Background())
-	totalBalance := service.GetTotalBalance(paymaster, req.Network)
+	//totalBalance := service.GetTotalBalance(paymaster, req.Network)
 	res.Rank = highCount + 1
-	res.AccountBalance = totalBalance
+	//res.AccountBalance = totalBalance
+	res.AccountBalance = info.ReserveUsd
 
 	addresses, _ := dao.AccountDao.GetAccountByAddresses(ctx, client, []string{req.Paymaster})
 	if len(addresses) > 0 {
