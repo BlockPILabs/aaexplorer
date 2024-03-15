@@ -41,7 +41,7 @@ func GetDailyStatistic(ctx context.Context, req vo.DailyStatisticRequest) (*vo.D
 		}
 		resp.Ups = decimal.NewFromInt(resp.UserOpsNum).DivRound(decimal.NewFromInt(DaySecond), 6)
 	} else if timeRange == config.RangeD7 {
-		startTime := time.Now().Add(-7 * 24 * time.Hour)
+		startTime := time.Now().Add(-8 * 24 * time.Hour)
 		dailyStatisticDays, err := client.DailyStatisticDay.Query().Where(dailystatisticday.StatisticTimeGTE(startTime.UnixMilli()), dailystatisticday.NetworkEqualFold(network)).All(ctx)
 		if err != nil {
 			log.Println(err)
@@ -53,7 +53,7 @@ func GetDailyStatistic(ctx context.Context, req vo.DailyStatisticRequest) (*vo.D
 		}
 		resp.Ups = decimal.NewFromInt(resp.UserOpsNum).DivRound(decimal.NewFromInt(7*DaySecond), 6)
 	} else if timeRange == config.RangeD30 {
-		startTime := time.Now().Add(-70 * 24 * time.Hour)
+		startTime := time.Now().Add(-31 * 24 * time.Hour)
 		dailyStatisticDays, err := client.DailyStatisticDay.Query().Where(dailystatisticday.StatisticTimeGTE(startTime.UnixMilli()), dailystatisticday.NetworkEqualFold(network)).All(ctx)
 		if err != nil {
 			log.Println(err)
