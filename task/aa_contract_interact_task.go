@@ -2,7 +2,7 @@ package task
 
 import (
 	"context"
-	"github.com/BlockPILabs/aaexplorer/config"
+	internalconfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aacontractinteract"
@@ -84,9 +84,9 @@ func doInteractTaskDay(days int) {
 
 		}
 		var interactCreates []*ent.AAContractInteractCreate
-		var statisticType = config.RangeD7
+		var statisticType = internalconfig.RangeD7
 		if days == 30 {
-			statisticType = config.RangeD30
+			statisticType = internalconfig.RangeD30
 		}
 		for target, count := range targetMap {
 			interactCreate := client.AAContractInteract.Create().
@@ -155,14 +155,14 @@ func day1InteractTask() {
 		var interactCreates []*ent.AAContractInteractCreate
 		for target, count := range targetMap {
 			interactCreate := client.AAContractInteract.Create().
-				SetStatisticType(config.RangeH24).
+				SetStatisticType(internalconfig.RangeH24).
 				SetContractAddress(target).
 				SetInteractNum(count).
 				SetNetwork(network)
 			interactCreates = append(interactCreates, interactCreate)
 		}
 		client.AAContractInteract.Delete().
-			Where(aacontractinteract.StatisticTypeEQ(config.RangeH24), aacontractinteract.NetworkEQ(opsCalldatas[0].Network)).Exec(context.Background())
+			Where(aacontractinteract.StatisticTypeEQ(internalconfig.RangeH24), aacontractinteract.NetworkEQ(opsCalldatas[0].Network)).Exec(context.Background())
 		_, err = client.AAContractInteract.CreateBulk(interactCreates...).Save(context.Background())
 		if err != nil {
 			log.Println(err)

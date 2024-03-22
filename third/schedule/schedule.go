@@ -23,7 +23,7 @@ type scheduler struct {
 }
 
 func (s *scheduler) run(ctx context.Context) {
-
+	s.task(ctx)
 }
 
 func (s *scheduler) Schedule(options ...chrono.Option) *scheduler {
@@ -89,6 +89,6 @@ func (s *scheduler) startSchedule() error {
 }
 
 func (s *scheduler) runECmd(cmd *cobra.Command, args []string) error {
-	s.run(cmd.Context())
+	s.run(CommandContext(cmd))
 	return nil
 }

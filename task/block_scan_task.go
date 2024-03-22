@@ -13,5 +13,6 @@ func init() {
 }
 
 func BlockScanRun(ctx context.Context) {
-	logger.Debug("BlockScanRun")
+
+	logger.Debug("start", "nets", config.Task.Networks)
 }

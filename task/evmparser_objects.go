@@ -1,7 +1,7 @@
 package task
 
 import (
-	"github.com/BlockPILabs/aaexplorer/config"
+	internalconfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/BlockPILabs/aaexplorer/task/aa"
@@ -31,7 +31,7 @@ type CallDetail struct {
 
 type _evmParser struct {
 	logger          log.Logger
-	config          *config.Config
+	config          *internalconfig.Config
 	startBlock      map[string]int64
 	latestBlock     map[string]int64
 	abi             abi.ABI

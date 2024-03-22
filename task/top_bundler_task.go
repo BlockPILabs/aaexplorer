@@ -2,7 +2,7 @@ package task
 
 import (
 	"context"
-	"github.com/BlockPILabs/aaexplorer/config"
+	internalconfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/bundlerinfo"
@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func InitTask(ctx context.Context, cfg *config.Config, logger log2.Logger) {
+func InitTask(ctx context.Context, cfg *internalconfig.Config, logger log2.Logger) {
 
 	AccountTask()
 	InitDayStatis()

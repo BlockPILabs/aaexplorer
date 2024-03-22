@@ -5,19 +5,11 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaaccountdata"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aauseropsinfo"
-	interlog "github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/BlockPILabs/aaexplorer/service"
 	"github.com/procyon-projects/chrono"
 	"log"
-	"os"
 	"time"
 )
-
-var logger = interlog.NewTMLogger(interlog.NewSyncWriter(os.Stdout))
-
-func SetLogger(lg interlog.Logger) {
-	logger = lg
-}
 
 func AccountTask() {
 	logger.Info("account-task init ")

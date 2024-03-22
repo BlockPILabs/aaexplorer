@@ -7,7 +7,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"errors"
 	"fmt"
-	"github.com/BlockPILabs/aaexplorer/config"
+	internalconfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/dao"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
@@ -59,7 +59,7 @@ const ExecuteBatchSign = "0x47e1da2a"
 const ExecuteBatchCallSign = "0x912ccaa3"
 const EmptyMethod = "00000000"
 
-func InitEvmParse(ctx context.Context, config *config.Config, logger log.Logger) error {
+func InitEvmParse(ctx context.Context, config *internalconfig.Config, logger log.Logger) error {
 	logger = logger.With("task", "evmparser")
 	dayScheduler := chrono.NewDefaultTaskScheduler()
 	t := _evmParser{
@@ -941,11 +941,11 @@ func (t *_evmParser) insertAaAccounts(ctx context.Context, client *ent.Client, n
 	// find insert
 	for id, aaAccount := range dataMap {
 		switch aaAccount.AaType {
-		case config.AaAccountTypeFactory:
+		case internalconfig.AaAccountTypeFactory:
 			factoryMap[aaAccount.ID] = dataMap[id]
-		case config.AaAccountTypePaymaster:
+		case internalconfig.AaAccountTypePaymaster:
 			paymasterMap[aaAccount.ID] = dataMap[id]
-		case config.AaAccountTypeBundler:
+		case internalconfig.AaAccountTypeBundler:
 			bundlerMap[aaAccount.ID] = dataMap[id]
 		}
 		if _, ok := accountsMap[id]; !ok {
@@ -1070,10 +1070,10 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 	}
 
 	bundler := block.AaAccountData(parserTx.transaction.FromAddr)
-	bundler.AaType = config.AaAccountTypeBundler
+	bundler.AaType = internalconfig.AaAccountTypeBundler
 
 	entryPoint := block.AaAccountData(parserTx.transaction.ToAddr)
-	entryPoint.AaType = config.AaAccountTypeEntryPoint
+	entryPoint.AaType = internalconfig.AaAccountTypeEntryPoint
 
 	for aaIndex, op := range ops {
 		var source = ""
@@ -1133,19 +1133,19 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 			TargetsCount:         len(callDetails),
 		}
 		sender := block.AaAccountData(userOpsInfo.Sender)
-		sender.AaType = config.AaAccountTypeAA
+		sender.AaType = internalconfig.AaAccountTypeAA
 		factoryAddr, paymaster := t.getAddr(ctx, userOpsInfo.InitCode, userOpsInfo.PaymasterAndData)
 		userOpsInfo.Factory = strings.ToLower(factoryAddr)
 		userOpsInfo.Paymaster = strings.ToLower(paymaster)
 
 		if len(userOpsInfo.Paymaster) > 0 {
 			paymaster := block.AaAccountData(userOpsInfo.Paymaster)
-			paymaster.AaType = config.AaAccountTypePaymaster
+			paymaster.AaType = internalconfig.AaAccountTypePaymaster
 		}
 
 		if len(userOpsInfo.Factory) > 0 {
 			factory := block.AaAccountData(userOpsInfo.Factory)
-			factory.AaType = config.AaAccountTypeFactory
+			factory.AaType = internalconfig.AaAccountTypeFactory
 			sender.Factory = userOpsInfo.Factory
 			sender.FactoryTime = userOpsInfo.Time
 		}

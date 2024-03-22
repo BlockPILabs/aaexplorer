@@ -95,6 +95,7 @@ type Config struct {
 	Databases []*DbConfig      `mapstructure:"databases" toml:"databases"`
 	EvmParser *EvmParserConfig `mapstructure:"evmparser" toml:"evmparser"`
 	MemoCache *MemoConfig      `mapstructure:"memoCache" toml:"memoCache"`
+	Task      *TaskConfig      `mapstructure:"task" toml:"task" json:"task"`
 }
 
 // DefaultConfig returns a default configuration
@@ -105,6 +106,7 @@ func DefaultConfig() *Config {
 		Databases:  DefaultDatabaseConfig(),
 		EvmParser:  DefaultEvmParserConfig(),
 		MemoCache:  DefaultMemoCacheConfig(),
+		Task:       DefaultTaskConfig(),
 	}
 }
 

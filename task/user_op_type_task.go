@@ -2,7 +2,7 @@ package task
 
 import (
 	"context"
-	"github.com/BlockPILabs/aaexplorer/config"
+	internalconfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aauseropscalldata"
@@ -85,9 +85,9 @@ func doTaskDay(days int) {
 			sourceMap[source] = count
 
 		}
-		var statisticType = config.RangeD7
+		var statisticType = internalconfig.RangeD7
 		if days == 30 {
-			statisticType = config.RangeD30
+			statisticType = internalconfig.RangeD30
 		}
 		var userOpCreates []*ent.UserOpTypeStatisticCreate
 		for source, count := range sourceMap {
@@ -159,7 +159,7 @@ func day1Task() {
 		var userOpCreates []*ent.UserOpTypeStatisticCreate
 		for source, count := range sourceMap {
 			userOpCreate := client.UserOpTypeStatistic.Create().
-				SetStatisticType(config.RangeH24).
+				SetStatisticType(internalconfig.RangeH24).
 				SetUserOpType(source).
 				SetOpNum(count).
 				SetUserOpSign(source).
@@ -167,7 +167,7 @@ func day1Task() {
 			userOpCreates = append(userOpCreates, userOpCreate)
 		}
 		client.UserOpTypeStatistic.Delete().
-			Where(useroptypestatistic.StatisticTypeEQ(config.RangeH24), useroptypestatistic.NetworkEQ(opsCalldatas[0].Network)).Exec(context.Background())
+			Where(useroptypestatistic.StatisticTypeEQ(internalconfig.RangeH24), useroptypestatistic.NetworkEQ(opsCalldatas[0].Network)).Exec(context.Background())
 		_, err = client.UserOpTypeStatistic.CreateBulk(userOpCreates...).Save(context.Background())
 		if err != nil {
 			log.Println(err)

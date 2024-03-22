@@ -2,7 +2,7 @@ package task
 
 import (
 	"context"
-	"github.com/BlockPILabs/aaexplorer/config"
+	internalconfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/assetchangetrace"
@@ -91,7 +91,7 @@ func AssetSync() {
 			var changes []int64
 
 			for _, changeTrace := range changeTraces {
-				if changeTrace.AddressType == config.AddressTypeAccount {
+				if changeTrace.AddressType == internalconfig.AddressTypeAccount {
 					accounts = append(accounts, changeTrace)
 					accountAddrs = append(accountAddrs, changeTrace.Address)
 				} else {
@@ -112,9 +112,9 @@ func AssetSync() {
 
 func syncWTokenPrice(client *ent.Client) {
 	var wtokens = make(map[string]string)
-	wtokens[config.WBNB] = config.BSC
-	wtokens[config.WETH] = config.Eth
-	wtokens[config.WMATIC] = config.Polygon
+	wtokens[internalconfig.WBNB] = internalconfig.BSC
+	wtokens[internalconfig.WETH] = internalconfig.Eth
+	wtokens[internalconfig.WMATIC] = internalconfig.Polygon
 	for token, value := range wtokens {
 		tokenPrice := moralis.GetTokenPrice(token, value)
 		curMillis := time.Now().UnixMilli()
@@ -239,21 +239,21 @@ func addNativeToken(balances []*moralis.TokenBalance, native decimal.Decimal, ad
 	}
 	userAssetCreate := &moralis.TokenBalance{
 		Balance:      native,
-		TokenAddress: config.ZeroAddress,
+		TokenAddress: internalconfig.ZeroAddress,
 		Name:         moralis.GetNativeName(network),
-		Decimals:     config.EvmDecimal,
+		Decimals:     internalconfig.EvmDecimal,
 	}
 	balances = append(balances, userAssetCreate)
 	return balances
 }
 
 func GetWToken(network string) string {
-	if network == config.EthNetwork {
-		return config.WETH
-	} else if network == config.BscNetwork {
-		return config.WBNB
-	} else if network == config.PolygonNetwork {
-		return config.WMATIC
+	if network == internalconfig.EthNetwork {
+		return internalconfig.WETH
+	} else if network == internalconfig.BscNetwork {
+		return internalconfig.WBNB
+	} else if network == internalconfig.PolygonNetwork {
+		return internalconfig.WMATIC
 	}
 
 	return ""

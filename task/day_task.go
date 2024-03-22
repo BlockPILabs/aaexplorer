@@ -2,7 +2,7 @@ package task
 
 import (
 	"context"
-	"github.com/BlockPILabs/aaexplorer/config"
+	internalconfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aauseropsinfo"
@@ -226,7 +226,7 @@ func saveWhaleStatisticDay(ctx context.Context, client *ent.Client, time time.Ti
 	var totalUsd = decimal.Zero
 	var addrCount = 0
 	for _, value := range valueMap {
-		if value.Cmp(decimal.NewFromInt(config.WhaleUsd)) < 0 {
+		if value.Cmp(decimal.NewFromInt(internalconfig.WhaleUsd)) < 0 {
 			continue
 		}
 		addrCount += 1

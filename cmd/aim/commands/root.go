@@ -79,6 +79,7 @@ var RootCmd = &cobra.Command{
 		// Set default logger
 		log.SetDefaultLogger(logger)
 		task.SetLogger(logger)
+		task.SetConfig(config)
 		cmd.SetContext(
 			log.WithContext(cmd.Context(), logger),
 		)
