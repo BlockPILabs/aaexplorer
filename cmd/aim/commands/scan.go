@@ -49,7 +49,7 @@ var ScanCmd = &cobra.Command{
 		}
 
 		// init task
-		task.InitTask(schedule.CommandContext(cmd), config, logger.With("module", "task"))
+		task.InitTask()
 		// start schedule
 		schedule.Schedule(schedule.CommandContext(cmd))
 
