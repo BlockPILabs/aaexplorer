@@ -12,6 +12,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/service"
 	"github.com/BlockPILabs/aaexplorer/task"
 	"github.com/BlockPILabs/aaexplorer/third/moralis"
+	"github.com/BlockPILabs/aaexplorer/third/schedule"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -42,11 +43,23 @@ var ScanCmd = &cobra.Command{
 			return
 		}
 		moralis.SetConfig(config)
-		task.InitTask()
+
+		if config.IsLocal() {
+			task.BlockScanRun(schedule.CommandContext(cmd))
+		}
+
+		// init task
+		task.InitTask(schedule.CommandContext(cmd), config, logger.With("module", "task"))
+		// start schedule
+		schedule.Schedule(schedule.CommandContext(cmd))
+
 		service.ScanBlock()
 
 		task.InitEvmParse(cmd.Context(), config, logger.With("module", "task"))
-		aimos.TrapSignal(logger, func() {})
+
+		aimos.TrapSignal(logger, func() {
+			schedule.Shutdown(context.Background())
+		})
 
 		// Run forever.
 		select {}

@@ -50,3 +50,10 @@ const (
 )
 
 const TokenTypeBase = "base"
+
+const (
+	ModeLocal   = "local"
+	ModeDevnet  = "devnet"
+	ModeTestnet = "testnet"
+	ModeMainnet = "mainnet"
+)

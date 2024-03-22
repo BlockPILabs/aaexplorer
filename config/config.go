@@ -56,6 +56,8 @@ type BaseConfig struct { //nolint: maligned
 	LogLevel string `mapstructure:"log_level" toml:"log_level"`
 
 	MoralisApiKey string `mapstructure:"moralis_api_key" toml:"moralis_api_key"`
+
+	Mode string `mapstructure:"mode" toml:"mode"`
 }
 
 // ValidateBasic performs basic validation (checking param bounds, etc.) and
@@ -69,12 +71,18 @@ func (cfg BaseConfig) ValidateBasic() error {
 	return nil
 }
 
+func (cfg BaseConfig) IsLocal() bool {
+	return cfg.Mode == ModeLocal
+}
+
 // DefaultBaseConfig returns a default base configuration
 func DefaultBaseConfig() BaseConfig {
 	return BaseConfig{
-		RootDir:   "",
-		LogFormat: LogFormatPlain,
-		LogLevel:  DefaultLogLevel,
+		RootDir:       "",
+		LogFormat:     LogFormatPlain,
+		LogLevel:      DefaultLogLevel,
+		MoralisApiKey: "",
+		Mode:          ModeMainnet,
 	}
 }
 
