@@ -16,7 +16,7 @@ func main() {
 		commands.MigrateCmd,
 	)
 	// Create & start
-	rootCmd.AddCommand(commands.NewScheduleCmd())
+	rootCmd.AddCommand(commands.NewExecCmd())
 	rootCmd.AddCommand(commands.NewStartCmd())
 	cmd := cli.PrepareBaseCmd(rootCmd, "AIM", os.ExpandEnv(filepath.Join("$HOME", config.DefaultHomeDir)))
 	if err := cmd.Execute(); err != nil {

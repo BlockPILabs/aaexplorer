@@ -3,6 +3,7 @@ package schedule
 import (
 	"context"
 	"github.com/procyon-projects/chrono"
+	"github.com/spf13/cobra"
 	"sync"
 	"time"
 )
@@ -85,4 +86,9 @@ func (s *scheduler) startSchedule() error {
 	t, err := s.scheduleFn()
 	s.schedulerTask = t
 	return err
+}
+
+func (s *scheduler) runECmd(cmd *cobra.Command, args []string) error {
+	s.run(cmd.Context())
+	return nil
 }

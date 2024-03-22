@@ -5,13 +5,14 @@ import (
 	cfg "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/config/cli"
 	"github.com/BlockPILabs/aaexplorer/internal/log"
+	"github.com/BlockPILabs/aaexplorer/task"
 	"github.com/BlockPILabs/aaexplorer/version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"os"
 )
 
-var logger = log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+var logger = log.L()
 var config = cfg.DefaultConfig()
 
 // ParseConfig retrieves the default environment configuration,
@@ -77,6 +78,7 @@ var RootCmd = &cobra.Command{
 
 		// Set default logger
 		log.SetDefaultLogger(logger)
+		task.SetLogger(logger)
 		cmd.SetContext(
 			log.WithContext(cmd.Context(), logger),
 		)

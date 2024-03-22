@@ -1,11 +1,14 @@
 package log
 
-import "context"
+import (
+	"context"
+	"os"
+)
 
 type logContextKey struct {
 }
 
-var _defaultLogger = NewNopLogger()
+var _defaultLogger = NewTMLogger(NewSyncWriter(os.Stdout))
 
 func SetDefaultLogger(logger Logger) {
 	_defaultLogger = logger

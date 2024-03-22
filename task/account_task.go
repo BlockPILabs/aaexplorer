@@ -15,6 +15,10 @@ import (
 
 var logger = interlog.NewTMLogger(interlog.NewSyncWriter(os.Stdout))
 
+func SetLogger(lg interlog.Logger) {
+	logger = lg
+}
+
 func AccountTask() {
 	logger.Info("account-task init ")
 	go doAccountTask()

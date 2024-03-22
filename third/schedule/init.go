@@ -3,6 +3,7 @@ package schedule
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/procyon-projects/chrono"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -84,5 +85,18 @@ func _startAll(ctx context.Context) {
 }
 
 func Commands() []*cobra.Command {
-	return []*cobra.Command{}
+
+	cmds := []*cobra.Command{}
+	schedulerLck.Lock()
+	defer schedulerLck.Unlock()
+
+	for _, s := range schedulers {
+		cmd := &cobra.Command{
+			Use:   s.id,
+			Short: fmt.Sprintf(" run task :%s ", s.name),
+			RunE:  s.runECmd,
+		}
+		cmds = append(cmds, cmd)
+	}
+	return cmds
 }
