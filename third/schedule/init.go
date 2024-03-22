@@ -60,8 +60,11 @@ func Shutdown(ctx context.Context) error {
 
 }
 
+type commandContextKey struct {
+}
+
 func CommandContext(cmd *cobra.Command) context.Context {
-	return cmd.Context()
+	return context.WithValue(cmd.Context(), commandContextKey{}, cmd)
 }
 
 func _startAll(ctx context.Context) {
@@ -78,4 +81,8 @@ func _startAll(ctx context.Context) {
 			}
 		})()
 	}
+}
+
+func Commands() []*cobra.Command {
+	return []*cobra.Command{}
 }

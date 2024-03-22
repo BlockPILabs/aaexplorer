@@ -18,7 +18,6 @@ import (
 
 func InitTask(ctx context.Context, cfg *config.Config, logger log2.Logger) {
 
-	BlockScanStart(ctx, cfg, logger)
 	AccountTask()
 	InitDayStatis()
 	InitHourStatis()
