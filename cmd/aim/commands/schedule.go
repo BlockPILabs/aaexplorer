@@ -33,7 +33,13 @@ func NewExecCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.PersistentFlags().StringSliceVar(&config.Task.Networks, "network", config.Task.Networks, "--network neta --network netb")
+	AddNetworkFlag(cmd)
 	cmd.AddCommand(schedule.Commands()...)
 	return cmd
+}
+
+func AddNetworkFlag(cmds ...*cobra.Command) {
+	for _, cmd := range cmds {
+		cmd.PersistentFlags().StringSliceVar(&config.Task.Networks, "network", config.Task.Networks, "--network neta --network netb")
+	}
 }

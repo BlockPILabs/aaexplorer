@@ -15,6 +15,12 @@ import (
 var logger = log.L()
 var config = cfg.DefaultConfig()
 
+func init() {
+	task.SetConfig(config)
+	task.SetLogger(logger)
+	log.SetDefaultLogger(logger)
+}
+
 // ParseConfig retrieves the default environment configuration,
 // sets up the aim root and ensures that the root exists
 func ParseConfig(cmd *cobra.Command) (*cfg.Config, error) {
