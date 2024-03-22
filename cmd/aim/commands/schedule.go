@@ -16,7 +16,7 @@ func NewExecCmd() *cobra.Command {
 		//	fmt.Println("start")
 		//	return nil
 		//},
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// db start
 			err := entity.Start(logger.With("lib", "ent"), config)
 			if err != nil {
@@ -40,6 +40,6 @@ func NewExecCmd() *cobra.Command {
 
 func AddNetworkFlag(cmds ...*cobra.Command) {
 	for _, cmd := range cmds {
-		cmd.PersistentFlags().StringSliceVar(&config.Task.Networks, "network", config.Task.Networks, "--network neta --network netb")
+		cmd.PersistentFlags().StringSlice("task.networks", config.Task.Networks, "--task.networks neta --task.networks netb")
 	}
 }

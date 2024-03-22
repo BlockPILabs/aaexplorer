@@ -19,18 +19,25 @@ func init() {
 	task.SetConfig(config)
 	task.SetLogger(logger)
 	log.SetDefaultLogger(logger)
+
+	cobra.OnInitialize(func() {
+		//conf := cfg.DefaultConfig()
+
+		//err := viper.Unmarshal(config)
+		//if err != nil {
+		//	panic(err)
+		//}
+	})
 }
 
 // ParseConfig retrieves the default environment configuration,
 // sets up the aim root and ensures that the root exists
 func ParseConfig(cmd *cobra.Command) (*cfg.Config, error) {
-	conf := cfg.DefaultConfig()
-
-	err := viper.Unmarshal(conf)
+	conf := config
+	err := viper.Unmarshal(config)
 	if err != nil {
 		return nil, err
 	}
-
 	var home string
 	if os.Getenv("AIM_HOME") != "" {
 		home = os.Getenv("AIM_HOME")
@@ -59,6 +66,7 @@ func ParseConfig(cmd *cobra.Command) (*cfg.Config, error) {
 var RootCmd = &cobra.Command{
 	Use: version.Name,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) (err error) {
+		logger.Debug("program start")
 		if cmd.Name() == VersionCmd.Name() {
 			return nil
 		}
