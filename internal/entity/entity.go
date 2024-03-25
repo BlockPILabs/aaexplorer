@@ -9,8 +9,9 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/log"
 	_ "github.com/go-sql-driver/mysql" // mysql driver
-	_ "github.com/lib/pq"              // postgres driver
-	_ "github.com/mattn/go-sqlite3"    // sqlite3
+	"github.com/google/uuid"
+	_ "github.com/lib/pq"           // postgres driver
+	_ "github.com/mattn/go-sqlite3" // sqlite3
 	"github.com/procyon-projects/chrono"
 	"strings"
 	"sync"
@@ -122,4 +123,60 @@ func SetDialect(ctx context.Context, f func(string), group ...string) {
 		return
 	}
 	f(cc.Dialect)
+}
+
+var TxErr = errors.New("ent: cannot start a transaction within a transaction")
+
+func WithTx(ctx context.Context, client *ent.Client, fn func(db *ent.Client) error) error {
+
+	tx, err := client.Tx(ctx)
+	if err != nil {
+		if strings.Contains(err.Error(), "cannot start a transaction within a transaction") {
+			return withSubTx(ctx, client, fn)
+		}
+		return err
+	}
+	defer func() {
+		if v := recover(); v != nil {
+			tx.Rollback()
+			panic(v)
+		}
+	}()
+	if err := fn(tx.Client()); err != nil {
+		if rerr := tx.Rollback(); rerr != nil {
+			err = fmt.Errorf("%w: rolling back transaction: %v", err, rerr)
+		}
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("committing transaction: %w", err)
+	}
+	return nil
+}
+
+func withSubTx(ctx context.Context, client *ent.Client, fn func(db *ent.Client) error) error {
+
+	pointId := "p_" + strings.Replace(uuid.NewString(), "-", "", -1)
+
+	_, err := client.ExecContext(ctx, fmt.Sprintf("SAVEPOINT %s", pointId))
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if v := recover(); v != nil {
+			client.ExecContext(ctx, fmt.Sprintf("ROLLBACK TO  %s", pointId))
+			panic(v)
+		}
+	}()
+	if err := fn(client); err != nil {
+		if _, rerr := client.ExecContext(ctx, fmt.Sprintf("ROLLBACK TO SAVEPOINT %s", pointId)); rerr != nil {
+			err = fmt.Errorf("%w: rolling back transaction: %v", err, rerr)
+		}
+		return err
+	}
+	if _, rerr := client.ExecContext(ctx, fmt.Sprintf("RELEASE SAVEPOINT  %s", pointId)); rerr != nil {
+		return fmt.Errorf("committing transaction: %w", err)
+	}
+	return nil
 }

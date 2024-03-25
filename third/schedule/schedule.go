@@ -83,7 +83,7 @@ func (s *scheduler) Shutdown() chan bool {
 func (s *scheduler) startSchedule() error {
 	s.lck.Lock()
 	defer s.lck.Unlock()
-	if s.scheduled {
+	if s.scheduled || s.scheduleFn == nil {
 		return nil
 	}
 	s.scheduled = true
