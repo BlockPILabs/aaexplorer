@@ -12,11 +12,7 @@ func NewExecCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "exec",
 		Short: "execute schedule task",
-		//RunE: func(cmd *cobra.Command, args []string) error {
-		//	fmt.Println("start")
-		//	return nil
-		//},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			// db start
 			err := entity.Start(logger.With("lib", "ent"), config)
 			if err != nil {

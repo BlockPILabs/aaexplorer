@@ -2,6 +2,7 @@ package schedule
 
 import (
 	"context"
+	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/procyon-projects/chrono"
 	"github.com/spf13/cobra"
 	"sync"
@@ -23,7 +24,10 @@ type scheduler struct {
 }
 
 func (s *scheduler) run(ctx context.Context) {
+	ctx, logger := log.With(ctx, "task", s.name, "id", "")
+	logger.Debug("start")
 	s.task(ctx)
+	logger.Debug("complete")
 }
 
 func (s *scheduler) Schedule(options ...chrono.Option) *scheduler {
