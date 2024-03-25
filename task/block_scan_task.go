@@ -68,4 +68,5 @@ func BlockSyncRun(ctx context.Context) {
 
 func BlockScanRun(ctx context.Context) {
 	logger.Debug("start", "nets", config.Task.Networks)
+
 }
