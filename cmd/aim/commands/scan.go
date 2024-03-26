@@ -48,14 +48,15 @@ var ScanCmd = &cobra.Command{
 			task.BlockScanRun(schedule.CommandContext(cmd))
 		}
 
+		task.TokenTask(context.Background())
 		// init task
-		task.InitTask()
+		//task.InitTask()
 		// start schedule
-		schedule.Schedule(schedule.CommandContext(cmd))
+		//schedule.Schedule(schedule.CommandContext(cmd))
 
-		service.ScanBlock()
+		//service.ScanBlock()
 
-		task.InitEvmParse(cmd.Context(), config, logger.With("module", "task"))
+		//task.InitEvmParse(cmd.Context(), config, logger.With("module", "task"))
 
 		aimos.TrapSignal(logger, func() {
 			schedule.Shutdown(context.Background())
