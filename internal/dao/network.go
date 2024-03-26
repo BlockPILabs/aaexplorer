@@ -16,7 +16,7 @@ type networkCtxKey struct {
 
 var NetworkDao = &networkDao{}
 
-func (*networkDao) GetNetworks(ctx context.Context, tx *ent.Client) ([]*ent.Network, error) {
+func (*networkDao) GetNetworks(ctx context.Context, tx *ent.Client) (ent.Networks, error) {
 
 	ctx, logger := log.With(ctx, "module", "network")
 
@@ -46,6 +46,24 @@ func (*networkDao) GetNetworkByNetwork(ctx context.Context, network_ string) (*e
 		return nil, err
 	}
 	return net, err
+}
+
+func (*networkDao) GetNetworksByNetworks(ctx context.Context, tx *ent.Client, networks ...string) (ent.Networks, error) {
+
+	ctx, logger := log.With(ctx, "module", "network")
+	db, err := entity.Client(ctx)
+	if err != nil {
+		return nil, err
+	}
+	nets, err := db.Network.Query().Where(
+		network.IDIn(networks...),
+		network.DeleteTimeIsNil(),
+	).All(ctx)
+	if err != nil {
+		logger.Warn("get networks error", "err", err)
+		return nil, err
+	}
+	return nets, err
 }
 
 func (*networkDao) WithContext(ctx context.Context, net *ent.Network) context.Context {

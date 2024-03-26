@@ -157,3 +157,22 @@ func validateOutput(cmd *cobra.Command, args []string) error {
 	}
 	return nil
 }
+
+func AddCommand(parent, child *cobra.Command) {
+	cp := child.PersistentPreRunE
+
+	if parent.PersistentPreRunE != nil {
+		child.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+			err := parent.PersistentPreRunE(cmd, args)
+			if err != nil {
+				return err
+			}
+
+			if cp == nil {
+				return nil
+			}
+			return cp(cmd, args)
+		}
+	}
+	parent.AddCommand(child)
+}
