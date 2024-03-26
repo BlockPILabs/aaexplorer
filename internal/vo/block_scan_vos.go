@@ -1,5 +1,7 @@
 package vo
 
+import "github.com/ethereum/go-ethereum/core/types"
+
 type BlockWithBlockByNumber struct {
 	BaseFeePerGas         string                         `json:"baseFeePerGas"`
 	BlobGasUsed           string                         `json:"blobGasUsed"`
@@ -59,4 +61,9 @@ type TransactionWithBlockByNumber struct {
 	YParity string `json:"yParity,omitempty"`
 	R       string `json:"r"`
 	S       string `json:"s"`
+}
+
+type BlockScanNetworkBlockDoResult struct {
+	Block    *BlockWithBlockByNumber
+	Receipts types.Receipts
 }

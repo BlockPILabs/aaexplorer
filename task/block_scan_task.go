@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"golang.org/x/sync/errgroup"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -87,7 +88,7 @@ var startBlockScanRunOnce = sync.Once{}
 
 func startBlockScanRun() {
 	startBlockScanRunOnce.Do(func() {
-		blockScanTaskChain = make(chan *ent.Network, config.Task.BlockScanThreads*3/2)
+		blockScanTaskChain = make(chan *ent.Network, config.Task.GetBlockScanThreads()*3/2)
 		go startBlockScanNetworkDo()
 	})
 }
@@ -111,7 +112,7 @@ func BlockScanRun(ctx context.Context) {
 }
 
 func startBlockScanNetworkDo() {
-	for i := 0; i < config.Task.BlockScanThreads+2; i++ {
+	for i := 0; i < config.Task.GetBlockScanThreads(); i++ {
 		(func(i int) {
 			go blockScanNetworkDo(i)
 		})(i)
@@ -147,7 +148,7 @@ func blockScanNetworkDo(i int) {
 					//blocksync.Scanned(false),
 					blocksync.Scanned(true),
 				).
-				Limit(1000).
+				Limit(10).
 				All(ctx)
 			if err != nil {
 				logger.Error("error in block sync query", "err", err)
@@ -165,19 +166,23 @@ func blockScanNetworkDo(i int) {
 			}
 
 			wg := errgroup.Group{}
-			wg.SetLimit(config.Task.BlockScanThreads + 1)
+			wg.SetLimit(runtime.NumCPU())
 
+			results := make([]*vo.BlockScanNetworkBlockDoResult, len(blockSyncs))
 			for i, blockSync := range blockSyncs {
 				(func(i int, blockSync *ent.BlockSync) {
 					wg.Go(func() error {
-						blockScanNetworkBlockDo(ctx, bc, blockSync, logger)
+						ret, err := blockScanNetworkBlockDo(ctx, bc, blockSync, logger)
+						if err == nil {
+							results[i] = ret
+						}
 						return nil
 					})
 				})(i, blockSync)
 			}
 			wg.Wait()
 
-			fmt.Sprintln(blockSyncs)
+			fmt.Sprintln(results)
 			return nil
 		})
 		if err != nil {
@@ -187,10 +192,12 @@ func blockScanNetworkDo(i int) {
 	}
 }
 
-func blockScanNetworkBlockDo(ctx context.Context, bc *ethclient.Client, blockSync *ent.BlockSync, logger log.Logger) {
+func blockScanNetworkBlockDo(ctx context.Context, bc *ethclient.Client, blockSync *ent.BlockSync, logger log.Logger) (*vo.BlockScanNetworkBlockDoResult, error) {
 
-	block := &vo.BlockWithBlockByNumber{}
-	receipts := types.Receipts{}
+	ret := &vo.BlockScanNetworkBlockDoResult{
+		Block:    &vo.BlockWithBlockByNumber{},
+		Receipts: []*types.Receipt{},
+	}
 
 	batchCall := []rpc.BatchElem{
 		{
@@ -199,7 +206,7 @@ func blockScanNetworkBlockDo(ctx context.Context, bc *ethclient.Client, blockSyn
 				rpc.BlockNumber(blockSync.ID).String(),
 				true,
 			},
-			Result: block,
+			Result: ret.Block,
 			Error:  nil,
 		},
 		{
@@ -207,15 +214,22 @@ func blockScanNetworkBlockDo(ctx context.Context, bc *ethclient.Client, blockSyn
 			Args: []interface{}{
 				rpc.BlockNumber(blockSync.ID).String(),
 			},
-			Result: &receipts,
+			Result: &ret.Receipts,
 			Error:  nil,
 		},
 	}
 	err := bc.Client().BatchCall(batchCall)
 	if err != nil {
 		logger.Error("error in batch call", "err", err)
-		return
+		return nil, err
 	}
 
-	fmt.Sprintln(block)
+	if len(ret.Block.Hash) < 5 {
+		return nil, errors.New("block not found")
+	}
+
+	if len(ret.Block.Transactions) != len(ret.Receipts) {
+		return nil, errors.New("receipts fail")
+	}
+	return ret, nil
 }

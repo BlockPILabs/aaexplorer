@@ -1,5 +1,7 @@
 package config
 
+import "runtime"
+
 // TaskConfig defines the configuration options for the Task
 type TaskConfig struct {
 	Networks         []string `mapstructure:"networks" toml:"networks" json:"networks"`
@@ -10,6 +12,13 @@ type TaskConfig struct {
 func DefaultTaskConfig() *TaskConfig {
 	return &TaskConfig{
 		Networks:         []string{},
-		BlockScanThreads: 10,
+		BlockScanThreads: runtime.NumCPU(),
 	}
+}
+
+func (cfg TaskConfig) GetBlockScanThreads() int {
+	if cfg.BlockScanThreads < 1 {
+		return 1
+	}
+	return cfg.BlockScanThreads
 }
