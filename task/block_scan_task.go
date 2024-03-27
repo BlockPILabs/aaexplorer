@@ -136,6 +136,9 @@ func blockScanNetworkFanout() {
 
 func blockScanNetworkDo(i int) {
 	for network := range blockScanTaskChain {
+		if defaultEvmParser.handleOpsMethod == nil {
+			break
+		}
 		ctx := context.Background()
 		logger := logger.With("network", network.ID, "networkName", network.Name, "threads", i)
 		client, err := entity.Client(ctx, network.ID)
@@ -216,9 +219,9 @@ func blockScanNetworkDo(i int) {
 							blocksMap[blockDataDecode.ID] = &parserBlock{
 								block:         blockDataDecode,
 								transitions:   []*parserTransaction{},
-								userOpInfo:    nil,
-								aaAccounts:    nil,
-								aaAccountsLck: nil,
+								userOpInfo:    &ent.AaBlockInfo{},
+								aaAccounts:    &sync.Map{},
+								aaAccountsLck: &sync.Mutex{},
 								nativePrice:   decimal.Decimal{},
 							}
 							for i, blockDataTransactionDecode := range blockDataTransactionDecodes {

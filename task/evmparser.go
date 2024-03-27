@@ -554,7 +554,11 @@ func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *e
 			continue
 		}
 
-		t.parseUserOps(ctx, client, network, block, parserTx)
+		err := t.parseUserOps(ctx, client, network, block, parserTx)
+		if err != nil {
+			logger.Error("error in parseUserOps", "err", err)
+			return
+		}
 
 		block.userOpInfo.BundlerProfit = block.userOpInfo.BundlerProfit.Add(parserTx.userOpInfo.BundlerProfit)
 		block.userOpInfo.UseropCount += len(parserTx.userops)
@@ -1050,7 +1054,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 	_ = json.Unmarshal(opsBytes, &ops)
 	err = json.Unmarshal([]byte(parserTx.receipt.Logs), &parserTx.logs)
 	if err != nil {
-		logger.Warn("abi  Unmarshal success", "err", err)
+		logger.Warn("abi  Unmarshal error", "err", err)
 		return err
 	}
 
