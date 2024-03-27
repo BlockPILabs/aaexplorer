@@ -6,6 +6,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/config/cli"
 	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/BlockPILabs/aaexplorer/task"
+	"github.com/BlockPILabs/aaexplorer/third/cmc"
 	"github.com/BlockPILabs/aaexplorer/version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -19,6 +20,7 @@ func init() {
 	task.SetConfig(config)
 	task.SetLogger(logger)
 	log.SetDefaultLogger(logger)
+	cmc.SetLogger(logger)
 
 	cobra.OnInitialize(func() {
 		//conf := cfg.DefaultConfig()
