@@ -7,6 +7,8 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/blocksync"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactionreceiptblocksync"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactionsync"
 	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/BlockPILabs/aaexplorer/internal/service"
 	"github.com/BlockPILabs/aaexplorer/internal/utils"
@@ -262,6 +264,26 @@ func blockScanNetworkDo(i int) {
 			err = tx.BlockSync.Update().
 				Where(
 					blocksync.IDIn(blockIds...),
+				).
+				SetScanned(true).
+				SetUpdateTime(time.Now()).Exec(ctx)
+			if err != nil {
+				return err
+			}
+
+			err = tx.TransactionSync.Update().
+				Where(
+					transactionsync.IDIn(blockIds...),
+				).
+				SetScanned(true).
+				SetUpdateTime(time.Now()).Exec(ctx)
+			if err != nil {
+				return err
+			}
+
+			err = tx.TransactionReceiptBlockSync.Update().
+				Where(
+					transactionreceiptblocksync.IDIn(blockIds...),
 				).
 				SetScanned(true).
 				SetUpdateTime(time.Now()).Exec(ctx)
