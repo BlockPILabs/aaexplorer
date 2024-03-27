@@ -3,6 +3,8 @@ package utils
 import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/shopspring/decimal"
 	"math/big"
 	"runtime"
 	"strconv"
@@ -148,4 +150,26 @@ func SubstringFromIndex(input string, index int) string {
 		return ""
 	}
 	return input[index:]
+}
+
+func DecodeDecimal(d string) decimal.Decimal {
+
+	dd := DecodeDecimalPtr(d)
+	if dd == nil {
+		return decimal.Zero
+	}
+	return *dd
+
+}
+
+func DecodeDecimalPtr(d string) (dd *decimal.Decimal) {
+
+	blockNumber, err := hexutil.DecodeBig(d)
+	if err != nil {
+		return nil
+	}
+	dd = &decimal.Decimal{}
+	*dd = decimal.NewFromBigInt(blockNumber, 0)
+	return
+
 }

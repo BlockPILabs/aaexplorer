@@ -1,6 +1,8 @@
 package vo
 
-import "github.com/ethereum/go-ethereum/core/types"
+import (
+	"encoding/json"
+)
 
 type BlockWithBlockByNumber struct {
 	BaseFeePerGas         string                         `json:"baseFeePerGas"`
@@ -26,9 +28,8 @@ type BlockWithBlockByNumber struct {
 	TotalDifficulty       string                         `json:"totalDifficulty"`
 	Transactions          []TransactionWithBlockByNumber `json:"transactions"`
 	TransactionsRoot      string                         `json:"transactionsRoot"`
-	Uncles                []interface {
-	} `json:"uncles"`
-	Withdrawals []struct {
+	Uncles                []string                       `json:"uncles"`
+	Withdrawals           []struct {
 		Index          string `json:"index"`
 		ValidatorIndex string `json:"validatorIndex"`
 		Address        string `json:"address"`
@@ -65,5 +66,32 @@ type TransactionWithBlockByNumber struct {
 
 type BlockScanNetworkBlockDoResult struct {
 	Block    *BlockWithBlockByNumber
-	Receipts types.Receipts
+	Receipts []*BlockWithGetBlockReceipt
+}
+
+type BlockWithGetBlockReceipt struct {
+	BlockHash         string          `json:"blockHash"`
+	BlockNumber       string          `json:"blockNumber"`
+	ContractAddress   string          `json:"contractAddress"`
+	CumulativeGasUsed string          `json:"cumulativeGasUsed"`
+	EffectiveGasPrice string          `json:"effectiveGasPrice"`
+	From              string          `json:"from"`
+	GasUsed           string          `json:"gasUsed"`
+	Logs              json.RawMessage `json:"logs"` /*[]struct {
+		Address          string   `json:"address"`
+		Topics           []string `json:"topics"`
+		Data             string   `json:"data"`
+		BlockNumber      string   `json:"blockNumber"`
+		TransactionHash  string   `json:"transactionHash"`
+		TransactionIndex string   `json:"transactionIndex"`
+		BlockHash        string   `json:"blockHash"`
+		LogIndex         string   `json:"logIndex"`
+		Removed          bool     `json:"removed"`
+	} `json:"logs"`*/
+	LogsBloom        string `json:"logsBloom"`
+	Status           string `json:"status"`
+	To               string `json:"to"`
+	TransactionHash  string `json:"transactionHash"`
+	TransactionIndex string `json:"transactionIndex"`
+	Type             string `json:"type"`
 }
