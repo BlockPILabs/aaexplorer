@@ -35,7 +35,7 @@ const (
 	AnalyzeTop7     = 7
 	FeePrecision    = 6
 
-	TopNum = 320
+	TopNum = 300
 )
 
 const (
