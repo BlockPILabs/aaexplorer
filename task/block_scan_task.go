@@ -4,7 +4,6 @@ import (
 	"context"
 	"entgo.io/ent/dialect/sql"
 	"errors"
-	"fmt"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/blocksync"
@@ -148,8 +147,8 @@ func blockScanNetworkDo(i int) {
 				Query().
 				ForUpdate(sql.WithLockAction(sql.SkipLocked)).
 				Where(
-					//blocksync.Scanned(false),
-					blocksync.Scanned(true),
+					blocksync.Scanned(false),
+					//blocksync.Scanned(true),
 				).
 				Order(blocksync.ByID(sql.OrderDesc())).
 				Limit(10).
@@ -240,6 +239,10 @@ func blockScanNetworkDo(i int) {
 			}
 			wg.Wait()
 
+			if len(blocksMap) < 1 {
+				return nil
+			}
+
 			defaultEvmParser.runByParseData(ctx, client, tx, network, blocksMap, blockIds)
 
 			err = tx.BlockDataDecode.CreateBulk(blockDataDecodeCreates...).OnConflict(sql.DoNothing()).Exec(ctx)
@@ -255,7 +258,15 @@ func blockScanNetworkDo(i int) {
 				return err
 			}
 
-			fmt.Sprintln(results)
+			err = tx.BlockSync.Update().
+				Where(
+					blocksync.IDIn(blockIds...),
+				).
+				SetScanned(true).
+				SetUpdateTime(time.Now()).Exec(ctx)
+			if err != nil {
+				return err
+			}
 			return nil
 		})
 		if err != nil {
