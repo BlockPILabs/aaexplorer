@@ -42,7 +42,6 @@ func init() {
 }
 
 func BlockSyncRun(ctx context.Context) {
-	initEvmParser(ctx, config, logger)
 	log.Context(ctx).Info("start", "nets", config.Task.Networks)
 	tx, err := entity.Client(ctx)
 	if err != nil {
@@ -100,6 +99,7 @@ func startBlockScanRun() {
 var blockScanRunNetworks ent.Networks
 
 func BlockScanRun(ctx context.Context) {
+	initEvmParser(ctx, config, logger)
 	logger.Debug("start", "nets", config.Task.Networks)
 
 	tx, err := entity.Client(ctx)
