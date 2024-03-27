@@ -526,7 +526,7 @@ func (t *_evmParser) getCurrentTimestampMillis() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
-func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *ent.Network, block *parserBlock) {
+func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *ent.Network, block *parserBlock) error {
 
 	ctx, logger := log.With(ctx, "blockNumber", block.block.ID)
 
@@ -557,13 +557,14 @@ func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *e
 		err := t.parseUserOps(ctx, client, network, block, parserTx)
 		if err != nil {
 			logger.Error("error in parseUserOps", "err", err)
-			return
+			return err
 		}
 
 		block.userOpInfo.BundlerProfit = block.userOpInfo.BundlerProfit.Add(parserTx.userOpInfo.BundlerProfit)
 		block.userOpInfo.UseropCount += len(parserTx.userops)
 	}
 	block.userOpInfo.BundlerProfitUsd = block.userOpInfo.BundlerProfit.Mul(block.nativePrice)
+	return nil
 }
 
 func (t *_evmParser) getFrom(tx *types.Transaction, client *ethclient.Client) string {
