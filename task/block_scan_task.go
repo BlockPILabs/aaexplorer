@@ -9,6 +9,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/blocksync"
 	"github.com/BlockPILabs/aaexplorer/internal/log"
+	"github.com/BlockPILabs/aaexplorer/internal/service"
 	"github.com/BlockPILabs/aaexplorer/internal/utils"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
 	"github.com/BlockPILabs/aaexplorer/third/schedule"
@@ -180,11 +181,14 @@ func blockScanNetworkDo(i int) {
 			blockDataTransactionReceiptDecodes := ent.TransactionReceiptDecodes{}
 			blockDataTransactionReceiptDecodeCreates := []*ent.TransactionReceiptDecodeCreate{}
 
-			//
-			//blocksMap := map[int64]*parserBlock{}
-			//transactionMap := map[string]*parserTransaction{}
-
 			results := make([]*vo.BlockScanNetworkBlockDoResult, len(blockSyncs))
+			lck := sync.Mutex{}
+
+			// evm parser
+			blocksMap := map[int64]*parserBlock{}
+			transactionMap := map[string]*parserTransaction{}
+			blockIds := []int64{}
+
 			for i, blockSync := range blockSyncs {
 				(func(i int, blockSync *ent.BlockSync) {
 					wg.Go(func() error {
@@ -192,7 +196,12 @@ func blockScanNetworkDo(i int) {
 						if err == nil {
 							results[i] = ret
 
+							// evm parse data
+							lck.Lock()
+							defer lck.Unlock()
+
 							blockDataDecode, blockDataDecodeCreate, transactionDecodes, transactionDecodeCreates, transactionReceiptDecodes, transactionReceiptDecodeCreates := parseBlockScanNetworkBlockDoResult(ctx, tx, client, ret)
+
 							blockDataDecodes = append(blockDataDecodes, blockDataDecode)
 							blockDataDecodeCreates = append(blockDataDecodeCreates, blockDataDecodeCreate)
 
@@ -202,12 +211,36 @@ func blockScanNetworkDo(i int) {
 							blockDataTransactionReceiptDecodes = append(blockDataTransactionReceiptDecodes, transactionReceiptDecodes...)
 							blockDataTransactionReceiptDecodeCreates = append(blockDataTransactionReceiptDecodeCreates, transactionReceiptDecodeCreates...)
 
+							blockIds = append(blockIds, blockDataDecode.ID)
+							blocksMap[blockDataDecode.ID] = &parserBlock{
+								block:         blockDataDecode,
+								transitions:   []*parserTransaction{},
+								userOpInfo:    nil,
+								aaAccounts:    nil,
+								aaAccountsLck: nil,
+								nativePrice:   decimal.Decimal{},
+							}
+							for i, blockDataTransactionDecode := range blockDataTransactionDecodes {
+								parserTransactionItem := &parserTransaction{
+									transaction:     blockDataTransactionDecode,
+									receipt:         blockDataTransactionReceiptDecodes[i],
+									userOpInfo:      nil,
+									userops:         nil,
+									logs:            nil,
+									userOpsCalldata: nil,
+								}
+								transactionMap[parserTransactionItem.transaction.ID] = parserTransactionItem
+								blocksMap[blockDataDecode.ID].transitions = append(blocksMap[blockDataDecode.ID].transitions, transactionMap[parserTransactionItem.transaction.ID])
+							}
+
 						}
 						return nil
 					})
 				})(i, blockSync)
 			}
 			wg.Wait()
+
+			defaultEvmParser.runByParseData(ctx, client, tx, network, blocksMap, blockIds)
 
 			err = tx.BlockDataDecode.CreateBulk(blockDataDecodeCreates...).OnConflict(sql.DoNothing()).Exec(ctx)
 			if err != nil {
@@ -368,6 +401,14 @@ func parseBlockScanNetworkBlockDoResult(ctx context.Context, networkTx *ent.Clie
 			AccessList:           accessList,
 			Method:               "",
 		}
+
+		if len(transaction.Input) > 8 {
+			functionSignature, err := service.FunctionSignatureService.GetMethodBySignature(ctx, entity.MustClient(), transaction.Input[0:8])
+			if err == nil {
+				transactionDecode.Method = functionSignature.Name
+			}
+		}
+
 		transactionDecodes = append(transactionDecodes, transactionDecode)
 		transactionDecodeCreate := tx.TransactionDecode.Create().
 			SetID(transactionDecode.ID).

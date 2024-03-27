@@ -59,20 +59,22 @@ const ExecuteBatchSign = "0x47e1da2a"
 const ExecuteBatchCallSign = "0x912ccaa3"
 const EmptyMethod = "00000000"
 
+var defaultEvmParser = &_evmParser{}
+
 func InitEvmParse(ctx context.Context, config *internalconfig.Config, logger log.Logger) error {
 	logger = logger.With("task", "evmparser")
 	dayScheduler := chrono.NewDefaultTaskScheduler()
-	t := _evmParser{
+	defaultEvmParser = &_evmParser{
 		logger:      logger,
 		config:      config,
 		startBlock:  map[string]int64{},
 		latestBlock: map[string]int64{},
 	}
 
-	for network, blockNumber := range t.config.EvmParser.StartBlock {
-		t.startBlock[network] = blockNumber
-		if t.startBlock[network] == -1 {
-			t.startBlock[network] = 0
+	for network, blockNumber := range defaultEvmParser.config.EvmParser.StartBlock {
+		defaultEvmParser.startBlock[network] = blockNumber
+		if defaultEvmParser.startBlock[network] == -1 {
+			defaultEvmParser.startBlock[network] = 0
 			client, err := entity.Client(ctx, network)
 			if err != nil {
 				log.Context(ctx).Warn("client error", "err", err, "network", network)
@@ -84,31 +86,31 @@ func InitEvmParse(ctx context.Context, config *internalconfig.Config, logger log
 				continue
 			}
 
-			t.latestBlock[network] = latestBlock.ID
-			t.startBlock[network] = latestBlock.ID - int64(math.Max(float64(config.EvmParser.Multi*config.EvmParser.Batch), 10))
+			defaultEvmParser.latestBlock[network] = latestBlock.ID
+			defaultEvmParser.startBlock[network] = latestBlock.ID - int64(math.Max(float64(config.EvmParser.Multi*config.EvmParser.Batch), 10))
 
 		}
 
-		log.Context(ctx).Info("start block", "blockNumber", t.startBlock[network])
+		log.Context(ctx).Info("start block", "blockNumber", defaultEvmParser.startBlock[network])
 	}
 
-	jsonAbi, err := abi.JSON(bytes.NewBufferString(t.config.EvmParser.GetAbi()))
+	jsonAbi, err := abi.JSON(bytes.NewBufferString(defaultEvmParser.config.EvmParser.GetAbi()))
 	if err != nil {
 		logger.Error("abi parse error", "err", err)
 		return err
 	}
 
-	t.abi = jsonAbi
-	t.handleOpsMethod, err = jsonAbi.MethodById(hexutil.MustDecode(HandleOpsSign))
+	defaultEvmParser.abi = jsonAbi
+	defaultEvmParser.handleOpsMethod, err = jsonAbi.MethodById(hexutil.MustDecode(HandleOpsSign))
 	if err != nil {
 		logger.Error("abi method parse error", "err", err)
 		return err
 	}
 	_, err = dayScheduler.ScheduleWithCron(func(ctx context.Context) {
-		t.ScanBlock(log.WithContext(ctx, logger.With("action", "ScanBlock", "latest", true)), true)
+		defaultEvmParser.ScanBlock(log.WithContext(ctx, logger.With("action", "ScanBlock", "latest", true)), true)
 	}, "*/2 * * * * *")
 	_, err = dayScheduler.ScheduleWithCron(func(ctx context.Context) {
-		t.ScanBlock(log.WithContext(ctx, logger.With("action", "ScanBlock", "latest", false)), false)
+		defaultEvmParser.ScanBlock(log.WithContext(ctx, logger.With("action", "ScanBlock", "latest", false)), false)
 	}, "*/10 * * * * *")
 	if err != nil {
 		logger.Error("Schedule error", "err", err)
@@ -287,89 +289,7 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 		defer func() {
 			logger.Debug("block parse", "blockIds", blockIds, "count", len(blockIds), "duration", time.Now().Sub(start).Round(time.Millisecond))
 		}()
-
-		var aaUserOpsInfos ent.AAUserOpsInfos
-		var aaTransactionInfos ent.AaTransactionInfos
-		var userOpsInfoCalldatas ent.AAUserOpsCalldataSlice
-		var aaBlockInfos ent.AaBlockInfos
-		var setBlockSyncedId []int64
-		var aaAccountDataMap = map[string]*ent.AaAccountData{}
-		nativePrice := ser.GetNativePrice(network.ID)
-		for _, block := range blocksMap {
-			setBlockSyncedId = append(setBlockSyncedId, block.block.ID)
-			block.nativePrice = nativePrice
-
-			if block.block.TransactionCount.LessThanOrEqual(decimal.Zero) {
-				continue
-			}
-
-			t.doParse(ctx, client, network, block)
-
-			if block.userOpInfo == nil || block.userOpInfo.UseropCount < 1 {
-				continue
-			}
-			aaBlockInfos = append(aaBlockInfos, block.userOpInfo)
-
-			for _, transition := range block.transitions {
-				if len(transition.userops) > 0 {
-					aaUserOpsInfos = append(aaUserOpsInfos, transition.userops...)
-				}
-
-				if len(transition.userOpsCalldata) > 0 {
-					userOpsInfoCalldatas = append(userOpsInfoCalldatas, transition.userOpsCalldata...)
-				}
-
-				if transition.userOpInfo != nil {
-					aaTransactionInfos = append(aaTransactionInfos, transition.userOpInfo)
-				}
-			}
-
-			accountDataSlice := block.AaAccountDataSlice()
-			for i, data := range accountDataSlice {
-				if accountData, ok := aaAccountDataMap[data.ID]; ok {
-					if len(data.AaType) > 0 && len(accountData.AaType) < 1 {
-						accountData.AaType = data.AaType
-					}
-					if len(data.Factory) > 0 && len(accountData.Factory) < 1 {
-						accountData.Factory = data.Factory
-						accountData.FactoryTime = data.FactoryTime
-					}
-				} else {
-					aaAccountDataMap[data.ID] = accountDataSlice[i]
-				}
-			}
-		}
-
-		t.insertUserOpsInfo(ctx, client, network, aaUserOpsInfos)
-		t.insertTransactions(ctx, client, network, aaTransactionInfos)
-		t.insertBlockInfos(ctx, client, network, aaBlockInfos)
-		t.insertuserOpsInfoCalldatas(ctx, client, network, userOpsInfoCalldatas)
-		t.insertAccounts(ctx, client, network, aaAccountDataMap)
-		t.insertAaAccounts(ctx, client, network, aaAccountDataMap)
-
-		// set sync status
-		if len(setBlockSyncedId) > 0 {
-			affected, err := tx.AaBlockSync.Update().
-				Where(
-					aablocksync.IDIn(setBlockSyncedId...),
-				).
-				SetScanned(true).
-				SetUpdateTime(time.Now()).Save(ctx)
-			if err != nil {
-				logger.Warn("set block sync status error", "ids", setBlockSyncedId, "err", err)
-			} else {
-				logger.Info("set block scanned", "ids", setBlockSyncedId, "num", affected)
-			}
-		}
-
-		affected, err := tx.AaBlockSync.Update().Where(
-			aablocksync.IDIn(blockIds...),
-		).AddScanCount(1).SetUpdateTime(time.Now()).Save(ctx)
-		logger.Info("set block scanned count", "ids", blockIds, "num", affected)
-		if err != nil {
-			return
-		}
-
+		t.runByParseData(ctx, client, tx.Client(), network, blocksMap, blockIds)
 	})
 	if err != nil {
 		logger.Warn("block scanned error", "err", err)
@@ -377,6 +297,91 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 	}
 	logger.Debug("block success")
 	return fiend
+}
+
+func (t *_evmParser) runByParseData(ctx context.Context, client *ent.Client, tx *ent.Client, network *ent.Network, blocksMap map[int64]*parserBlock, blockIds []int64) {
+	logger := log.Context(ctx)
+	var aaUserOpsInfos ent.AAUserOpsInfos
+	var aaTransactionInfos ent.AaTransactionInfos
+	var userOpsInfoCalldatas ent.AAUserOpsCalldataSlice
+	var aaBlockInfos ent.AaBlockInfos
+	var setBlockSyncedId []int64
+	var aaAccountDataMap = map[string]*ent.AaAccountData{}
+	nativePrice := ser.GetNativePrice(network.ID)
+	for _, block := range blocksMap {
+		setBlockSyncedId = append(setBlockSyncedId, block.block.ID)
+		block.nativePrice = nativePrice
+
+		if block.block.TransactionCount.LessThanOrEqual(decimal.Zero) {
+			continue
+		}
+
+		t.doParse(ctx, client, network, block)
+
+		if block.userOpInfo == nil || block.userOpInfo.UseropCount < 1 {
+			continue
+		}
+		aaBlockInfos = append(aaBlockInfos, block.userOpInfo)
+
+		for _, transition := range block.transitions {
+			if len(transition.userops) > 0 {
+				aaUserOpsInfos = append(aaUserOpsInfos, transition.userops...)
+			}
+
+			if len(transition.userOpsCalldata) > 0 {
+				userOpsInfoCalldatas = append(userOpsInfoCalldatas, transition.userOpsCalldata...)
+			}
+
+			if transition.userOpInfo != nil {
+				aaTransactionInfos = append(aaTransactionInfos, transition.userOpInfo)
+			}
+		}
+
+		accountDataSlice := block.AaAccountDataSlice()
+		for i, data := range accountDataSlice {
+			if accountData, ok := aaAccountDataMap[data.ID]; ok {
+				if len(data.AaType) > 0 && len(accountData.AaType) < 1 {
+					accountData.AaType = data.AaType
+				}
+				if len(data.Factory) > 0 && len(accountData.Factory) < 1 {
+					accountData.Factory = data.Factory
+					accountData.FactoryTime = data.FactoryTime
+				}
+			} else {
+				aaAccountDataMap[data.ID] = accountDataSlice[i]
+			}
+		}
+	}
+
+	t.insertUserOpsInfo(ctx, client, network, aaUserOpsInfos)
+	t.insertTransactions(ctx, client, network, aaTransactionInfos)
+	t.insertBlockInfos(ctx, client, network, aaBlockInfos)
+	t.insertuserOpsInfoCalldatas(ctx, client, network, userOpsInfoCalldatas)
+	t.insertAccounts(ctx, client, network, aaAccountDataMap)
+	t.insertAaAccounts(ctx, client, network, aaAccountDataMap)
+
+	// set sync status
+	if len(setBlockSyncedId) > 0 {
+		affected, err := tx.AaBlockSync.Update().
+			Where(
+				aablocksync.IDIn(setBlockSyncedId...),
+			).
+			SetScanned(true).
+			SetUpdateTime(time.Now()).Save(ctx)
+		if err != nil {
+			logger.Warn("set block sync status error", "ids", setBlockSyncedId, "err", err)
+		} else {
+			logger.Info("set block scanned", "ids", setBlockSyncedId, "num", affected)
+		}
+	}
+
+	affected, err := tx.AaBlockSync.Update().Where(
+		aablocksync.IDIn(blockIds...),
+	).AddScanCount(1).SetUpdateTime(time.Now()).Save(ctx)
+	logger.Info("set block scanned count", "ids", blockIds, "num", affected)
+	if err != nil {
+		return
+	}
 }
 
 func (t *_evmParser) getParseData(ctx context.Context, client *ent.Client, blockIds ...int64) (
