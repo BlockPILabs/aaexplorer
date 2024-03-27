@@ -12,6 +12,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/BlockPILabs/aaexplorer/internal/utils"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
+	"github.com/BlockPILabs/aaexplorer/third/schedule"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/jackc/pgtype"
@@ -32,11 +33,11 @@ func init() {
 	//	startBlockScanRun()
 	//	BlockScanRun(ctx)
 	//}).ScheduleWithCron("*/1 * * * * *")
-	//schedule.Add("scan_block_test", func(ctx context.Context) {
-	//	startBlockScanRun()
-	//	BlockScanRun(ctx)
-	//	select {}
-	//})
+	schedule.Add("scan_block_test", func(ctx context.Context) {
+		startBlockScanRun()
+		BlockScanRun(ctx)
+		select {}
+	})
 	logger.Debug("BlockScanRun has been scheduled")
 }
 
