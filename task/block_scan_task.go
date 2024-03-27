@@ -10,7 +10,6 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactionreceiptblocksync"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactionsync"
 	"github.com/BlockPILabs/aaexplorer/internal/log"
-	"github.com/BlockPILabs/aaexplorer/internal/service"
 	"github.com/BlockPILabs/aaexplorer/internal/utils"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
 	"github.com/BlockPILabs/aaexplorer/third/schedule"
@@ -436,12 +435,12 @@ func parseBlockScanNetworkBlockDoResult(ctx context.Context, networkTx *ent.Clie
 			Method:               "",
 		}
 
-		if len(transaction.Input) > 8 {
-			functionSignature, err := service.FunctionSignatureService.GetMethodBySignature(ctx, entity.MustClient(), transaction.Input[0:8])
-			if err == nil {
-				transactionDecode.Method = functionSignature.Name
-			}
-		}
+		//if len(transaction.Input) > 8 {
+		//	functionSignature, err := service.FunctionSignatureService.GetMethodBySignature(ctx, entity.MustClient(), transaction.Input[0:8])
+		//	if err == nil {
+		//		transactionDecode.Method = functionSignature.Name
+		//	}
+		//}
 
 		transactionDecodes = append(transactionDecodes, transactionDecode)
 		transactionDecodeCreate := tx.TransactionDecode.Create().

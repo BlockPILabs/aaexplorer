@@ -61,55 +61,60 @@ const EmptyMethod = "00000000"
 
 var defaultEvmParser = &_evmParser{}
 
-var initEvmParserOnce = sync.Once{}
+var initEvmParserOnce = sync.Mutex{}
 
 func initEvmParser(ctx context.Context, config *internalconfig.Config, logger log.Logger) (retErr error) {
-	initEvmParserOnce.Do(func() {
-		defaultEvmParser = &_evmParser{
-			logger:      logger,
-			config:      config,
-			startBlock:  map[string]int64{},
-			latestBlock: map[string]int64{},
-		}
+	initEvmParserOnce.Lock()
+	defer initEvmParserOnce.Unlock()
 
-		for network, blockNumber := range defaultEvmParser.config.EvmParser.StartBlock {
-			defaultEvmParser.startBlock[network] = blockNumber
-			if defaultEvmParser.startBlock[network] == -1 {
-				defaultEvmParser.startBlock[network] = 0
-				client, err := entity.Client(ctx, network)
-				if err != nil {
-					log.Context(ctx).Warn("client error", "err", err, "network", network)
-					continue
-				}
-				latestBlock, err := dao.AaBlockDao.GetLatestBlock(ctx, client)
-				if err != nil {
-					log.Context(ctx).Warn("GetLatestBlock error", "err", err, "network", network)
-					continue
-				}
+	if defaultEvmParser.config != nil {
+		return nil
+	}
 
-				defaultEvmParser.latestBlock[network] = latestBlock.ID
-				defaultEvmParser.startBlock[network] = latestBlock.ID - int64(math.Max(float64(config.EvmParser.Multi*config.EvmParser.Batch), 10))
+	defaultEvmParser = &_evmParser{
+		logger:      logger,
+		config:      config,
+		startBlock:  map[string]int64{},
+		latestBlock: map[string]int64{},
+	}
 
+	for network, blockNumber := range defaultEvmParser.config.EvmParser.StartBlock {
+		defaultEvmParser.startBlock[network] = blockNumber
+		if defaultEvmParser.startBlock[network] == -1 {
+			defaultEvmParser.startBlock[network] = 0
+			client, err := entity.Client(ctx, network)
+			if err != nil {
+				log.Context(ctx).Warn("client error", "err", err, "network", network)
+				continue
+			}
+			latestBlock, err := dao.AaBlockDao.GetLatestBlock(ctx, client)
+			if err != nil {
+				log.Context(ctx).Warn("GetLatestBlock error", "err", err, "network", network)
+				continue
 			}
 
-			log.Context(ctx).Info("start block", "blockNumber", defaultEvmParser.startBlock[network])
+			defaultEvmParser.latestBlock[network] = latestBlock.ID
+			defaultEvmParser.startBlock[network] = latestBlock.ID - int64(math.Max(float64(config.EvmParser.Multi*config.EvmParser.Batch), 10))
+
 		}
 
-		jsonAbi, err := abi.JSON(bytes.NewBufferString(defaultEvmParser.config.EvmParser.GetAbi()))
-		if err != nil {
-			retErr = err
-			logger.Error("abi parse error", "err", err)
-			return
-		}
+		log.Context(ctx).Info("start block", "blockNumber", defaultEvmParser.startBlock[network])
+	}
 
-		defaultEvmParser.abi = jsonAbi
-		defaultEvmParser.handleOpsMethod, err = jsonAbi.MethodById(hexutil.MustDecode(HandleOpsSign))
-		if err != nil {
-			retErr = err
-			logger.Error("abi method parse error", "err", err)
-			return
-		}
-	})
+	jsonAbi, err := abi.JSON(bytes.NewBufferString(defaultEvmParser.config.EvmParser.GetAbi()))
+	if err != nil {
+		retErr = err
+		logger.Error("abi parse error", "err", err)
+		return
+	}
+
+	defaultEvmParser.abi = jsonAbi
+	defaultEvmParser.handleOpsMethod, err = jsonAbi.MethodById(hexutil.MustDecode(HandleOpsSign))
+	if err != nil {
+		retErr = err
+		logger.Error("abi method parse error", "err", err)
+		return
+	}
 	return
 }
 
@@ -1338,11 +1343,11 @@ func (t *_evmParser) parseCallData(ctx context.Context, client *ent.Client, netw
 			continue
 		}
 
-		functionSignature, err := service.FunctionSignatureService.GetMethodBySignature(ctx, entity.MustClient(), detail.source)
-		if err == nil {
-			detail.source = functionSignature.Name
-			continue
-		}
+		//functionSignature, err := service.FunctionSignatureService.GetMethodBySignature(ctx, entity.MustClient(), detail.source)
+		//if err == nil {
+		//	detail.source = functionSignature.Name
+		//	continue
+		//}
 
 		//accountAbi, err := service.AccountService.GetAbiByAddress(ctx, client, detail.target)
 		//if err != nil {
