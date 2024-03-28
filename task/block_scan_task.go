@@ -172,6 +172,7 @@ func blockScanNetworkDo(i int) {
 
 			bc, err := ethclient.DialContext(ctx, network.HTTPRPC)
 			if err != nil {
+				logger.Error("error in block  ethclient.DialContext", "err", err)
 				return err
 			}
 
@@ -250,18 +251,23 @@ func blockScanNetworkDo(i int) {
 				return nil
 			}
 
+			logger := logger.With("blockIds", blockIds)
+
 			defaultEvmParser.runByParseData(ctx, client, tx, network, blocksMap, blockIds)
 
 			err = tx.BlockDataDecode.CreateBulk(blockDataDecodeCreates...).OnConflict(sql.DoNothing()).Exec(ctx)
 			if err != nil {
+				logger.Error("error in create BlockDataDecode", "err", err)
 				return err
 			}
 			err = tx.TransactionDecode.CreateBulk(blockDataTransactionDecodeCreates...).OnConflict(sql.DoNothing()).Exec(ctx)
 			if err != nil {
+				logger.Error("error in create TransactionDecode", "err", err)
 				return err
 			}
 			err = tx.TransactionReceiptDecode.CreateBulk(blockDataTransactionReceiptDecodeCreates...).OnConflict(sql.DoNothing()).Exec(ctx)
 			if err != nil {
+				logger.Error("error in create TransactionReceiptDecode", "err", err)
 				return err
 			}
 
@@ -272,6 +278,7 @@ func blockScanNetworkDo(i int) {
 				SetScanned(true).
 				SetUpdateTime(time.Now()).Exec(ctx)
 			if err != nil {
+				logger.Error("error in update BlockSync", "err", err)
 				return err
 			}
 
@@ -282,6 +289,7 @@ func blockScanNetworkDo(i int) {
 				SetScanned(true).
 				SetUpdateTime(time.Now()).Exec(ctx)
 			if err != nil {
+				logger.Error("error in update TransactionSync", "err", err)
 				return err
 			}
 
@@ -292,8 +300,10 @@ func blockScanNetworkDo(i int) {
 				SetScanned(true).
 				SetUpdateTime(time.Now()).Exec(ctx)
 			if err != nil {
+				logger.Error("error in update TransactionReceiptBlockSync", "err", err)
 				return err
 			}
+			logger.Debug("success")
 			return nil
 		})
 		if err != nil {
