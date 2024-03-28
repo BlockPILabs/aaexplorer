@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"encoding/json"
 	"entgo.io/ent/dialect/sql"
 	"errors"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
@@ -12,6 +13,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/BlockPILabs/aaexplorer/internal/utils"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
+	"github.com/BlockPILabs/aaexplorer/task/aa"
 	"github.com/BlockPILabs/aaexplorer/third/schedule"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -26,13 +28,13 @@ import (
 var blockScanTaskChain = make(chan *ent.Network, 10)
 
 func init() {
-	//schedule.Add("block_sync", func(ctx context.Context) {
-	//	BlockSyncRun(ctx)
-	//}).ScheduleWithCron("*/1 * * * * *")
-	//schedule.Add("scan_block", func(ctx context.Context) {
-	//	startBlockScanRun()
-	//	BlockScanRun(ctx)
-	//}).ScheduleWithCron("*/1 * * * * *")
+	schedule.Add("block_sync", func(ctx context.Context) {
+		BlockSyncRun(ctx)
+	}).ScheduleWithCron("*/1 * * * * *")
+	schedule.Add("scan_block", func(ctx context.Context) {
+		startBlockScanRun()
+		BlockScanRun(ctx)
+	}).ScheduleWithCron("*/1 * * * * *")
 	schedule.Add("scan_block_test", func(ctx context.Context) {
 		startBlockScanRun()
 		BlockScanRun(ctx)
@@ -472,6 +474,27 @@ func parseBlockScanNetworkBlockDoResult(ctx context.Context, networkTx *ent.Clie
 		transactionDecodeCreates = append(transactionDecodeCreates, transactionDecodeCreate)
 		receipt := ret.Receipts[i]
 
+		logs := []*aa.Log{}
+
+		for _, rlog := range receipt.Logs {
+			logs = append(logs, &aa.Log{
+				Data:                rlog.Data,
+				Topics:              rlog.Topics,
+				Address:             rlog.Address,
+				Removed:             rlog.Removed,
+				LogIndex:            utils.DecodeDecimal(rlog.LogIndex).IntPart(),
+				BlockHash:           rlog.BlockHash,
+				BlockNumber:         blockDataDecode.ID,
+				LogIndexRaw:         rlog.LogIndex,
+				BlockNumberRaw:      rlog.BlockNumber,
+				TransactionHash:     rlog.TransactionHash,
+				TransactionIndex:    utils.DecodeDecimal(rlog.TransactionIndex).IntPart(),
+				TransactionIndexRaw: rlog.TransactionIndex,
+			})
+		}
+
+		logsBytes, _ := json.Marshal(logs)
+
 		transactionReceiptDecode := &ent.TransactionReceiptDecode{
 			ID:                receipt.TransactionHash,
 			Time:              timestamp,
@@ -483,7 +506,7 @@ func parseBlockScanNetworkBlockDoResult(ctx context.Context, networkTx *ent.Clie
 			EffectiveGasPrice: receipt.EffectiveGasPrice,
 			FromAddr:          receipt.From,
 			GasUsed:           utils.DecodeDecimal(receipt.GasUsed),
-			Logs:              string(receipt.Logs),
+			Logs:              string(logsBytes),
 			LogsBloom:         receipt.LogsBloom,
 			Status:            receipt.Status,
 			ToAddr:            transactionDecode.ToAddr,

@@ -5,12 +5,12 @@ type Log struct {
 	Topics              []string `json:"topics"`
 	Address             string   `json:"address"`
 	Removed             bool     `json:"removed"`
-	LogIndex            int      `json:"logIndex"`
+	LogIndex            int64    `json:"logIndex"`
 	BlockHash           string   `json:"blockHash"`
-	BlockNumber         int      `json:"blockNumber"`
+	BlockNumber         int64    `json:"blockNumber"`
 	LogIndexRaw         string   `json:"logIndexRaw"`
 	BlockNumberRaw      string   `json:"blockNumberRaw"`
 	TransactionHash     string   `json:"transactionHash"`
-	TransactionIndex    int      `json:"transactionIndex"`
+	TransactionIndex    int64    `json:"transactionIndex"`
 	TransactionIndexRaw string   `json:"transactionIndexRaw"`
 }

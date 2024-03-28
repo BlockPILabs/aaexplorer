@@ -1,9 +1,5 @@
 package vo
 
-import (
-	"encoding/json"
-)
-
 type BlockWithBlockByNumber struct {
 	BaseFeePerGas         string                         `json:"baseFeePerGas"`
 	BlobGasUsed           string                         `json:"blobGasUsed"`
@@ -70,14 +66,14 @@ type BlockScanNetworkBlockDoResult struct {
 }
 
 type BlockWithGetBlockReceipt struct {
-	BlockHash         string          `json:"blockHash"`
-	BlockNumber       string          `json:"blockNumber"`
-	ContractAddress   string          `json:"contractAddress"`
-	CumulativeGasUsed string          `json:"cumulativeGasUsed"`
-	EffectiveGasPrice string          `json:"effectiveGasPrice"`
-	From              string          `json:"from"`
-	GasUsed           string          `json:"gasUsed"`
-	Logs              json.RawMessage `json:"logs"` /*[]struct {
+	BlockHash         string `json:"blockHash"`
+	BlockNumber       string `json:"blockNumber"`
+	ContractAddress   string `json:"contractAddress"`
+	CumulativeGasUsed string `json:"cumulativeGasUsed"`
+	EffectiveGasPrice string `json:"effectiveGasPrice"`
+	From              string `json:"from"`
+	GasUsed           string `json:"gasUsed"`
+	Logs              []struct {
 		Address          string   `json:"address"`
 		Topics           []string `json:"topics"`
 		Data             string   `json:"data"`
@@ -87,7 +83,7 @@ type BlockWithGetBlockReceipt struct {
 		BlockHash        string   `json:"blockHash"`
 		LogIndex         string   `json:"logIndex"`
 		Removed          bool     `json:"removed"`
-	} `json:"logs"`*/
+	} `json:"logs"`
 	LogsBloom        string `json:"logsBloom"`
 	Status           string `json:"status"`
 	To               string `json:"to"`
