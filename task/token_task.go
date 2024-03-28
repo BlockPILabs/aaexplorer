@@ -44,6 +44,14 @@ func TokenTask(ctx context.Context) {
 				continue
 			}
 			if len(tokens) > 0 {
+				for _, oldToken := range tokens {
+					if oldToken.MarketRank != tokenItem.Rank {
+						_, err = client.Token.Update().Where(token.IDEQ(oldToken.ID)).SetMarketRank(tokenItem.Rank).Save(ctx)
+						if err != nil {
+							logger.Error("TokenTask update token ranking err ", "symbol", "msg", symbol, err)
+						}
+					}
+				}
 				continue
 			}
 			var contractAddress string
