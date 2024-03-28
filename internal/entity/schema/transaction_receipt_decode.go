@@ -50,8 +50,7 @@ func (TransactionReceiptDecode) Fields() []ent.Field {
 		field.String("to_addr").
 			MaxLen(255).
 			StructTag(`json:"to"`),
-		field.String("transaction_index").
-			MaxLen(255).
+		field.Int64("transaction_index").
 			StructTag(`json:"transactionIndex"`),
 		field.String("type").
 			MaxLen(255).

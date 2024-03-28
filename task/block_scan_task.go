@@ -520,7 +520,7 @@ func parseBlockScanNetworkBlockDoResult(ctx context.Context, networkTx *ent.Clie
 			LogsBloom:         receipt.LogsBloom,
 			Status:            receipt.Status,
 			ToAddr:            transactionDecode.ToAddr,
-			TransactionIndex:  receipt.TransactionIndex,
+			TransactionIndex:  transactionDecode.TransactionIndex.IntPart(),
 			Type:              receipt.Type,
 		}
 		transactionReceiptDecodes = append(transactionReceiptDecodes, transactionReceiptDecode)
