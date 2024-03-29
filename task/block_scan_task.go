@@ -2,15 +2,18 @@ package task
 
 import (
 	"context"
+	"encoding/json"
 	"entgo.io/ent/dialect/sql"
 	"errors"
-	"fmt"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/blocksync"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactionreceiptblocksync"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactionsync"
 	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/BlockPILabs/aaexplorer/internal/utils"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
+	"github.com/BlockPILabs/aaexplorer/task/aa"
 	"github.com/BlockPILabs/aaexplorer/third/schedule"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -98,6 +101,7 @@ func startBlockScanRun() {
 var blockScanRunNetworks ent.Networks
 
 func BlockScanRun(ctx context.Context) {
+	initEvmParser(ctx, config, logger)
 	logger.Debug("start", "nets", config.Task.Networks)
 
 	tx, err := entity.Client(ctx)
@@ -134,6 +138,9 @@ func blockScanNetworkFanout() {
 
 func blockScanNetworkDo(i int) {
 	for network := range blockScanTaskChain {
+		if defaultEvmParser.handleOpsMethod == nil {
+			break
+		}
 		ctx := context.Background()
 		logger := logger.With("network", network.ID, "networkName", network.Name, "threads", i)
 		client, err := entity.Client(ctx, network.ID)
@@ -147,8 +154,8 @@ func blockScanNetworkDo(i int) {
 				Query().
 				ForUpdate(sql.WithLockAction(sql.SkipLocked)).
 				Where(
-					//blocksync.Scanned(false),
-					blocksync.Scanned(true),
+					blocksync.Scanned(false),
+					//blocksync.Scanned(true),
 				).
 				Order(blocksync.ByID(sql.OrderDesc())).
 				Limit(10).
@@ -165,6 +172,7 @@ func blockScanNetworkDo(i int) {
 
 			bc, err := ethclient.DialContext(ctx, network.HTTPRPC)
 			if err != nil {
+				logger.Error("error in block  ethclient.DialContext", "err", err)
 				return err
 			}
 
@@ -180,11 +188,14 @@ func blockScanNetworkDo(i int) {
 			blockDataTransactionReceiptDecodes := ent.TransactionReceiptDecodes{}
 			blockDataTransactionReceiptDecodeCreates := []*ent.TransactionReceiptDecodeCreate{}
 
-			//
-			//blocksMap := map[int64]*parserBlock{}
-			//transactionMap := map[string]*parserTransaction{}
-
 			results := make([]*vo.BlockScanNetworkBlockDoResult, len(blockSyncs))
+			lck := sync.Mutex{}
+
+			// evm parser
+			blocksMap := map[int64]*parserBlock{}
+			transactionMap := map[string]*parserTransaction{}
+			blockIds := []int64{}
+
 			for i, blockSync := range blockSyncs {
 				(func(i int, blockSync *ent.BlockSync) {
 					wg.Go(func() error {
@@ -192,7 +203,12 @@ func blockScanNetworkDo(i int) {
 						if err == nil {
 							results[i] = ret
 
+							// evm parse data
+							lck.Lock()
+							defer lck.Unlock()
+
 							blockDataDecode, blockDataDecodeCreate, transactionDecodes, transactionDecodeCreates, transactionReceiptDecodes, transactionReceiptDecodeCreates := parseBlockScanNetworkBlockDoResult(ctx, tx, client, ret)
+
 							blockDataDecodes = append(blockDataDecodes, blockDataDecode)
 							blockDataDecodeCreates = append(blockDataDecodeCreates, blockDataDecodeCreate)
 
@@ -202,6 +218,28 @@ func blockScanNetworkDo(i int) {
 							blockDataTransactionReceiptDecodes = append(blockDataTransactionReceiptDecodes, transactionReceiptDecodes...)
 							blockDataTransactionReceiptDecodeCreates = append(blockDataTransactionReceiptDecodeCreates, transactionReceiptDecodeCreates...)
 
+							blockIds = append(blockIds, blockDataDecode.ID)
+							blocksMap[blockDataDecode.ID] = &parserBlock{
+								block:         blockDataDecode,
+								transitions:   []*parserTransaction{},
+								userOpInfo:    &ent.AaBlockInfo{},
+								aaAccounts:    &sync.Map{},
+								aaAccountsLck: &sync.Mutex{},
+								nativePrice:   decimal.Decimal{},
+							}
+							for i, blockDataTransactionDecode := range blockDataTransactionDecodes {
+								parserTransactionItem := &parserTransaction{
+									transaction:     blockDataTransactionDecode,
+									receipt:         blockDataTransactionReceiptDecodes[i],
+									userOpInfo:      nil,
+									userops:         nil,
+									logs:            nil,
+									userOpsCalldata: nil,
+								}
+								transactionMap[parserTransactionItem.transaction.ID] = parserTransactionItem
+								blocksMap[blockDataDecode.ID].transitions = append(blocksMap[blockDataDecode.ID].transitions, transactionMap[parserTransactionItem.transaction.ID])
+							}
+
 						}
 						return nil
 					})
@@ -209,20 +247,63 @@ func blockScanNetworkDo(i int) {
 			}
 			wg.Wait()
 
+			if len(blocksMap) < 1 {
+				return nil
+			}
+
+			logger := logger.With("blockIds", blockIds)
+
+			defaultEvmParser.runByParseData(ctx, client, tx, network, blocksMap, blockIds)
+
 			err = tx.BlockDataDecode.CreateBulk(blockDataDecodeCreates...).OnConflict(sql.DoNothing()).Exec(ctx)
 			if err != nil {
+				logger.Error("error in create BlockDataDecode", "err", err)
 				return err
 			}
 			err = tx.TransactionDecode.CreateBulk(blockDataTransactionDecodeCreates...).OnConflict(sql.DoNothing()).Exec(ctx)
 			if err != nil {
+				logger.Error("error in create TransactionDecode", "err", err)
 				return err
 			}
 			err = tx.TransactionReceiptDecode.CreateBulk(blockDataTransactionReceiptDecodeCreates...).OnConflict(sql.DoNothing()).Exec(ctx)
 			if err != nil {
+				logger.Error("error in create TransactionReceiptDecode", "err", err)
 				return err
 			}
 
-			fmt.Sprintln(results)
+			err = tx.BlockSync.Update().
+				Where(
+					blocksync.IDIn(blockIds...),
+				).
+				SetScanned(true).
+				SetUpdateTime(time.Now()).Exec(ctx)
+			if err != nil {
+				logger.Error("error in update BlockSync", "err", err)
+				return err
+			}
+
+			err = tx.TransactionSync.Update().
+				Where(
+					transactionsync.IDIn(blockIds...),
+				).
+				SetScanned(true).
+				SetUpdateTime(time.Now()).Exec(ctx)
+			if err != nil {
+				logger.Error("error in update TransactionSync", "err", err)
+				return err
+			}
+
+			err = tx.TransactionReceiptBlockSync.Update().
+				Where(
+					transactionreceiptblocksync.IDIn(blockIds...),
+				).
+				SetScanned(true).
+				SetUpdateTime(time.Now()).Exec(ctx)
+			if err != nil {
+				logger.Error("error in update TransactionReceiptBlockSync", "err", err)
+				return err
+			}
+			logger.Debug("success")
 			return nil
 		})
 		if err != nil {
@@ -368,6 +449,14 @@ func parseBlockScanNetworkBlockDoResult(ctx context.Context, networkTx *ent.Clie
 			AccessList:           accessList,
 			Method:               "",
 		}
+
+		//if len(transaction.Input) > 8 {
+		//	functionSignature, err := service.FunctionSignatureService.GetMethodBySignature(ctx, entity.MustClient(), transaction.Input[0:8])
+		//	if err == nil {
+		//		transactionDecode.Method = functionSignature.Name
+		//	}
+		//}
+
 		transactionDecodes = append(transactionDecodes, transactionDecode)
 		transactionDecodeCreate := tx.TransactionDecode.Create().
 			SetID(transactionDecode.ID).
@@ -395,6 +484,27 @@ func parseBlockScanNetworkBlockDoResult(ctx context.Context, networkTx *ent.Clie
 		transactionDecodeCreates = append(transactionDecodeCreates, transactionDecodeCreate)
 		receipt := ret.Receipts[i]
 
+		logs := []*aa.Log{}
+
+		for _, rlog := range receipt.Logs {
+			logs = append(logs, &aa.Log{
+				Data:                rlog.Data,
+				Topics:              rlog.Topics,
+				Address:             rlog.Address,
+				Removed:             rlog.Removed,
+				LogIndex:            utils.DecodeDecimal(rlog.LogIndex).IntPart(),
+				BlockHash:           rlog.BlockHash,
+				BlockNumber:         blockDataDecode.ID,
+				LogIndexRaw:         rlog.LogIndex,
+				BlockNumberRaw:      rlog.BlockNumber,
+				TransactionHash:     rlog.TransactionHash,
+				TransactionIndex:    utils.DecodeDecimal(rlog.TransactionIndex).IntPart(),
+				TransactionIndexRaw: rlog.TransactionIndex,
+			})
+		}
+
+		logsBytes, _ := json.Marshal(logs)
+
 		transactionReceiptDecode := &ent.TransactionReceiptDecode{
 			ID:                receipt.TransactionHash,
 			Time:              timestamp,
@@ -406,11 +516,11 @@ func parseBlockScanNetworkBlockDoResult(ctx context.Context, networkTx *ent.Clie
 			EffectiveGasPrice: receipt.EffectiveGasPrice,
 			FromAddr:          receipt.From,
 			GasUsed:           utils.DecodeDecimal(receipt.GasUsed),
-			Logs:              string(receipt.Logs),
+			Logs:              string(logsBytes),
 			LogsBloom:         receipt.LogsBloom,
 			Status:            receipt.Status,
 			ToAddr:            transactionDecode.ToAddr,
-			TransactionIndex:  receipt.TransactionIndex,
+			TransactionIndex:  transactionDecode.TransactionIndex.IntPart(),
 			Type:              receipt.Type,
 		}
 		transactionReceiptDecodes = append(transactionReceiptDecodes, transactionReceiptDecode)

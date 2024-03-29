@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
-	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/functionsignature"
 	"github.com/BlockPILabs/aaexplorer/internal/memo"
 	"github.com/BlockPILabs/aaexplorer/internal/utils"
-	"github.com/BlockPILabs/aaexplorer/service"
 	"time"
 )
 
@@ -20,48 +18,25 @@ func (s *functionSignatureService) GetMethodBySignature(ctx context.Context, tx 
 	if !utils.IsHexSting(signature) && len(signature) < 8 {
 		return nil, errors.New("not signature")
 	}
+	key := "f:" + signature
+	mf, ok := memo.Get(key)
+	if ok {
+		switch t := mf.(type) {
+		case error:
+			return nil, t
+		case *ent.FunctionSignature:
+			return t, nil
+		}
+	}
 
 	f, err = tx.FunctionSignature.Get(ctx, signature)
 	if err != nil {
-		// db not found , www.4byte.directory
-		key := "f:" + signature
-		ferr, ok := memo.Get(key)
-		if ok {
-			err, ok := ferr.(error)
-			if ok {
-				return nil, err
-			}
-		}
-		functionSignature, err := service.GetSignature(signature)
-		if err != nil {
-			memo.SetWithTTL(key, err, 1, time.Hour)
-			return nil, err
-		}
 
-		f = &ent.FunctionSignature{
-			ID:         functionSignature.HexSignature,
-			Name:       functionSignature.Name,
-			Text:       functionSignature.TextSignature,
-			Bytes:      functionSignature.BytesSignature,
-			CreateTime: time.Now(),
-		}
+		memo.SetWithTTL(key, err, 1, time.Hour)
+		return nil, err
 
-		tx.FunctionSignature.Create().
-			SetID(f.ID).
-			SetName(f.Name).
-			SetText(f.Text).
-			SetBytes(f.Bytes).
-			SetCreateTime(f.CreateTime).
-			OnConflictColumns(functionsignature.FieldID).
-			Update(func(upsert *ent.FunctionSignatureUpsert) {
-				upsert.
-					UpdateName().
-					UpdateBytes().
-					UpdateText().
-					UpdateText()
-			}).
-			ExecX(ctx)
-
+	} else {
+		memo.Set(key, f, 2)
 	}
 	return
 }

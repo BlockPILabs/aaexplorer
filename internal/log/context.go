@@ -2,6 +2,7 @@ package log
 
 import (
 	"context"
+	"fmt"
 	"os"
 )
 
@@ -38,4 +39,13 @@ func With(ctx context.Context, keyvals ...interface{}) (context.Context, Logger)
 
 func L() Logger {
 	return _defaultLogger
+}
+
+func MaskMsg(msg string) string {
+	if len(msg) < 512 {
+		return msg
+	}
+	runes := []rune(msg)
+	return fmt.Sprintf("%s...{%d}...%s", string(runes[0:255]), len(runes), string(runes[len(runes)-255:]))
+
 }

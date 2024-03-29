@@ -139,7 +139,8 @@ func WithTx(ctx context.Context, client *ent.Client, fn func(db *ent.Client) err
 	defer func() {
 		if v := recover(); v != nil {
 			tx.Rollback()
-			panic(v)
+			log.Context(ctx).Error("error in tx", "err", v)
+
 		}
 	}()
 	if err := fn(tx.Client()); err != nil {
