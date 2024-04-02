@@ -74,6 +74,7 @@ func Resister(router fiber.Router) {
 	networksV1.Get("/topBundler", controller.GetTopBundler).Name(controller.NameGetTopBundler)
 	networksV1.Get("/topPaymaster", controller.GetTopPaymaster).Name(controller.NameGetTopPaymaster)
 	networksV1.Get("/topFactory", controller.GetTopFactory).Name(controller.NameGetTopFactory)
+	networksV1.Get("/topWhale", controller.GetTopWhale).Name(controller.NameGetTopWhale)
 }
 
 func Error() {

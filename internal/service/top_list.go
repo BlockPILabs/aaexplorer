@@ -112,3 +112,8 @@ func GetTopFactory(ctx context.Context, req vo.TopFactoryRequest) (*vo.TopFactor
 
 	return resp, nil
 }
+
+func GetTopWhale(ctx context.Context, req vo.TopWhaleRequest) (*vo.TopWhaleResponse, error) {
+
+	return nil, nil
+}
