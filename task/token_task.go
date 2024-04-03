@@ -174,7 +174,6 @@ func RefreshPrice(ctx context.Context) {
 			if now-one.LastTime < PriceExpire {
 				continue
 			}
-			one.Symbol = "REI"
 			price := cmc.GetTokenPrice(one.Symbol)
 			err := client.Token.Update().SetTokenPrice(price).SetLastTime(now).Where(token.IDEQ(one.ID)).Exec(ctx)
 			if err != nil {

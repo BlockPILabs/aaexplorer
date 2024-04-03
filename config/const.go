@@ -35,7 +35,8 @@ const (
 	AnalyzeTop7     = 7
 	FeePrecision    = 6
 
-	TopNum = 300
+	TopNum          = 300
+	DefaultDecimals = 18
 )
 
 const (
