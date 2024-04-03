@@ -233,7 +233,7 @@ func saveWhaleStatisticDay(ctx context.Context, client *ent.Client, time time.Ti
 		totalUsd = totalUsd.Add(value)
 
 	}
-	whaleDay := client.WhaleStatisticDay.Create().SetWhaleNum(int64(addrCount)).SetTotalUsd(totalUsd).SetNetwork("").SetStatisticTime(time)
+	whaleDay := client.WhaleStatisticDay.Create().SetWhaleNum(int64(addrCount)).SetTotalUsd(totalUsd).SetNetwork("").SetStatisticTime(time.UnixMilli())
 	whaleDay.Save(ctx)
 
 }

@@ -25,6 +25,10 @@ func InitTask() {
 	AAContractInteractTask()
 	UserOpTypeTask()
 	AssetTask()
+	InitWhaleStatistic(context.Background())
+	InitAaAccountTask()
+	InitAssetRefreshTask()
+
 	go AATransactionFix()
 	//temp
 	//DataFixedTask()

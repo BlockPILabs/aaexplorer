@@ -75,6 +75,10 @@ func Resister(router fiber.Router) {
 	networksV1.Get("/topPaymaster", controller.GetTopPaymaster).Name(controller.NameGetTopPaymaster)
 	networksV1.Get("/topFactory", controller.GetTopFactory).Name(controller.NameGetTopFactory)
 	networksV1.Get("/topWhale", controller.GetTopWhale).Name(controller.NameGetTopWhale)
+
+	//whale
+	networksV1.Get("/whaleOverview", controller.GetWhaleOverview).Name(controller.NameGetWhaleOverview)
+	networksV1.Get("/whaleChart", controller.GetWhaleChart).Name(controller.NameGetWhaleChart)
 }
 
 func Error() {

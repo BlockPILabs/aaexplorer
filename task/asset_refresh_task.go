@@ -10,12 +10,24 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/chenzhijie/go-web3"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
 	"math/big"
 	"time"
 )
 
 const Abi = "[{\"constant\":true,\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"name\":\"\",\"type\":\"uint8\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"balance\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"}]"
+
+func InitAssetRefreshTask() {
+	hourScheduler := chrono.NewDefaultTaskScheduler()
+	_, err := hourScheduler.ScheduleWithCron(func(ctx context.Context) {
+		AssetRefreshTask(ctx)
+	}, "0 55 0 * * *")
+
+	if err == nil {
+		logger.Info("AssetRefreshTask has been scheduled")
+	}
+}
 
 func AssetRefreshTask(ctx context.Context) {
 	cli, err := entity.Client(ctx)
@@ -40,6 +52,7 @@ func AssetRefreshTask(ctx context.Context) {
 		lastTime := time.Now().UnixMilli() - constConfig.AssetExpireTime
 		aas, err := client.AaAsset.Query().Where(aaasset.LastTimeLT(lastTime)).All(ctx)
 		if err != nil {
+			logger.Error("AssetRefreshTask query asset err ", "msg", err)
 			continue
 		}
 		if len(aas) == 0 {
@@ -47,6 +60,7 @@ func AssetRefreshTask(ctx context.Context) {
 		}
 		w3, err := web3.NewWeb3(net.HTTPRPC)
 		if err != nil {
+			logger.Error("AssetRefreshTask newWeb3 err ", "msg", err)
 			continue
 		}
 		w3.Eth.SetChainId(net.ChainID)
@@ -56,6 +70,7 @@ func AssetRefreshTask(ctx context.Context) {
 		}
 		blockNum, err := w3.Eth.GetBlockNumber()
 		if err != nil {
+			logger.Error("AssetRefreshTask blockNum err ", "msg", err)
 			continue
 		}
 		for _, aa := range aas {
@@ -75,6 +90,7 @@ func AssetRefreshTask(ctx context.Context) {
 
 			balance, err := w3.Eth.GetBalance(common.HexToAddress(userAddress), big.NewInt(int64(blockNum)))
 			if err != nil {
+				logger.Error("AssetRefreshTask get balance err ", "msg", err)
 				continue
 			}
 			nativeBalance := decimal.NewFromBigInt(balance, 0).Div(decimal.NewFromInt(10).Pow(decimal.NewFromInt(constConfig.DefaultDecimals)))

@@ -6,9 +6,21 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaaccountdata"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaasset"
+	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
 	"time"
 )
+
+func InitAaAccountTask() {
+	hourScheduler := chrono.NewDefaultTaskScheduler()
+	_, err := hourScheduler.ScheduleWithCron(func(ctx context.Context) {
+		AaAccountTask(ctx)
+	}, "0 15 * * * *")
+
+	if err == nil {
+		logger.Info("AaAccountTask has been scheduled")
+	}
+}
 
 func AaAccountTask(ctx context.Context) {
 	cli, err := entity.Client(ctx)

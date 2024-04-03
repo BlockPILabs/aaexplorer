@@ -33,7 +33,7 @@ func (WhaleStatisticDay) Fields() []ent.Field {
 			StructTag(`json:"whaleNum"`),
 		field.Int64("total_usd").
 			StructTag(`json:"totalUsd"`).GoType(decimal.Zero).SchemaType(map[string]string{dialect.Postgres: "numeric(50, 6)"}),
-		field.Time("statistic_time").
+		field.Int64("statistic_time").
 			StructTag(`json:"statisticTime"`),
 		field.Time("create_time").
 			Default(time.Now).

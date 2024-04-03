@@ -321,7 +321,7 @@ func saveWhaleStatisticHour(ctx context.Context, client *ent.Client, time time.T
 		totalUsd = totalUsd.Add(value)
 
 	}
-	whaleHour := client.WhaleStatisticHour.Create().SetWhaleNum(int64(addrCount)).SetTotalUsd(totalUsd).SetNetwork("").SetStatisticTime(time)
+	whaleHour := client.WhaleStatisticHour.Create().SetWhaleNum(int64(addrCount)).SetTotalUsd(totalUsd).SetNetwork("").SetStatisticTime(time.UnixMilli())
 	whaleHour.Save(ctx)
 
 }

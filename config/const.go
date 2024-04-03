@@ -37,6 +37,7 @@ const (
 
 	TopNum          = 300
 	DefaultDecimals = 18
+	WhaleNum        = 500
 )
 
 const (
