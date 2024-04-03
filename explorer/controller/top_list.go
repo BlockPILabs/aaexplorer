@@ -11,6 +11,7 @@ const (
 	NameGetTopBundler   = "get_top_bundler"
 	NameGetTopPaymaster = "get_top_paymaster"
 	NameGetTopFactory   = "get_top_factory"
+	NameGetTopWhale     = "get_top_whale"
 )
 
 func GetTopBundler(fcx *fiber.Ctx) error {
@@ -79,6 +80,31 @@ func GetTopFactory(fcx *fiber.Ctx) error {
 	}
 
 	res, err := service.GetTopFactory(ctx, req)
+	if err != nil {
+		logger.Error("get top factory error", "err", err)
+	}
+	return vo.NewResultJsonResponse(res).JSON(fcx)
+}
+
+func GetTopWhale(fcx *fiber.Ctx) error {
+	ctx := fcx.UserContext()
+	logger := log.Context(fcx.UserContext())
+
+	logger.Debug("start get top whale")
+	req := vo.TopWhaleRequest{
+		PaginationRequest: vo.NewDefaultPaginationRequest(),
+	}
+	err := fcx.ParamsParser(&req)
+	if err != nil {
+		logger.Warn("params parse error", "err", err)
+	}
+	err = fcx.QueryParser(&req)
+	if err != nil {
+		logger.Warn("query params parse error", "err", err, "network", req.Network)
+	}
+
+	res, err := service.GetTopWhale(ctx, req)
+
 	if err != nil {
 		logger.Error("get top factory error", "err", err)
 	}

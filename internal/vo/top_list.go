@@ -26,6 +26,15 @@ type TopBundlerResponse struct {
 	BundlerDetails []*BundlerDetail
 }
 
+type TopWhaleRequest struct {
+	PaginationRequest
+	Network string `json:"network"`
+}
+
+type TopWhaleResponse struct {
+	Pagination
+}
+
 type BundlerDetail struct {
 	Address         string          `json:"address"`
 	Bundles         int64           `json:"bundles"`
