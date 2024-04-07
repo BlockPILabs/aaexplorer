@@ -88,7 +88,7 @@ func GetWhaleChart(ctx context.Context, req vo.WhaleChartRequest) (*vo.WhaleChar
 			log.Println(err)
 			return nil, err
 		}
-		resp = getWhaleResponseDay(whaleStatisticDays, 7)
+		resp = getWhaleResponseDay(whaleStatisticDays)
 		if resp == nil {
 			return nil, nil
 		}
@@ -99,7 +99,7 @@ func GetWhaleChart(ctx context.Context, req vo.WhaleChartRequest) (*vo.WhaleChar
 			log.Println(err)
 			return nil, err
 		}
-		resp = getWhaleResponseDay(whaleStatisticDays, 30)
+		resp = getWhaleResponseDay(whaleStatisticDays)
 		if resp == nil {
 			return nil, nil
 		}
@@ -107,7 +107,7 @@ func GetWhaleChart(ctx context.Context, req vo.WhaleChartRequest) (*vo.WhaleChar
 	return resp, nil
 }
 
-func getWhaleResponseDay(days []*ent.WhaleStatisticDay, i int) *vo.WhaleChartResponse {
+func getWhaleResponseDay(days []*ent.WhaleStatisticDay) *vo.WhaleChartResponse {
 
 	if len(days) == 0 {
 		return nil

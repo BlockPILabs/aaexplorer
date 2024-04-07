@@ -7,6 +7,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaasset"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaassetdetail"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/token"
 	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/chenzhijie/go-web3"
 	"github.com/ethereum/go-ethereum/common"
@@ -19,9 +20,10 @@ import (
 const Abi = "[{\"constant\":true,\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"name\":\"\",\"type\":\"uint8\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"balance\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"}]"
 
 func InitAssetRefreshTask() {
+	go AssetRefreshTask(context.Background())
 	hourScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := hourScheduler.ScheduleWithCron(func(ctx context.Context) {
-		AssetRefreshTask(ctx)
+		//AssetRefreshTask(ctx)
 	}, "0 55 0 * * *")
 
 	if err == nil {
@@ -49,7 +51,7 @@ func AssetRefreshTask(ctx context.Context) {
 		if err != nil {
 			continue
 		}
-		lastTime := time.Now().UnixMilli() - constConfig.AssetExpireTime
+		lastTime := time.Now().UnixMilli() // - constConfig.AssetExpireTime
 		aas, err := client.AaAsset.Query().Where(aaasset.LastTimeLT(lastTime)).All(ctx)
 		if err != nil {
 			logger.Error("AssetRefreshTask query asset err ", "msg", err)
@@ -94,7 +96,19 @@ func AssetRefreshTask(ctx context.Context) {
 				continue
 			}
 			nativeBalance := decimal.NewFromBigInt(balance, 0).Div(decimal.NewFromInt(10).Pow(decimal.NewFromInt(constConfig.DefaultDecimals)))
+			nativeTokens, err := client.Token.Query().Where(token.TypeEQ("base"), token.NetworkEQ(network)).Limit(1).All(ctx)
+			nativePrice := decimal.Zero
+			if len(nativeTokens) > 0 {
+				nativePrice = nativeTokens[0].TokenPrice
+			}
+			nativeValue := nativeBalance.Mul(nativePrice)
+			totalValue = totalValue.Add(nativeValue)
 			client.AaAsset.Update().SetAssetValue(totalValue).SetLastTime(time.Now().UnixMilli()).SetBalance(nativeBalance).Where(aaasset.IDEqualFold(userAddress)).Exec(ctx)
+			if nativeBalance.Cmp(decimal.Zero) > 0 {
+				logger.Info("AssetRefreshTask update balance success, ", "userAddress", aa.ID)
+			} else {
+				logger.Info("AssetRefreshTask update balance success empty, ", "userAddress", aa.ID)
+			}
 		}
 	}
 }
