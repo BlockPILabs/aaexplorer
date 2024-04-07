@@ -89,7 +89,6 @@ func GetTopFactory(fcx *fiber.Ctx) error {
 func GetTopWhale(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()
 	logger := log.Context(fcx.UserContext())
-
 	logger.Debug("start get top whale")
 	req := vo.TopWhaleRequest{
 		PaginationRequest: vo.NewDefaultPaginationRequest(),
