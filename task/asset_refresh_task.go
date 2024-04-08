@@ -51,7 +51,7 @@ func AssetRefreshTask(ctx context.Context) {
 		if err != nil {
 			continue
 		}
-		lastTime := time.Now().UnixMilli() // - constConfig.AssetExpireTime
+		lastTime := time.Now().UnixMilli() - constConfig.WhaleTxDay*24*3600*1000
 		aas, err := client.AaAsset.Query().Where(aaasset.LastTimeLT(lastTime)).All(ctx)
 		if err != nil {
 			logger.Error("AssetRefreshTask query asset err ", "msg", err)
