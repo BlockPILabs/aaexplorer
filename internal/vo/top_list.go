@@ -1,6 +1,8 @@
 package vo
 
-import "github.com/shopspring/decimal"
+import (
+	"github.com/shopspring/decimal"
+)
 
 type TopRequest struct {
 	Type string
@@ -28,11 +30,20 @@ type TopBundlerResponse struct {
 
 type TopWhaleRequest struct {
 	PaginationRequest
-	Network string `json:"network"`
+	RankLimit int    `json:"rankLimit"`
+	Network   string `json:"network"`
 }
 
 type TopWhaleResponse struct {
 	Pagination
+	TopWhaleRankList []*TopWhaleInfo
+}
+
+type TopWhaleInfo struct {
+	Rank       int             `json:"rank"`
+	Address    string          `json:"address"`
+	Balance    decimal.Decimal `json:"balance"`
+	Percentage float64         `json:"percentage"`
 }
 
 type BundlerDetail struct {

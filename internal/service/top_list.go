@@ -9,6 +9,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/factoryinfo"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/paymasterinfo"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
+	"github.com/shopspring/decimal"
 )
 
 func GetTopBundler(ctx context.Context, req vo.TopBundlerRequest) (*vo.TopBundlerResponse, error) {
@@ -114,6 +115,60 @@ func GetTopFactory(ctx context.Context, req vo.TopFactoryRequest) (*vo.TopFactor
 }
 
 func GetTopWhale(ctx context.Context, req vo.TopWhaleRequest) (*vo.TopWhaleResponse, error) {
+	network := req.Network
+	client, err := entity.Client(ctx, network)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	var resp = &vo.TopWhaleResponse{
+		Pagination: vo.Pagination{
+			TotalCount: 0,
+			PerPage:    req.GetPerPage(),
+			Page:       req.GetPage(),
+		},
+	}
+
+	if req.RankLimit == 0 {
+		req.RankLimit = config.WhaleNum
+	}
+	aaAssets, err := client.QueryContext(ctx, `select row_number() over(order by asset_value desc) as row_number, rank_tab.user_address, rank_tab.asset_value from (select * from aa_asset order by asset_value DESC offset $1 limit $2) rank_tab offset $3 limit $4`, 0, req.RankLimit, req.GetOffset(), req.GetPerPage())
+	defer aaAssets.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	var aaAssetsRankList []*vo.TopWhaleInfo
+	queryContext, err := client.QueryContext(ctx, "select sum(rank_tab.asset_value) from (select asset_value from aa_asset order by asset_value DESC offset $1 limit $2) rank_tab", 0, req.RankLimit)
+	defer queryContext.Close()
+	if err != nil {
+		return nil, err
+	}
+	var totalValue float64
+	if queryContext.Next() {
+		queryContext.Scan(&totalValue)
+	}
+	if totalValue == 0 {
+		return nil, nil
+	}
+	for aaAssets.Next() {
+		var rank int
+		var address string
+		var assetValue decimal.Decimal
+		aaAssets.Scan(&rank, &address, &assetValue)
+		assetValueForFloat64, _ := assetValue.Float64()
+		whale := &vo.TopWhaleInfo{
+			Rank:       rank,
+			Address:    address,
+			Balance:    assetValue,
+			Percentage: assetValueForFloat64 / totalValue,
+		}
+
+		aaAssetsRankList = append(aaAssetsRankList, whale)
+	}
+
+	resp.TopWhaleRankList = aaAssetsRankList
+	resp.TotalCount = req.RankLimit
+
+	return resp, nil
 }
