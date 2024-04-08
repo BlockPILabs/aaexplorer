@@ -129,9 +129,8 @@ func GetTopWhale(ctx context.Context, req vo.TopWhaleRequest) (*vo.TopWhaleRespo
 		},
 	}
 
-	total := req.RankLimit
-	if total == 0 {
-		return nil, nil
+	if req.RankLimit == 0 {
+		req.RankLimit = config.WhaleNum
 	}
 	aaAssets, err := client.QueryContext(ctx, `select row_number() over(order by asset_value desc) as row_number, rank_tab.user_address, rank_tab.asset_value from (select * from aa_asset order by asset_value DESC offset $1 limit $2) rank_tab offset $3 limit $4`, 0, req.RankLimit, req.GetOffset(), req.GetPerPage())
 	defer aaAssets.Close()
@@ -169,7 +168,7 @@ func GetTopWhale(ctx context.Context, req vo.TopWhaleRequest) (*vo.TopWhaleRespo
 	}
 
 	resp.TopWhaleRankList = aaAssetsRankList
-	resp.TotalCount = total
+	resp.TotalCount = req.RankLimit
 
 	return resp, nil
 }
