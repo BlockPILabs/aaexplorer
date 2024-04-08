@@ -20,11 +20,11 @@ import (
 const Abi = "[{\"constant\":true,\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"name\":\"\",\"type\":\"uint8\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"balance\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"}]"
 
 func InitAssetRefreshTask() {
-	go AssetRefreshTask(context.Background())
+	//go AssetRefreshTask(context.Background())
 	hourScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := hourScheduler.ScheduleWithCron(func(ctx context.Context) {
-		//AssetRefreshTask(ctx)
-	}, "0 55 0 * * *")
+		AssetRefreshTask(ctx)
+	}, "0 35 0 1/6 * *")
 
 	if err == nil {
 		logger.Info("AssetRefreshTask has been scheduled")

@@ -6,6 +6,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaasset"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aatransactioninfo"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/token"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/whalestatisticday"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/whalestatistichour"
@@ -32,15 +33,33 @@ func GetWhaleOverview(ctx context.Context, req vo.WhaleOverviewRequest) (*vo.Wha
 		return nil, nil
 	}
 	minAssetValue := aaAssets[len(aaAssets)-1].AssetValue
-	noWhaleCount, err := client.AaAsset.Query().Where(aaasset.AssetValueLT(minAssetValue)).Count(ctx)
+	noWhaleCount, err := client.AaAsset.Query().Where(aaasset.AssetValueLTE(minAssetValue)).Count(ctx)
 	if err != nil {
 		return nil, nil
 	}
 	totalAssetValue := decimal.Zero
 	totalEth := decimal.Zero
+	var whaleAddresss []string
 	for _, asset := range aaAssets {
 		totalAssetValue = totalAssetValue.Add(asset.AssetValue)
 		totalEth = totalEth.Add(asset.Balance)
+		whaleAddresss = append(whaleAddresss, asset.ID)
+	}
+
+	txStartTimeMs := time.Now().UnixMilli() - config.WhaleTxDay*DaySecond*1000
+	txStartTime := time.UnixMilli(txStartTimeMs)
+	allCount, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.TimeGTE(txStartTime)).Count(ctx)
+	if err != nil {
+		allCount = 0
+	}
+	whaleCount, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.TimeGTE(txStartTime), aatransactioninfo.IDIn(whaleAddresss[:]...)).Count(ctx)
+	if err != nil {
+		whaleCount = 0
+	}
+
+	txDominance := decimal.Zero
+	if allCount != 0 {
+		txDominance = decimal.NewFromInt(int64(whaleCount)).DivRound(decimal.NewFromInt(int64(allCount)), 6)
 	}
 
 	baseTokens, err := client.Token.Query().Where(token.TypeEQ("base")).All(ctx)
@@ -51,13 +70,13 @@ func GetWhaleOverview(ctx context.Context, req vo.WhaleOverviewRequest) (*vo.Wha
 	if len(baseTokens) > 0 {
 		ethPrice = baseTokens[0].TokenPrice
 	}
-	ratio := decimal.NewFromInt(int64(noWhaleCount)).Div(decimal.NewFromInt(int64(noWhaleCount)).Add(decimal.NewFromInt(config.WhaleNum))).RoundDown(6)
+	ratio := decimal.NewFromInt(int64(len(aaAssets))).Div(decimal.NewFromInt(int64(noWhaleCount)).Add(decimal.NewFromInt(int64(len(aaAssets))))).RoundDown(6)
 	totalEthValue := totalEth.Mul(ethPrice).RoundDown(6)
 
 	resp.TotalAssetUsd = totalAssetValue
 	resp.TotalEthUsd = totalEthValue
 	resp.Ratio = ratio
-	resp.TxDominance = decimal.Zero
+	resp.TxDominance = txDominance
 	return resp, nil
 }
 
