@@ -1,8 +1,14 @@
 ---- 20230804
+
+CREATE DATABASE   block_db_taiko;
+\connect block_db_taiko;
 create schema partman;
 create extension pg_partman with schema partman;
+\connect postgres;
 create extension pg_cron;
 SELECT cron.schedule('@hourly', $$CALL partman.run_maintenance_proc()$$);
+
+\connect block_db_taiko;
 create table block_data_decode
 (
     time              timestamptz,
