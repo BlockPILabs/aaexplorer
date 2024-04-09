@@ -38,6 +38,8 @@ const (
 	TopNum          = 300
 	DefaultDecimals = 18
 	WhaleNum        = 500
+
+	WhaleTxDay = 7
 )
 
 const (

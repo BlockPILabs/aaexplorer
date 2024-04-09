@@ -126,9 +126,10 @@ func GetTokenPrice(symbol string) decimal.Decimal {
 
 	req.Header.Add("X-CMC_PRO_API_KEY", CmcAuthVal)
 
-	res, _ := http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if res == nil {
-		logger.Info("GetTokenPrice err, ")
+		logger.Info("GetTokenPrice http err, ", "msg", err)
+		return decimal.Zero
 	}
 
 	defer res.Body.Close()
@@ -138,9 +139,9 @@ func GetTokenPrice(symbol string) decimal.Decimal {
 
 	var tokenPriceResp *TokenPriceResp
 
-	err := json.Unmarshal([]byte(bodyData), &tokenPriceResp)
+	err = json.Unmarshal([]byte(bodyData), &tokenPriceResp)
 	if err != nil {
-		logger.Error("GetTopToken parse err ", "msg", err)
+		logger.Info("GetTokenPrice parse err ", "msg", err)
 		return decimal.Zero
 	}
 	var price = decimal.Zero

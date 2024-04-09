@@ -28,6 +28,7 @@ func InitTask() {
 	InitWhaleStatistic(context.Background())
 	InitAaAccountTask()
 	InitAssetRefreshTask()
+	InitRefreshPrice(context.Background())
 
 	go AATransactionFix()
 	//temp

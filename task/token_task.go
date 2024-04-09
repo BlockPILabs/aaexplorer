@@ -90,6 +90,7 @@ func InitRefreshToken(ctx context.Context) {
 }
 
 func InitRefreshPrice(ctx context.Context) {
+	go RefreshPrice(ctx)
 	hourScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := hourScheduler.ScheduleWithCron(func(ctx context.Context) {
 		RefreshPrice(ctx)
@@ -175,6 +176,10 @@ func RefreshPrice(ctx context.Context) {
 				continue
 			}
 			price := cmc.GetTokenPrice(one.Symbol)
+			logger.Info("RefreshPrice get price success, ", "symbol", one.Symbol, "price", price)
+			if price.Cmp(decimal.Zero) == 0 {
+				continue
+			}
 			err := client.Token.Update().SetTokenPrice(price).SetLastTime(now).Where(token.IDEQ(one.ID)).Exec(ctx)
 			if err != nil {
 				logger.Error("RefreshTokenPrice err ", "symbol", one.Symbol, "msg", err)

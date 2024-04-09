@@ -23,8 +23,8 @@ func InitAssetRefreshTask() {
 	go AssetRefreshTask(context.Background())
 	hourScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := hourScheduler.ScheduleWithCron(func(ctx context.Context) {
-		//AssetRefreshTask(ctx)
-	}, "0 55 0 * * *")
+		AssetRefreshTask(ctx)
+	}, "0 35 0 1/6 * *")
 
 	if err == nil {
 		logger.Info("AssetRefreshTask has been scheduled")
@@ -51,7 +51,7 @@ func AssetRefreshTask(ctx context.Context) {
 		if err != nil {
 			continue
 		}
-		lastTime := time.Now().UnixMilli() // - constConfig.AssetExpireTime
+		lastTime := time.Now().UnixMilli() - constConfig.WhaleTxDay*24*3600*1000
 		aas, err := client.AaAsset.Query().Where(aaasset.LastTimeLT(lastTime)).All(ctx)
 		if err != nil {
 			logger.Error("AssetRefreshTask query asset err ", "msg", err)
