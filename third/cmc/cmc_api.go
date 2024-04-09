@@ -132,7 +132,7 @@ func GetTokenPrice(symbol string) decimal.Decimal {
 
 	res, err := client.Do(req)
 	if res == nil {
-		logger.Info("GetTokenPrice err, ", "msg", err)
+		logger.Info("GetTokenPrice http err, ", "msg", err)
 		return decimal.Zero
 	}
 
@@ -145,7 +145,7 @@ func GetTokenPrice(symbol string) decimal.Decimal {
 
 	err = json.Unmarshal([]byte(bodyData), &tokenPriceResp)
 	if err != nil {
-		logger.Error("GetTopToken parse err ", "msg", err)
+		logger.Info("GetTokenPrice parse err ", "msg", err)
 		return decimal.Zero
 	}
 	var price = decimal.Zero
