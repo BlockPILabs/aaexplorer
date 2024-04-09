@@ -176,6 +176,7 @@ func RefreshPrice(ctx context.Context) {
 				continue
 			}
 			price := cmc.GetTokenPrice(one.Symbol)
+			logger.Info("RefreshPrice get price success, ", "symbol", one.Symbol, "price", price)
 			if price.Cmp(decimal.Zero) == 0 {
 				continue
 			}
