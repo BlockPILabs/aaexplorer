@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 const CmcUrl = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/map?sort=cmc_rank"
@@ -121,14 +122,18 @@ type QuoteUsd struct {
 
 func GetTokenPrice(symbol string) decimal.Decimal {
 	url := CmcPriceUrl
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
 
 	req, _ := http.NewRequest("GET", url+"symbol="+symbol, nil)
 
 	req.Header.Add("X-CMC_PRO_API_KEY", CmcAuthVal)
 
-	res, _ := http.DefaultClient.Do(req)
+	res, err := client.Do(req)
 	if res == nil {
-		logger.Info("GetTokenPrice err, ")
+		logger.Info("GetTokenPrice err, ", "msg", err)
+		return decimal.Zero
 	}
 
 	defer res.Body.Close()
@@ -138,7 +143,7 @@ func GetTokenPrice(symbol string) decimal.Decimal {
 
 	var tokenPriceResp *TokenPriceResp
 
-	err := json.Unmarshal([]byte(bodyData), &tokenPriceResp)
+	err = json.Unmarshal([]byte(bodyData), &tokenPriceResp)
 	if err != nil {
 		logger.Error("GetTopToken parse err ", "msg", err)
 		return decimal.Zero
