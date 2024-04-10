@@ -155,10 +155,22 @@ func GetTokenPrice(symbol string) decimal.Decimal {
 					usd := quote.USD
 					if usd != nil {
 						price = usd.Price
+					} else {
+						logger.Info("GetTokenPrice usd nil ", "symbol", symbol)
 					}
+				} else {
+					logger.Info("GetTokenPrice quote nil ", "symbol", symbol)
+
 				}
+			} else {
+				logger.Info("GetTokenPrice priceDataDetails size 0 ", "symbol", symbol)
+
 			}
+		} else {
+			logger.Info("GetTokenPrice data size 0 ", "symbol", symbol)
 		}
+	} else {
+		logger.Info("GetTokenPrice tokenPriceResp nil ", "symbol", symbol)
 	}
 
 	return price

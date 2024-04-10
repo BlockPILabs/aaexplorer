@@ -75,42 +75,66 @@ func AssetRefreshTask(ctx context.Context) {
 			logger.Error("AssetRefreshTask blockNum err ", "msg", err)
 			continue
 		}
-		for _, aa := range aas {
-			userAddress := aa.ID
-			totalValue := decimal.Zero
-			for _, token := range tokens {
-				contractAddress := token.ContractAddress
-				if len(contractAddress) == 0 {
-					continue
-				}
-				decimals := GetDecimals(ctx, contractAddress, w3)
-				balance := GetBalance(ctx, contractAddress, userAddress, decimals, w3)
-				assetValue := balance.Mul(token.TokenPrice)
-				addOrUpdateAssetDetail(ctx, contractAddress, userAddress, assetValue, client, network, token.Symbol, balance)
-				totalValue = totalValue.Add(assetValue)
-			}
+		oneSize := len(aas) / 10
+		var allArrs [][]*ent.AaAsset
+		for i := 0; i <= oneSize; i++ {
+			var oneArr []*ent.AaAsset
+			allArrs = append(allArrs, oneArr)
+		}
 
-			balance, err := w3.Eth.GetBalance(common.HexToAddress(userAddress), big.NewInt(int64(blockNum)))
-			if err != nil {
-				logger.Error("AssetRefreshTask get balance err ", "msg", err)
-				continue
+		start := 0
+		for idx, aa := range aas {
+			r := idx % 10
+			if r == 0 {
+				go doRefresh(ctx, client, tokens, w3, blockNum, network, allArrs[start])
+				start = start + 1
 			}
-			nativeBalance := decimal.NewFromBigInt(balance, 0).Div(decimal.NewFromInt(10).Pow(decimal.NewFromInt(constConfig.DefaultDecimals)))
-			nativeTokens, err := client.Token.Query().Where(token.TypeEQ("base"), token.NetworkEQ(network)).Limit(1).All(ctx)
-			nativePrice := decimal.Zero
-			if len(nativeTokens) > 0 {
-				nativePrice = nativeTokens[0].TokenPrice
-			}
-			nativeValue := nativeBalance.Mul(nativePrice)
-			totalValue = totalValue.Add(nativeValue)
-			client.AaAsset.Update().SetAssetValue(totalValue).SetLastTime(time.Now().UnixMilli()).SetBalance(nativeBalance).Where(aaasset.IDEqualFold(userAddress)).Exec(ctx)
-			if nativeBalance.Cmp(decimal.Zero) > 0 {
-				logger.Info("AssetRefreshTask update balance success, ", "userAddress", aa.ID)
-			} else {
-				logger.Info("AssetRefreshTask update balance success empty, ", "userAddress", aa.ID)
-			}
+			allArrs[start] = append(allArrs[start], aa)
 		}
 	}
+}
+
+func doRefresh(ctx context.Context, client *ent.Client, tokens []*ent.Token, w3 *web3.Web3, blockNum uint64, network string, assets []*ent.AaAsset) {
+	if len(assets) == 0 {
+		return
+	}
+	logger.Info("AssetRefreshTask doRefresh start.")
+	for _, aa := range assets {
+		userAddress := aa.ID
+		totalValue := decimal.Zero
+		for _, token := range tokens {
+			contractAddress := token.ContractAddress
+			if len(contractAddress) == 0 {
+				continue
+			}
+			decimals := GetDecimals(ctx, contractAddress, w3)
+			balance := GetBalance(ctx, contractAddress, userAddress, decimals, w3)
+			assetValue := balance.Mul(token.TokenPrice)
+			addOrUpdateAssetDetail(ctx, contractAddress, userAddress, assetValue, client, network, token.Symbol, balance)
+			totalValue = totalValue.Add(assetValue)
+		}
+
+		balance, err := w3.Eth.GetBalance(common.HexToAddress(userAddress), big.NewInt(int64(blockNum)))
+		if err != nil {
+			logger.Error("AssetRefreshTask get balance err ", "msg", err)
+			continue
+		}
+		nativeBalance := decimal.NewFromBigInt(balance, 0).Div(decimal.NewFromInt(10).Pow(decimal.NewFromInt(constConfig.DefaultDecimals)))
+		nativeTokens, err := client.Token.Query().Where(token.TypeEQ("base"), token.NetworkEQ(network)).Limit(1).All(ctx)
+		nativePrice := decimal.Zero
+		if len(nativeTokens) > 0 {
+			nativePrice = nativeTokens[0].TokenPrice
+		}
+		nativeValue := nativeBalance.Mul(nativePrice)
+		totalValue = totalValue.Add(nativeValue)
+		client.AaAsset.Update().SetAssetValue(totalValue).SetLastTime(time.Now().UnixMilli()).SetBalance(nativeBalance).Where(aaasset.IDEqualFold(userAddress)).Exec(ctx)
+		if nativeBalance.Cmp(decimal.Zero) > 0 {
+			logger.Info("AssetRefreshTask update balance success, ", "userAddress", aa.ID)
+		} else {
+			logger.Info("AssetRefreshTask update balance success empty, ", "userAddress", aa.ID)
+		}
+	}
+
 }
 
 func addOrUpdateAssetDetail(ctx context.Context, contractAddress string, userAddress string, value decimal.Decimal, client *ent.Client, network string, symbol string, amount decimal.Decimal) {
