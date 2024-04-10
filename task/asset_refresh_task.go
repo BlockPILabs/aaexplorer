@@ -84,7 +84,7 @@ func AssetRefreshTask(ctx context.Context) {
 
 		start := 0
 		for idx, aa := range aas {
-			r := idx % 10
+			r := idx % oneSize
 			if r == 0 {
 				go doRefresh(ctx, client, tokens, w3, blockNum, network, allArrs[start])
 				start = start + 1
