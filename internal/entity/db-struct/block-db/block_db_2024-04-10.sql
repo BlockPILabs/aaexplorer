@@ -42,12 +42,8 @@ alter table public.block_data_decode
     owner to postgres;
 
 
--- create table if not exists public.block_data_decode_p2023_10_20
---     partition of public.block_data_decode
---         FOR VALUES FROM ('2023-10-20 00:00:00+00') TO ('2023-10-21 00:00:00+00');
---
--- alter table public.block_data_decode_p2023_10_20
---     owner to postgres;
+
+
 
 create index if not exists block_data_decode_hash_index
     on public.block_data_decode using hash (hash);
@@ -76,12 +72,6 @@ create table if not exists public.aa_block_info
 
 alter table public.aa_block_info
     owner to postgres;
---
--- create table if not exists public.aa_block_info_p2023_01_01
---     partition of public.aa_block_info
---         FOR VALUES FROM ('2023-01-01 00:00:00+00') TO ('2023-01-02 00:00:00+00');
---
-
 create index if not exists aa_block_info_hash_index
     on public.aa_block_info using hash (hash);
 
@@ -124,10 +114,6 @@ create table if not exists public.transaction_decode
 alter table public.transaction_decode
     owner to postgres;
 
--- create table if not exists public.transaction_decode_p2023_01_01
---     partition of public.transaction_decode
---         FOR VALUES FROM ('2023-01-01 00:00:00+00') TO ('2023-01-02 00:00:00+00');
---
 
 create index if not exists transaction_decode_hash_index
     on public.transaction_decode using hash (hash);
@@ -172,11 +158,6 @@ create table if not exists public.transaction_receipt_decode
 
 alter table public.transaction_receipt_decode
     owner to postgres;
---
--- create table if not exists public.transaction_receipt_decode_p2023_01_01
---     partition of public.transaction_receipt_decode
---         FOR VALUES FROM ('2023-01-01 00:00:00+00') TO ('2023-01-02 00:00:00+00');
---
 
 create index if not exists transaction_receipt_decode_hash_index
     on public.transaction_receipt_decode using hash (transaction_hash);
@@ -374,10 +355,6 @@ create table if not exists public.aa_transaction_info
 alter table public.aa_transaction_info
     owner to postgres;
 
--- create table if not exists public.aa_transaction_info_p2023_01_01
---     partition of public.aa_transaction_info
---         FOR VALUES FROM ('2023-01-01 00:00:00+00') TO ('2023-01-02 00:00:00+00');
-
 create index if not exists aa_transaction_info_hash_index
     on public.aa_transaction_info using hash (hash);
 
@@ -424,11 +401,6 @@ create table if not exists public.aa_user_ops_calldata
 
 alter table public.aa_user_ops_calldata
     owner to postgres;
-
--- create table if not exists public.aa_user_ops_calldata_p2023_01_01
---     partition of public.aa_user_ops_calldata
---         FOR VALUES FROM ('2023-01-01 00:00:00+00') TO ('2023-01-02 00:00:00+00');
---
 
 create index if not exists aa_user_ops_calldata_tx_hash_index
     on public.aa_user_ops_calldata using hash (tx_hash);
@@ -486,11 +458,6 @@ create table if not exists public.aa_user_ops_info
 
 alter table public.aa_user_ops_info
     owner to postgres;
-
--- create table if not exists public.aa_user_ops_info_p2023_01_01
---     partition of public.aa_user_ops_info
---         FOR VALUES FROM ('2023-01-01 00:00:00+00') TO ('2023-01-02 00:00:00+00');
---
 
 create index if not exists aa_user_ops_info_tx_hash_index
     on public.aa_user_ops_info using hash (tx_hash);
