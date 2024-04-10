@@ -1241,6 +1241,12 @@ create trigger aa_scan_sync
     on public.aa_block_sync
     for each row
 execute procedure public.aa_scan_sync();
+
+create trigger aa_scan_sync_insert
+    after insert
+    on public.aa_block_sync
+    for each row
+execute procedure public.aa_scan_sync();
 create trigger transaction_block_sync
     after insert
     on public.block_sync
