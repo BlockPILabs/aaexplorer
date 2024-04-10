@@ -1,15 +1,3 @@
-
-CREATE DATABASE   block_db;
-\connect block_db;
-create schema partman;
-create extension pg_partman with schema partman;
-\connect postgres;
-create extension pg_cron;
--- function schedule_in_database(job_name text, schedule text, command text, database text, username text default NULL::text, active boolean default true) returns bigint
-SELECT cron.schedule_in_database('block_db_partman','@hourly', $$CALL partman.run_maintenance_proc()$$,'block_db','postgres');
-\connect block_db;
-
-
 create table if not exists public.block_data_decode
 (
     time              timestamp with time zone,
@@ -42,12 +30,6 @@ alter table public.block_data_decode
     owner to postgres;
 
 
--- create table if not exists public.block_data_decode_p2023_10_20
---     partition of public.block_data_decode
---         FOR VALUES FROM ('2023-10-20 00:00:00+00') TO ('2023-10-21 00:00:00+00');
---
--- alter table public.block_data_decode_p2023_10_20
---     owner to postgres;
 
 create index if not exists block_data_decode_hash_index
     on public.block_data_decode using hash (hash);
@@ -76,12 +58,6 @@ create table if not exists public.aa_block_info
 
 alter table public.aa_block_info
     owner to postgres;
---
--- create table if not exists public.aa_block_info_p2023_01_01
---     partition of public.aa_block_info
---         FOR VALUES FROM ('2023-01-01 00:00:00+00') TO ('2023-01-02 00:00:00+00');
---
-
 create index if not exists aa_block_info_hash_index
     on public.aa_block_info using hash (hash);
 
@@ -124,10 +100,6 @@ create table if not exists public.transaction_decode
 alter table public.transaction_decode
     owner to postgres;
 
--- create table if not exists public.transaction_decode_p2023_01_01
---     partition of public.transaction_decode
---         FOR VALUES FROM ('2023-01-01 00:00:00+00') TO ('2023-01-02 00:00:00+00');
---
 
 create index if not exists transaction_decode_hash_index
     on public.transaction_decode using hash (hash);
@@ -172,11 +144,6 @@ create table if not exists public.transaction_receipt_decode
 
 alter table public.transaction_receipt_decode
     owner to postgres;
---
--- create table if not exists public.transaction_receipt_decode_p2023_01_01
---     partition of public.transaction_receipt_decode
---         FOR VALUES FROM ('2023-01-01 00:00:00+00') TO ('2023-01-02 00:00:00+00');
---
 
 create index if not exists transaction_receipt_decode_hash_index
     on public.transaction_receipt_decode using hash (transaction_hash);
@@ -203,23 +170,7 @@ alter table public.block_sync
 create index if not exists block_sync_scanned_index
     on public.block_sync (scanned);
 
-create trigger transaction_block_sync
-    after insert
-    on public.block_sync
-    for each row
-execute procedure public.transaction_block_sync();
 
-create trigger transaction_receipt_block_sync
-    after insert
-    on public.block_sync
-    for each row
-execute procedure public.transaction_receipt_block_sync();
-
-create trigger aa_block_sync
-    after update
-    on public.block_sync
-    for each row
-execute procedure public.aa_block_sync();
 
 create table if not exists public.transaction_sync
 (
@@ -237,12 +188,6 @@ alter table public.transaction_sync
 create index if not exists transaction_sync_scanned_index
     on public.transaction_sync (scanned);
 
-create trigger aa_tx_sync
-    after update
-    on public.transaction_sync
-    for each row
-execute procedure public.aa_tx_sync();
-
 create table if not exists public.transaction_receipt_block_sync
 (
     block_num   bigint not null
@@ -258,12 +203,6 @@ alter table public.transaction_receipt_block_sync
 
 create index if not exists transaction_receipt_block_sync_index
     on public.transaction_receipt_block_sync (scanned);
-
-create trigger aa_txr_sync
-    after update
-    on public.transaction_receipt_block_sync
-    for each row
-execute procedure public.aa_txr_sync();
 
 create table if not exists public.aa_block_sync
 (
@@ -284,12 +223,6 @@ alter table public.aa_block_sync
 
 create index if not exists aa_block_sync_scanned_index
     on public.aa_block_sync (scanned);
-
-create trigger aa_scan_sync
-    after update
-    on public.aa_block_sync
-    for each row
-execute procedure public.aa_scan_sync();
 
 create table if not exists public.account
 (
@@ -374,10 +307,6 @@ create table if not exists public.aa_transaction_info
 alter table public.aa_transaction_info
     owner to postgres;
 
--- create table if not exists public.aa_transaction_info_p2023_01_01
---     partition of public.aa_transaction_info
---         FOR VALUES FROM ('2023-01-01 00:00:00+00') TO ('2023-01-02 00:00:00+00');
-
 create index if not exists aa_transaction_info_hash_index
     on public.aa_transaction_info using hash (hash);
 
@@ -424,11 +353,6 @@ create table if not exists public.aa_user_ops_calldata
 
 alter table public.aa_user_ops_calldata
     owner to postgres;
-
--- create table if not exists public.aa_user_ops_calldata_p2023_01_01
---     partition of public.aa_user_ops_calldata
---         FOR VALUES FROM ('2023-01-01 00:00:00+00') TO ('2023-01-02 00:00:00+00');
---
 
 create index if not exists aa_user_ops_calldata_tx_hash_index
     on public.aa_user_ops_calldata using hash (tx_hash);
@@ -486,11 +410,6 @@ create table if not exists public.aa_user_ops_info
 
 alter table public.aa_user_ops_info
     owner to postgres;
-
--- create table if not exists public.aa_user_ops_info_p2023_01_01
---     partition of public.aa_user_ops_info
---         FOR VALUES FROM ('2023-01-01 00:00:00+00') TO ('2023-01-02 00:00:00+00');
---
 
 create index if not exists aa_user_ops_info_tx_hash_index
     on public.aa_user_ops_info using hash (tx_hash);
@@ -972,8 +891,7 @@ create index if not exists aa_asset_detail_contract_address_idx
 
 create table if not exists public.whale_statistic_hour
 (
-    id             bigserial
-        primary key,
+    id             bigserial primary key,
     network        varchar(255),
     whale_num      bigint,
     total_usd      numeric(50, 20),
@@ -986,8 +904,7 @@ alter table public.whale_statistic_hour
 
 create table if not exists public.whale_statistic_day
 (
-    id             bigserial
-        primary key,
+    id             bigserial primary key,
     network        varchar(255),
     whale_num      bigint,
     total_usd      numeric(50, 20),
@@ -1001,355 +918,7 @@ alter table public.whale_statistic_day
 create index if not exists whale_statistic_day_statistic_time_idx
     on public.whale_statistic_day (statistic_time);
 
--- Cyclic dependencies found
 
-create table if not exists public.aa_account_data_p1
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 0);
-
-alter table public.aa_account_data_p1
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p2
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 1);
-
-alter table public.aa_account_data_p2
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p3
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 2);
-
-alter table public.aa_account_data_p3
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p4
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 3);
-
-alter table public.aa_account_data_p4
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p5
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 4);
-
-alter table public.aa_account_data_p5
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p6
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 5);
-
-alter table public.aa_account_data_p6
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p7
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 6);
-
-alter table public.aa_account_data_p7
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p8
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 7);
-
-alter table public.aa_account_data_p8
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p9
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 8);
-
-alter table public.aa_account_data_p9
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p10
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 9);
-
-alter table public.aa_account_data_p10
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p11
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 10);
-
-alter table public.aa_account_data_p11
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p12
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 11);
-
-alter table public.aa_account_data_p12
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p13
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 12);
-
-alter table public.aa_account_data_p13
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p14
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 13);
-
-alter table public.aa_account_data_p14
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p15
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 14);
-
-alter table public.aa_account_data_p15
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p16
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 15);
-
-alter table public.aa_account_data_p16
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p17
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 16);
-
-alter table public.aa_account_data_p17
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p18
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 17);
-
-alter table public.aa_account_data_p18
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p19
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 18);
-
-alter table public.aa_account_data_p19
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p20
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 19);
-
-alter table public.aa_account_data_p20
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p21
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 20);
-
-alter table public.aa_account_data_p21
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p22
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 21);
-
-alter table public.aa_account_data_p22
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p23
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 22);
-
-alter table public.aa_account_data_p23
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p24
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 23);
-
-alter table public.aa_account_data_p24
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p25
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 24);
-
-alter table public.aa_account_data_p25
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p26
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 25);
-
-alter table public.aa_account_data_p26
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p27
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 26);
-
-alter table public.aa_account_data_p27
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p28
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 27);
-
-alter table public.aa_account_data_p28
-    owner to postgres;
-
--- Cyclic dependencies found
-
-create table if not exists public.aa_account_data_p29
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 28);
-
-alter table public.aa_account_data_p29
-    owner to postgres;
-
--- Cyclic dependencies found
 
 create table if not exists public.aa_account_data
 (
@@ -1368,19 +937,326 @@ create table if not exists public.aa_account_data
 alter table public.aa_account_data
     owner to postgres;
 
-create table if not exists public.aa_account_data_p30
-    partition of public.aa_account_data
-        (
-            primary key (address)
-            )
-        FOR VALUES WITH (modulus 30, remainder 29);
 
-alter table public.aa_account_data_p30
-    owner to postgres;
 
 create index if not exists aa_account_data_aa_type
     on public.aa_account_data (aa_type);
 
 create index if not exists aa_account_data_factory
     on public.aa_account_data (factory);
+
+-- Cyclic dependencies found
+
+create table aa_account_data_p1 partition of aa_account_data for values with (modulus 30, remainder 0);
+create table aa_account_data_p2 partition of aa_account_data for values with (modulus 30, remainder 1);
+create table aa_account_data_p3 partition of aa_account_data for values with (modulus 30, remainder 2);
+create table aa_account_data_p4 partition of aa_account_data for values with (modulus 30, remainder 3);
+create table aa_account_data_p5 partition of aa_account_data for values with (modulus 30, remainder 4);
+create table aa_account_data_p6 partition of aa_account_data for values with (modulus 30, remainder 5);
+create table aa_account_data_p7 partition of aa_account_data for values with (modulus 30, remainder 6);
+create table aa_account_data_p8 partition of aa_account_data for values with (modulus 30, remainder 7);
+create table aa_account_data_p9 partition of aa_account_data for values with (modulus 30, remainder 8);
+create table aa_account_data_p10 partition of aa_account_data for values with (modulus 30, remainder 9);
+create table aa_account_data_p11 partition of aa_account_data for values with (modulus 30, remainder 10);
+create table aa_account_data_p12 partition of aa_account_data for values with (modulus 30, remainder 11);
+create table aa_account_data_p13 partition of aa_account_data for values with (modulus 30, remainder 12);
+create table aa_account_data_p14 partition of aa_account_data for values with (modulus 30, remainder 13);
+create table aa_account_data_p15 partition of aa_account_data for values with (modulus 30, remainder 14);
+create table aa_account_data_p16 partition of aa_account_data for values with (modulus 30, remainder 15);
+create table aa_account_data_p17 partition of aa_account_data for values with (modulus 30, remainder 16);
+create table aa_account_data_p18 partition of aa_account_data for values with (modulus 30, remainder 17);
+create table aa_account_data_p19 partition of aa_account_data for values with (modulus 30, remainder 18);
+create table aa_account_data_p20 partition of aa_account_data for values with (modulus 30, remainder 19);
+create table aa_account_data_p21 partition of aa_account_data for values with (modulus 30, remainder 20);
+create table aa_account_data_p22 partition of aa_account_data for values with (modulus 30, remainder 21);
+create table aa_account_data_p23 partition of aa_account_data for values with (modulus 30, remainder 22);
+create table aa_account_data_p24 partition of aa_account_data for values with (modulus 30, remainder 23);
+create table aa_account_data_p25 partition of aa_account_data for values with (modulus 30, remainder 24);
+create table aa_account_data_p26 partition of aa_account_data for values with (modulus 30, remainder 25);
+create table aa_account_data_p27 partition of aa_account_data for values with (modulus 30, remainder 26);
+create table aa_account_data_p28 partition of aa_account_data for values with (modulus 30, remainder 27);
+create table aa_account_data_p29 partition of aa_account_data for values with (modulus 30, remainder 28);
+create table aa_account_data_p30 partition of aa_account_data for values with (modulus 30, remainder 29);
+
+
+---------------------------------------------------------------------------------------
+
+create function public.aa_scan_sync() returns trigger
+    language plpgsql
+as
+$$
+DECLARE
+    current_block bigint;
+    current_scanned
+                  boolean default false;
+    current_create_time
+                  timestamp with time zone;
+    current_update_time
+                  timestamp with time zone;
+
+BEGIN
+    if NEW.scanned is not null then
+        return null ;
+    end if;
+    current_block
+        = NEW.block_num;
+    current_scanned
+        = NEW.scanned;
+    current_create_time
+        = NEW.create_time;
+    current_update_time
+        = NEW.update_time;
+
+    if NEW.block_scanned and
+       NEW.tx_scanned and
+       NEW.txr_scanned then
+        update aa_block_sync set scanned = false, update_time = current_timestamp where block_num = current_block;
+    end if;
+    Return null;
+END;
+$$;
+
+alter function public.aa_scan_sync() owner to postgres;
+
+create function public.aa_block_sync() returns trigger
+    language plpgsql
+as
+$$
+DECLARE
+    current_block bigint;
+    current_scanned
+                  boolean default false;
+    current_create_time
+                  timestamp with time zone;
+    current_update_time
+                  timestamp with time zone;
+
+BEGIN
+    current_block
+        = NEW.block_num;
+    current_scanned
+        = NEW.scanned;
+    current_create_time
+        = NEW.create_time;
+    current_update_time
+        = NEW.update_time;
+
+    insert into aa_block_sync (block_num, block_scanned, create_time)
+    VALUES (current_block,
+            current_scanned,
+            current_create_time)
+    on conflict (block_num) do update set block_scanned = current_scanned, update_time = current_update_time;
+    Return null;
+END;
+$$;
+
+alter function public.aa_block_sync() owner to postgres;
+
+create function public.aa_tx_sync() returns trigger
+    language plpgsql
+as
+$$
+DECLARE
+    current_block bigint;
+    current_scanned
+                  boolean default false;
+    current_create_time
+                  timestamp with time zone;
+    current_update_time
+                  timestamp with time zone;
+
+BEGIN
+    current_block
+        = NEW.block_num;
+    current_scanned
+        = NEW.scanned;
+    current_create_time
+        = NEW.create_time;
+    current_update_time
+        = NEW.update_time;
+
+    insert into aa_block_sync (block_num, tx_scanned, create_time)
+    VALUES (current_block,
+            current_scanned,
+            current_create_time)
+    on conflict (block_num) do update set tx_scanned = current_scanned, update_time = current_update_time;
+    Return null;
+END;
+$$;
+
+alter function public.aa_tx_sync() owner to postgres;
+
+create function public.aa_txr_sync() returns trigger
+    language plpgsql
+as
+$$
+DECLARE
+    current_block bigint;
+    current_scanned
+                  boolean default false;
+    current_create_time
+                  timestamp with time zone;
+    current_update_time
+                  timestamp with time zone;
+
+BEGIN
+    current_block
+        = NEW.block_num;
+    current_scanned
+        = NEW.scanned;
+    current_create_time
+        = NEW.create_time;
+    current_update_time
+        = NEW.update_time;
+
+    insert into aa_block_sync (block_num, txr_scanned, create_time)
+    VALUES (current_block,
+            current_scanned,
+            current_create_time)
+    on conflict (block_num) do update set txr_scanned = current_scanned, update_time = current_update_time;
+    Return null;
+END;
+$$;
+
+alter function public.aa_txr_sync() owner to postgres;
+
+create function public.transaction_block_sync() returns trigger
+    language plpgsql
+as
+$$
+DECLARE
+    current_block bigint;
+    current_scanned
+                  boolean default false;
+    current_create_time
+                  timestamp with time zone;
+
+BEGIN
+    current_block
+        = NEW.block_num;
+    current_scanned
+        = false;
+    current_create_time
+        = NEW.create_time;
+
+    insert into transaction_sync (block_num, scanned, create_time)
+    VALUES (current_block,
+            current_scanned,
+            current_create_time)
+    on conflict (block_num) do nothing;
+    Return null;
+END;
+$$;
+
+alter function public.transaction_block_sync() owner to postgres;
+
+create function public.transaction_receipt_block_sync() returns trigger
+    language plpgsql
+as
+$$
+DECLARE
+    current_block bigint;
+    current_scanned
+                  boolean default false;
+    current_create_time
+                  timestamp with time zone;
+
+BEGIN
+    current_block
+        = NEW.block_num;
+    current_scanned
+        = false;
+    current_create_time
+        = NEW.create_time;
+
+    insert into transaction_receipt_block_sync (block_num, scanned, create_time)
+    VALUES (current_block,
+            current_scanned,
+            current_create_time)
+    on conflict (block_num) do nothing;
+    Return null;
+END;
+$$;
+
+alter function public.transaction_receipt_block_sync() owner to postgres;
+
+create function public.sync_account(batch bigint) returns void
+    language plpgsql
+as
+$$
+DECLARE
+    current_block_num int8;
+    current_max_block int8;
+    max_block_num     int8;
+BEGIN
+    current_block_num = (select block_num from account_sync limit 1 for update skip locked);
+    current_max_block = (select max(block_number) from transaction_decode);
+
+    if current_block_num > current_max_block then
+        return;
+    end if;
+    if current_block_num + batch > current_max_block then
+        max_block_num = current_max_block;
+    else
+        max_block_num = current_block_num + batch;
+    end if;
+
+    with addrs as (select unnest(array_agg(from_addr) || array_agg(to_addr)) as addr
+                   from transaction_decode
+                   where block_number >= current_block_num
+                     and block_number <= max_block_num)
+    insert
+    into account
+    select distinct addr
+    from addrs
+    where addr is not null
+    on conflict do nothing;
+    update account_sync set block_num = max_block_num where block_num = current_block_num;
+end
+$$;
+
+alter function public.sync_account(bigint) owner to postgres;
+
+create trigger aa_scan_sync
+    after update
+    on public.aa_block_sync
+    for each row
+execute procedure public.aa_scan_sync();
+
+create trigger aa_scan_sync_insert
+    after insert
+    on public.aa_block_sync
+    for each row
+execute procedure public.aa_scan_sync();
+
+create trigger transaction_block_sync
+    after insert
+    on public.block_sync
+    for each row
+execute procedure public.transaction_block_sync();
+
+create trigger transaction_receipt_block_sync
+    after insert
+    on public.block_sync
+    for each row
+execute procedure public.transaction_receipt_block_sync();
+
+create trigger aa_block_sync
+    after update
+    on public.block_sync
+    for each row
+execute procedure public.aa_block_sync();
+
+create trigger aa_txr_sync
+    after update
+    on public.transaction_receipt_block_sync
+    for each row
+execute procedure public.aa_txr_sync();
+
+create trigger aa_tx_sync
+    after update
+    on public.transaction_sync
+    for each row
+execute procedure public.aa_tx_sync();
+
 

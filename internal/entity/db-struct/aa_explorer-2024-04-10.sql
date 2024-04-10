@@ -56,8 +56,7 @@ alter table public.function_signature
 
 create table if not exists public.token
 (
-    id               bigserial
-    primary key,
+    id               bigserial primary key,
     network          varchar,
     contract_address varchar,
     symbol           varchar,
