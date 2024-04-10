@@ -81,11 +81,12 @@ func AssetRefreshTask(ctx context.Context) {
 			var oneArr []*ent.AaAsset
 			allArrs = append(allArrs, oneArr)
 		}
-
+		logger.Info("AssetRefreshTask arrSize ", "size", len(allArrs))
 		start := 0
 		for idx, aa := range aas {
 			r := idx % oneSize
 			if r == 0 && idx != 0 {
+				logger.Info("AssetRefreshTask oneSize ", "size", len(allArrs[start]), "start", start)
 				go doRefresh(ctx, client, tokens, w3, blockNum, network, allArrs[start])
 				start = start + 1
 			}
