@@ -31,8 +31,6 @@ alter table public.block_data_decode
 
 
 
-
-
 create index if not exists block_data_decode_hash_index
     on public.block_data_decode using hash (hash);
 
@@ -171,10 +169,6 @@ alter table public.block_sync
 
 create index if not exists block_sync_scanned_index
     on public.block_sync (scanned);
-
-
-
-
 
 
 
@@ -897,7 +891,7 @@ create index if not exists aa_asset_detail_contract_address_idx
 
 create table if not exists public.whale_statistic_hour
 (
-    id             bigserial  primary key,
+    id             bigserial primary key,
     network        varchar(255),
     whale_num      bigint,
     total_usd      numeric(50, 20),
@@ -926,8 +920,6 @@ create index if not exists whale_statistic_day_statistic_time_idx
 
 
 
-
-
 create table if not exists public.aa_account_data
 (
     address           text not null
@@ -944,7 +936,6 @@ create table if not exists public.aa_account_data
 
 alter table public.aa_account_data
     owner to postgres;
-
 
 
 
@@ -986,16 +977,6 @@ create table aa_account_data_p27 partition of aa_account_data for values with (m
 create table aa_account_data_p28 partition of aa_account_data for values with (modulus 30, remainder 27);
 create table aa_account_data_p29 partition of aa_account_data for values with (modulus 30, remainder 28);
 create table aa_account_data_p30 partition of aa_account_data for values with (modulus 30, remainder 29);
-
-
-
-
-
-
-
-
-
-
 
 
 ---------------------------------------------------------------------------------------
@@ -1222,8 +1203,8 @@ BEGIN
 
     with addrs as (select unnest(array_agg(from_addr) || array_agg(to_addr)) as addr
                    from transaction_decode
-                   where block_number >= current_block_num and
-                       block_number <= max_block_num)
+                   where block_number >= current_block_num
+                     and block_number <= max_block_num)
     insert
     into account
     select distinct addr
@@ -1247,6 +1228,7 @@ create trigger aa_scan_sync_insert
     on public.aa_block_sync
     for each row
 execute procedure public.aa_scan_sync();
+
 create trigger transaction_block_sync
     after insert
     on public.block_sync
