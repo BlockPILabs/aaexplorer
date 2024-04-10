@@ -939,8 +939,7 @@ create index if not exists aa_asset_detail_contract_address_idx
 
 create table if not exists public.whale_statistic_hour
 (
-    id             bigserial
-        primary key,
+    id             bigserial  primary key,
     network        varchar(255),
     whale_num      bigint,
     total_usd      numeric(50, 20),
@@ -953,8 +952,7 @@ alter table public.whale_statistic_hour
 
 create table if not exists public.whale_statistic_day
 (
-    id             bigserial
-        primary key,
+    id             bigserial primary key,
     network        varchar(255),
     whale_num      bigint,
     total_usd      numeric(50, 20),
