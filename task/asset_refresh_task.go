@@ -81,12 +81,12 @@ func AssetRefreshTask(ctx context.Context) {
 			var oneArr []*ent.AaAsset
 			allArrs = append(allArrs, oneArr)
 		}
-		logger.Info("AssetRefreshTask arrSize ", "size", len(allArrs))
+		logger.Info("AssetRefreshTask-arrSize ", "size", len(allArrs))
 		start := 0
 		for idx, aa := range aas {
 			r := idx % oneSize
 			if r == 0 && idx != 0 {
-				logger.Info("AssetRefreshTask oneSize ", "size", len(allArrs[start]), "start", start)
+				logger.Info("AssetRefreshTask-oneSize ", "size", len(allArrs[start]), "start", start)
 				go doRefresh(ctx, client, tokens, w3, blockNum, network, allArrs[start])
 				start = start + 1
 			}
@@ -99,7 +99,7 @@ func doRefresh(ctx context.Context, client *ent.Client, tokens []*ent.Token, w3 
 	if len(assets) == 0 {
 		return
 	}
-	logger.Info("AssetRefreshTask doRefresh start.")
+	logger.Info("AssetRefreshTask-doRefresh start.")
 	for _, aa := range assets {
 		userAddress := aa.ID
 		totalValue := decimal.Zero
@@ -117,7 +117,7 @@ func doRefresh(ctx context.Context, client *ent.Client, tokens []*ent.Token, w3 
 
 		balance, err := w3.Eth.GetBalance(common.HexToAddress(userAddress), big.NewInt(int64(blockNum)))
 		if err != nil {
-			logger.Error("AssetRefreshTask get balance err ", "msg", err)
+			logger.Error("AssetRefreshTask get balance err ", "user", userAddress, "network", network, "msg", err)
 			continue
 		}
 		nativeBalance := decimal.NewFromBigInt(balance, 0).Div(decimal.NewFromInt(10).Pow(decimal.NewFromInt(constConfig.DefaultDecimals)))
@@ -130,9 +130,9 @@ func doRefresh(ctx context.Context, client *ent.Client, tokens []*ent.Token, w3 
 		totalValue = totalValue.Add(nativeValue)
 		client.AaAsset.Update().SetAssetValue(totalValue).SetLastTime(time.Now().UnixMilli()).SetBalance(nativeBalance).Where(aaasset.IDEqualFold(userAddress)).Exec(ctx)
 		if nativeBalance.Cmp(decimal.Zero) > 0 {
-			logger.Info("AssetRefreshTask update balance success, ", "userAddress", aa.ID)
+			logger.Info("AssetRefreshTask update balance success, ", "userAddress", aa.ID, "network", network)
 		} else {
-			logger.Info("AssetRefreshTask update balance success empty, ", "userAddress", aa.ID)
+			logger.Info("AssetRefreshTask update balance success empty, ", "userAddress", aa.ID, "network", network)
 		}
 	}
 
