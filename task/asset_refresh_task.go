@@ -76,6 +76,9 @@ func AssetRefreshTask(ctx context.Context) {
 			continue
 		}
 		oneSize := len(aas) / 10
+		if oneSize == 0 {
+			oneSize = len(aas)
+		}
 		var allArrs [][]*ent.AaAsset
 		for i := 0; i <= 10; i++ {
 			var oneArr []*ent.AaAsset
