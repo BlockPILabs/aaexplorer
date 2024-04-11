@@ -75,12 +75,12 @@ func AssetRefreshTask(ctx context.Context) {
 			logger.Error("AssetRefreshTask blockNum err ", "msg", err)
 			continue
 		}
-		oneSize := len(aas) / 10
+		oneSize := len(aas) / 3
 		if oneSize == 0 {
 			oneSize = len(aas)
 		}
 		var allArrs [][]*ent.AaAsset
-		for i := 0; i <= 10; i++ {
+		for i := 0; i <= 3; i++ {
 			var oneArr []*ent.AaAsset
 			allArrs = append(allArrs, oneArr)
 		}
