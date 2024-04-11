@@ -93,6 +93,9 @@ func AssetRefreshTask(ctx context.Context) {
 				go doRefresh(ctx, client, tokens, w3, blockNum, network, allArrs[start])
 				start = start + 1
 			}
+			if len(allArrs)-1 < start {
+				break
+			}
 			allArrs[start] = append(allArrs[start], aa)
 		}
 	}
