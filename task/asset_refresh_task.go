@@ -119,6 +119,7 @@ func doRefresh(ctx context.Context, client *ent.Client, tokens []*ent.Token, w3 
 			assetValue := balance.Mul(token.TokenPrice)
 			addOrUpdateAssetDetail(ctx, contractAddress, userAddress, assetValue, client, network, token.Symbol, balance)
 			totalValue = totalValue.Add(assetValue)
+			logger.Info("AssetRefreshTask-one-token ", "user", userAddress, "token", contractAddress, "network", network)
 		}
 
 		balance, err := w3.Eth.GetBalance(common.HexToAddress(userAddress), big.NewInt(int64(blockNum)))
