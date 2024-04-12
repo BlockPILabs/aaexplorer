@@ -1,0 +1,1 @@
+alter table token add decimals integer default 18;

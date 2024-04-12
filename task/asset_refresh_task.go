@@ -31,6 +31,55 @@ func InitAssetRefreshTask() {
 	}
 }
 
+func AddDecimals(ctx context.Context) {
+	cli, err := entity.Client(ctx)
+	if err != nil {
+		logger.Error("AssetRefreshTask err, ", "msg", err)
+		return
+	}
+	networks, err := cli.Network.Query().All(ctx)
+	if err != nil {
+		return
+	}
+	if len(networks) == 0 {
+		return
+	}
+
+	for _, net := range networks {
+		network := net.ID
+		client, err := entity.Client(ctx, network)
+		if err != nil {
+			continue
+		}
+		w3, err := web3.NewWeb3(net.HTTPRPC)
+		if err != nil {
+			logger.Error("AddDecimals newWeb3 err ", "msg", err)
+			continue
+		}
+		w3.Eth.SetChainId(net.ChainID)
+		tokens, err := client.Token.Query().All(ctx)
+		if len(tokens) == 0 {
+			continue
+		}
+
+		for _, oneToken := range tokens {
+			contractAddress := oneToken.ContractAddress
+			if len(contractAddress) == 0 {
+				continue
+			}
+			decimals := GetDecimals(ctx, contractAddress, w3)
+			err = client.Token.Update().SetDecimals(decimals).Where(token.IDEQ(oneToken.ID)).Exec(ctx)
+			if err != nil {
+				logger.Error("update decimals err ", "symbol", oneToken.Symbol, "msg", err)
+			} else {
+				logger.Info("update decimals success ", "symbol", oneToken.Symbol, "decimals", decimals)
+
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}
+}
+
 func AssetRefreshTask(ctx context.Context) {
 	cli, err := entity.Client(ctx)
 	if err != nil {
@@ -114,7 +163,7 @@ func doRefresh(ctx context.Context, client *ent.Client, tokens []*ent.Token, w3 
 			if len(contractAddress) == 0 {
 				continue
 			}
-			decimals := GetDecimals(ctx, contractAddress, w3)
+			decimals := token.Decimals
 			balance := GetBalance(ctx, contractAddress, userAddress, decimals, w3)
 			assetValue := balance.Mul(token.TokenPrice)
 			addOrUpdateAssetDetail(ctx, contractAddress, userAddress, assetValue, client, network, token.Symbol, balance)

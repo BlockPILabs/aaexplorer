@@ -32,6 +32,8 @@ func (Token) Fields() []ent.Field {
 		field.String("full_name").
 			MaxLen(255).
 			StructTag(`json:"fullName"`),
+		field.Int64("decimals").
+			StructTag(`json:"decimals"`),
 		field.Int64("token_price").StructTag(`json:"tokenPrice"`).GoType(decimal.Zero).
 			SchemaType(map[string]string{dialect.Postgres: "numeric(50, 20)"}),
 		field.Int64("last_time").
