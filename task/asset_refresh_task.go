@@ -23,7 +23,7 @@ func InitAssetRefreshTask() {
 	go AssetRefreshTask(context.Background())
 	hourScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := hourScheduler.ScheduleWithCron(func(ctx context.Context) {
-		AssetRefreshTask(ctx)
+		//AssetRefreshTask(ctx)
 	}, "0 35 0 1/6 * *")
 
 	if err == nil {
