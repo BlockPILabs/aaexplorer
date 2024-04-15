@@ -46,7 +46,6 @@ import (
 	"time"
 )
 
-const HandleOpsSign = "0x1fad948c"
 const UserOperationEventSign = "0x49628fd1471006c1482da88028e9ce4dbb080b815c9b0344d39e5a8e6ec1419f"
 const LogTransferEventSign = "0xe6497e3ee548a3372136af2fcb0696db31fc6cf20260707645068bd3fe97f3c4"
 const TransferEventSign = "0xe6497e3ee548a3372136af2fcb0696db31fc6cf20260707645068bd3fe97f3c4"
@@ -101,21 +100,22 @@ func initEvmParser(ctx context.Context, config *internalconfig.Config, logger lo
 		log.Context(ctx).Info("start block", "blockNumber", defaultEvmParser.startBlock[network])
 	}
 
-	jsonAbi, err := abi.JSON(bytes.NewBufferString(defaultEvmParser.config.EvmParser.GetAbi()))
+	return
+}
+
+func (t *_evmParser) SelectABI(version string) {
+	jsonAbi, err := abi.JSON(bytes.NewBufferString(defaultEvmParser.config.EvmParser.GetAbi(version)))
 	if err != nil {
-		retErr = err
 		logger.Error("abi parse error", "err", err)
 		return
 	}
 
 	defaultEvmParser.abi = jsonAbi
-	defaultEvmParser.handleOpsMethod, err = jsonAbi.MethodById(hexutil.MustDecode(HandleOpsSign))
+	defaultEvmParser.handleOpsMethod, err = jsonAbi.MethodById(hexutil.MustDecode(internalconfig.HandleOpsMap[version]))
 	if err != nil {
-		retErr = err
 		logger.Error("abi method parse error", "err", err)
 		return
 	}
-	return
 }
 
 func InitEvmParse(ctx context.Context, config *internalconfig.Config, logger log.Logger) error {
@@ -548,13 +548,25 @@ func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *e
 		if len(input) <= 10 {
 			continue
 		}
+
 		sign := input[:10]
 		input = input[10:]
-		if sign != HandleOpsSign {
+
+		var aaVersion string
+		for version, funcSign := range internalconfig.HandleOpsMap {
+			if sign == funcSign {
+				aaVersion = version
+				break
+			}
+		}
+		if aaVersion == "" {
 			continue
 		}
 
-		err := t.parseUserOps(ctx, client, network, block, parserTx)
+		t.SelectABI(aaVersion)
+
+		err := t.parseUserOps(ctx, client, network, block, parserTx, aaVersion)
+
 		if err != nil {
 			logger.Error("error in parseUserOps", "err", err)
 			return err
@@ -732,7 +744,6 @@ func (t *_evmParser) insertuserOpsInfoCalldatas(ctx context.Context, client *ent
 			SetUpdateTime(tx.UpdateTime).
 			SetAaIndex(tx.AaIndex).
 			SetID(tx.ID)
-
 		transactionInfoCreates = append(transactionInfoCreates, txCreate)
 	}
 	err := client.AAUserOpsCalldata.
@@ -805,7 +816,6 @@ func (t *_evmParser) insertUserOpsInfo(ctx context.Context, client *ent.Client, 
 			SetAaIndex(ops.AaIndex).
 			SetFeeUsd(ops.FeeUsd).
 			SetTxValueUsd(ops.TxValueUsd)
-
 		userOpsInfoCreates = append(userOpsInfoCreates, userOpsCreate)
 	}
 	err := client.AAUserOpsInfo.CreateBulk(userOpsInfoCreates...).
@@ -849,6 +859,7 @@ func (t *_evmParser) insertUserOpsInfo(ctx context.Context, client *ent.Client, 
 				UpdateFeeUsd().
 				UpdateTxValueUsd()
 		}).Exec(context.Background())
+
 	if err != nil {
 		log.Context(ctx).Info("insert AAUserOpsInfo error", "err", err)
 	}
@@ -1026,7 +1037,7 @@ func (t *_evmParser) insertAaAccounts(ctx context.Context, client *ent.Client, n
 
 }
 
-func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, network *ent.Network, block *parserBlock, parserTx *parserTransaction) error {
+func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, network *ent.Network, block *parserBlock, parserTx *parserTransaction, version string) error {
 	ctx, logger := log.With(ctx, "transaction", parserTx.transaction.ID)
 	logger.Debug("start parse transaction")
 	data, err := hexutil.Decode(parserTx.transaction.Input)
@@ -1052,7 +1063,33 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 
 	opsBytes, _ := json.Marshal(unpack[0])
 	var ops []*aa.UserOperation
-	_ = json.Unmarshal(opsBytes, &ops)
+
+	if version == "0.6" {
+		_ = json.Unmarshal(opsBytes, &ops)
+	} else if version == "0.7" {
+		var opsV07 []*aa.UserOperationV07
+		_ = json.Unmarshal(opsBytes, &opsV07)
+
+		for _, opV07 := range opsV07 {
+			callGasLimit, verificationGasLimit := opV07.UnpackAccountGasLimits()
+			maxFeePerGas, maxPriorityFeePerGas := opV07.UnpackGasFees()
+
+			ops = append(ops, &aa.UserOperation{
+				Sender:               opV07.Sender,
+				Nonce:                opV07.Nonce,
+				InitCode:             opV07.InitCode,
+				CallData:             opV07.CallData,
+				CallGasLimit:         callGasLimit,
+				VerificationGasLimit: verificationGasLimit,
+				PreVerificationGas:   opV07.PreVerificationGas,
+				MaxFeePerGas:         maxFeePerGas,
+				MaxPriorityFeePerGas: maxPriorityFeePerGas,
+				PaymasterAndData:     opV07.PaymasterAndData,
+				Signature:            opV07.Signature,
+			})
+		}
+	}
+
 	err = json.Unmarshal([]byte(parserTx.receipt.Logs), &parserTx.logs)
 	if err != nil {
 		logger.Warn("abi  Unmarshal error", "err", err)
@@ -1344,15 +1381,16 @@ func (t *_evmParser) parseCallData(ctx context.Context, client *ent.Client, netw
 		}
 		detail.source = detail.data[0:8]
 		if detail.source == EmptyMethod {
+
 			detail.source = ""
 			continue
 		}
 
-		//functionSignature, err := service.FunctionSignatureService.GetMethodBySignature(ctx, entity.MustClient(), detail.source)
-		//if err == nil {
-		//	detail.source = functionSignature.Name
-		//	continue
-		//}
+		functionSignature, err := service.FunctionSignatureService.GetMethodBySignature(ctx, entity.MustClient(), detail.source)
+		if err == nil {
+			detail.source = functionSignature.Name
+			continue
+		}
 
 		//accountAbi, err := service.AccountService.GetAbiByAddress(ctx, client, detail.target)
 		//if err != nil {
