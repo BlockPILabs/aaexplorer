@@ -7,6 +7,14 @@ import (
 //go:embed abi/erc4337-abi.json
 var ERC_4337_ABI string
 
+//go:embed abi/erc4337-abi-v0.7.json
+var ERC_4337_ABI_V07 string
+
+var HandleOpsMap = map[string]string{
+	"0.6": "0x1fad948c",
+	"0.7": "0x765e827f",
+}
+
 type EvmParserConfig struct {
 	StartBlock map[string]int64 `mapstructure:"startBlock" toml:"startBlock"` // -1 start by latest , 0 start by first , >0 start by set
 	Multi      int              `mapstructure:"multi" toml:"multi"`
@@ -19,13 +27,17 @@ func DefaultEvmParserConfig() *EvmParserConfig {
 		StartBlock: map[string]int64{},
 		Multi:      10,
 		Batch:      10,
-		Abi:        ERC_4337_ABI,
+		Abi:        "",
 	}
 }
 
-func (c *EvmParserConfig) GetAbi() string {
+func (c *EvmParserConfig) GetAbi(version string) string {
 	if len(c.Abi) < 1 {
-		return ERC_4337_ABI
+		if version == "0.6" {
+			return ERC_4337_ABI
+		} else if version == "0.7" {
+			return ERC_4337_ABI_V07
+		}
 	}
 	return c.Abi
 }
