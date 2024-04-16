@@ -11,15 +11,14 @@ var ERC_4337_ABI string
 var ERC_4337_ABI_V07 string
 
 var HandleOpsMap = map[string]string{
-	"0.6": "0x1fad948c",
-	"0.7": "0x765e827f",
+	"0x1fad948c": "0.6",
+	"0x765e827f": "0.7",
 }
 
 type EvmParserConfig struct {
 	StartBlock map[string]int64 `mapstructure:"startBlock" toml:"startBlock"` // -1 start by latest , 0 start by first , >0 start by set
 	Multi      int              `mapstructure:"multi" toml:"multi"`
 	Batch      int              `mapstructure:"batch" toml:"batch"`
-	Abi        string           `mapstructure:"abi" toml:"abi"`
 }
 
 func DefaultEvmParserConfig() *EvmParserConfig {
@@ -27,17 +26,14 @@ func DefaultEvmParserConfig() *EvmParserConfig {
 		StartBlock: map[string]int64{},
 		Multi:      10,
 		Batch:      10,
-		Abi:        "",
 	}
 }
 
 func (c *EvmParserConfig) GetAbi(version string) string {
-	if len(c.Abi) < 1 {
-		if version == "0.6" {
-			return ERC_4337_ABI
-		} else if version == "0.7" {
-			return ERC_4337_ABI_V07
-		}
+	if version == "0.6" {
+		return ERC_4337_ABI
+	} else if version == "0.7" {
+		return ERC_4337_ABI_V07
 	}
-	return c.Abi
+	return ""
 }

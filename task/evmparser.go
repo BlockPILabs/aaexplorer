@@ -103,7 +103,7 @@ func initEvmParser(ctx context.Context, config *internalconfig.Config, logger lo
 	return
 }
 
-func (t *_evmParser) SelectABI(version string) {
+func (t *_evmParser) SelectABI(version string, sign string, txHash string) {
 	jsonAbi, err := abi.JSON(bytes.NewBufferString(defaultEvmParser.config.EvmParser.GetAbi(version)))
 	if err != nil {
 		logger.Error("abi parse error", "err", err)
@@ -111,7 +111,7 @@ func (t *_evmParser) SelectABI(version string) {
 	}
 
 	defaultEvmParser.abi = jsonAbi
-	defaultEvmParser.handleOpsMethod, err = jsonAbi.MethodById(hexutil.MustDecode(internalconfig.HandleOpsMap[version]))
+	defaultEvmParser.handleOpsMethod[txHash], err = jsonAbi.MethodById(hexutil.MustDecode(sign))
 	if err != nil {
 		logger.Error("abi method parse error", "err", err)
 		return
@@ -550,20 +550,13 @@ func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *e
 		}
 
 		sign := input[:10]
-		input = input[10:]
-
-		var aaVersion string
-		for version, funcSign := range internalconfig.HandleOpsMap {
-			if sign == funcSign {
-				aaVersion = version
-				break
-			}
-		}
+		aaVersion := internalconfig.HandleOpsMap[sign]
 		if aaVersion == "" {
 			continue
 		}
+		input = input[10:]
 
-		t.SelectABI(aaVersion)
+		t.SelectABI(aaVersion, sign, tx.ID)
 
 		err := t.parseUserOps(ctx, client, network, block, parserTx, aaVersion)
 
@@ -744,6 +737,8 @@ func (t *_evmParser) insertuserOpsInfoCalldatas(ctx context.Context, client *ent
 			SetUpdateTime(tx.UpdateTime).
 			SetAaIndex(tx.AaIndex).
 			SetID(tx.ID)
+
+		fmt.Println("hash", tx.UserOpsHash)
 		transactionInfoCreates = append(transactionInfoCreates, txCreate)
 	}
 	err := client.AAUserOpsCalldata.
@@ -1046,7 +1041,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 		return err
 	}
 
-	unpack, err := t.handleOpsMethod.Inputs.UnpackValues(data[4:])
+	unpack, err := t.handleOpsMethod[parserTx.transaction.ID].Inputs.UnpackValues(data[4:])
 	if err != nil {
 		logger.Warn("abi unpack input error", "err", err)
 		return err

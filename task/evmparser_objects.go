@@ -35,7 +35,7 @@ type _evmParser struct {
 	startBlock      map[string]int64
 	latestBlock     map[string]int64
 	abi             abi.ABI
-	handleOpsMethod *abi.Method
+	handleOpsMethod map[string]*abi.Method
 }
 
 type parserBlock struct {
