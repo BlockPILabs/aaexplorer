@@ -290,11 +290,6 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 		client, err = entity.NetworkClient(ctx, network)
 		logger.Debug("pre parse , get parse data")
 		blockDataDecodes, transactionDecodes, receiptDecodes, blocksMap, transactionMap, err := t.getParseData(ctx, client, blockIds...)
-		_ = (blockDataDecodes)
-		_ = (transactionDecodes)
-		_ = (receiptDecodes)
-		_ = (blocksMap)
-		_ = (transactionMap)
 
 		logger.Debug("complete get parse data", "err", err,
 			"blockDataDecodes", len(blockDataDecodes),
