@@ -71,10 +71,11 @@ func initEvmParser(ctx context.Context, config *internalconfig.Config, logger lo
 	}
 
 	defaultEvmParser = &_evmParser{
-		logger:      logger,
-		config:      config,
-		startBlock:  map[string]int64{},
-		latestBlock: map[string]int64{},
+		logger:          logger,
+		config:          config,
+		startBlock:      map[string]int64{},
+		latestBlock:     map[string]int64{},
+		handleOpsMethod: map[string]*abi.Method{},
 	}
 
 	for network, blockNumber := range defaultEvmParser.config.EvmParser.StartBlock {
@@ -111,7 +112,8 @@ func (t *_evmParser) SelectABI(version string, sign string, txHash string) {
 	}
 
 	defaultEvmParser.abi = jsonAbi
-	defaultEvmParser.handleOpsMethod[txHash], err = jsonAbi.MethodById(hexutil.MustDecode(sign))
+	opsMethod, err := jsonAbi.MethodById(hexutil.MustDecode(sign))
+	defaultEvmParser.handleOpsMethod[txHash] = opsMethod
 	if err != nil {
 		logger.Error("abi method parse error", "err", err)
 		return
@@ -544,6 +546,7 @@ func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *e
 	}
 	for _, parserTx := range parserTransactions {
 		tx := parserTx.transaction
+
 		input := tx.Input
 		if len(input) <= 10 {
 			continue
@@ -737,8 +740,6 @@ func (t *_evmParser) insertuserOpsInfoCalldatas(ctx context.Context, client *ent
 			SetUpdateTime(tx.UpdateTime).
 			SetAaIndex(tx.AaIndex).
 			SetID(tx.ID)
-
-		fmt.Println("hash", tx.UserOpsHash)
 		transactionInfoCreates = append(transactionInfoCreates, txCreate)
 	}
 	err := client.AAUserOpsCalldata.
