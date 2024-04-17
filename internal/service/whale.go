@@ -6,7 +6,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaasset"
-	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aatransactioninfo"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aauseropsinfo"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/token"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/whalestatisticday"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/whalestatistichour"
@@ -48,11 +48,11 @@ func GetWhaleOverview(ctx context.Context, req vo.WhaleOverviewRequest) (*vo.Wha
 
 	txStartTimeMs := time.Now().UnixMilli() - config.WhaleTxDay*DaySecond*1000
 	txStartTime := time.UnixMilli(txStartTimeMs)
-	allCount, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.TimeGTE(txStartTime)).Count(ctx)
+	allCount, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.TimeGTE(txStartTime)).Count(ctx)
 	if err != nil {
 		allCount = 0
 	}
-	whaleCount, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.TimeGTE(txStartTime), aatransactioninfo.IDIn(whaleAddresss[:]...)).Count(ctx)
+	whaleCount, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.TimeGTE(txStartTime), aauseropsinfo.SenderIn(whaleAddresss[:]...)).Count(ctx)
 	if err != nil {
 		whaleCount = 0
 	}

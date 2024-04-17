@@ -7,6 +7,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaasset"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaassetdetail"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aauseropsinfo"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/token"
 	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/chenzhijie/go-web3"
@@ -14,16 +15,16 @@ import (
 	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
 	"math/big"
+	"strings"
 	"time"
 )
 
 const Abi = "[{\"constant\":true,\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"name\":\"\",\"type\":\"uint8\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"balance\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"}]"
 
 func InitAssetRefreshTask() {
-	go AssetRefreshTask(context.Background())
 	hourScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := hourScheduler.ScheduleWithCron(func(ctx context.Context) {
-		//AssetRefreshTask(ctx)
+		AssetRefreshTask(ctx)
 	}, "0 35 0 1/6 * *")
 
 	if err == nil {
@@ -158,6 +159,16 @@ func doRefresh(ctx context.Context, client *ent.Client, tokens []*ent.Token, w3 
 	for _, aa := range assets {
 		userAddress := aa.ID
 		totalValue := decimal.Zero
+		startTime := time.Now().Second() - constConfig.WhaleTxDay*24*3600
+		lastTxCount, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.TxTimeGTE(int64(startTime)), aauseropsinfo.SenderEqualFold(userAddress)).Count(ctx)
+		if err != nil {
+			continue
+		}
+		if lastTxCount == 0 {
+			oldRefresh(ctx, client, userAddress, tokens, network)
+			continue
+		}
+
 		for _, token := range tokens {
 			contractAddress := token.ContractAddress
 			if len(contractAddress) == 0 {
@@ -192,6 +203,43 @@ func doRefresh(ctx context.Context, client *ent.Client, tokens []*ent.Token, w3 
 		}
 	}
 
+}
+
+func oldRefresh(ctx context.Context, client *ent.Client, address string, tokens []*ent.Token, network string) {
+	details, err := client.AaAssetDetail.Query().Where(aaassetdetail.UserAddressEqualFold(address)).All(ctx)
+	if err != nil {
+		return
+	}
+	if len(details) == 0 {
+		return
+	}
+
+	var tokenMap = make(map[string]decimal.Decimal)
+	for _, one := range tokens {
+		if len(one.ContractAddress) == 0 {
+			continue
+		}
+		contractAddress := strings.ToLower(one.ContractAddress)
+		tokenMap[contractAddress] = one.TokenPrice
+	}
+
+	totalValue := decimal.Zero
+	for _, detail := range details {
+		if detail.AssetAmount.Cmp(decimal.Zero) == 0 {
+			continue
+		}
+		contractAddress := strings.ToLower(detail.ContractAddress)
+		price := tokenMap[contractAddress]
+		oneValue := price.Mul(detail.AssetAmount)
+		totalValue = totalValue.Add(oneValue)
+
+	}
+	err = client.AaAsset.Update().SetAssetValue(totalValue).SetLastTime(time.Now().UnixMilli()).Where(aaasset.IDEqualFold(address)).Exec(ctx)
+	if err != nil {
+		logger.Info("oldRefresh update asset err, ", "userAddress", address, "network", network, "msg", err)
+	} else {
+		logger.Info("oldRefresh update asset success, ", "userAddress", address, "network", network)
+	}
 }
 
 func addOrUpdateAssetDetail(ctx context.Context, contractAddress string, userAddress string, value decimal.Decimal, client *ent.Client, network string, symbol string, amount decimal.Decimal) {
