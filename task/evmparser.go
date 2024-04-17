@@ -71,10 +71,11 @@ func initEvmParser(ctx context.Context, config *internalconfig.Config, logger lo
 	}
 
 	defaultEvmParser = &_evmParser{
-		logger:      logger,
-		config:      config,
-		startBlock:  map[string]int64{},
-		latestBlock: map[string]int64{},
+		logger:          logger,
+		config:          config,
+		startBlock:      map[string]int64{},
+		latestBlock:     map[string]int64{},
+		handleOpsMethod: map[string]*abi.Method{},
 	}
 
 	for network, blockNumber := range defaultEvmParser.config.EvmParser.StartBlock {
@@ -103,7 +104,7 @@ func initEvmParser(ctx context.Context, config *internalconfig.Config, logger lo
 	return
 }
 
-func (t *_evmParser) SelectABI(version string) {
+func (t *_evmParser) SelectABI(version string, sign string, txHash string) {
 	jsonAbi, err := abi.JSON(bytes.NewBufferString(defaultEvmParser.config.EvmParser.GetAbi(version)))
 	if err != nil {
 		logger.Error("abi parse error", "err", err)
@@ -111,7 +112,8 @@ func (t *_evmParser) SelectABI(version string) {
 	}
 
 	defaultEvmParser.abi = jsonAbi
-	defaultEvmParser.handleOpsMethod, err = jsonAbi.MethodById(hexutil.MustDecode(internalconfig.HandleOpsMap[version]))
+	opsMethod, err := jsonAbi.MethodById(hexutil.MustDecode(sign))
+	defaultEvmParser.handleOpsMethod[txHash] = opsMethod
 	if err != nil {
 		logger.Error("abi method parse error", "err", err)
 		return
@@ -288,11 +290,6 @@ func (t *_evmParser) ScanBlockByNetwork(ctx context.Context, network *ent.Networ
 		client, err = entity.NetworkClient(ctx, network)
 		logger.Debug("pre parse , get parse data")
 		blockDataDecodes, transactionDecodes, receiptDecodes, blocksMap, transactionMap, err := t.getParseData(ctx, client, blockIds...)
-		_ = (blockDataDecodes)
-		_ = (transactionDecodes)
-		_ = (receiptDecodes)
-		_ = (blocksMap)
-		_ = (transactionMap)
 
 		logger.Debug("complete get parse data", "err", err,
 			"blockDataDecodes", len(blockDataDecodes),
@@ -544,26 +541,20 @@ func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *e
 	}
 	for _, parserTx := range parserTransactions {
 		tx := parserTx.transaction
+
 		input := tx.Input
 		if len(input) <= 10 {
 			continue
 		}
 
 		sign := input[:10]
-		input = input[10:]
-
-		var aaVersion string
-		for version, funcSign := range internalconfig.HandleOpsMap {
-			if sign == funcSign {
-				aaVersion = version
-				break
-			}
-		}
+		aaVersion := internalconfig.HandleOpsMap[sign]
 		if aaVersion == "" {
 			continue
 		}
+		input = input[10:]
 
-		t.SelectABI(aaVersion)
+		t.SelectABI(aaVersion, sign, tx.ID)
 
 		err := t.parseUserOps(ctx, client, network, block, parserTx, aaVersion)
 
@@ -1046,7 +1037,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 		return err
 	}
 
-	unpack, err := t.handleOpsMethod.Inputs.UnpackValues(data[4:])
+	unpack, err := t.handleOpsMethod[parserTx.transaction.ID].Inputs.UnpackValues(data[4:])
 	if err != nil {
 		logger.Warn("abi unpack input error", "err", err)
 		return err
