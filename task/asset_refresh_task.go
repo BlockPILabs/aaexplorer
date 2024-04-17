@@ -165,7 +165,7 @@ func doRefresh(ctx context.Context, client *ent.Client, tokens []*ent.Token, w3 
 			continue
 		}
 		if lastTxCount == 0 {
-			oldRefresh(ctx, client, userAddress, tokens, network)
+			oldRefresh(ctx, client, userAddress, tokens, network, aa)
 			continue
 		}
 
@@ -205,17 +205,23 @@ func doRefresh(ctx context.Context, client *ent.Client, tokens []*ent.Token, w3 
 
 }
 
-func oldRefresh(ctx context.Context, client *ent.Client, address string, tokens []*ent.Token, network string) {
+func oldRefresh(ctx context.Context, client *ent.Client, address string, tokens []*ent.Token, network string, aa *ent.AaAsset) {
 	details, err := client.AaAssetDetail.Query().Where(aaassetdetail.UserAddressEqualFold(address)).All(ctx)
 	if err != nil {
 		return
 	}
-	if len(details) == 0 {
+
+	balance := aa.Balance
+	if len(details) == 0 && balance.Cmp(decimal.Zero) == 0 {
 		return
 	}
 
 	var tokenMap = make(map[string]decimal.Decimal)
+	var nativePrice = decimal.Zero
 	for _, one := range tokens {
+		if one.Type != nil && *one.Type == "base" {
+			nativePrice = one.TokenPrice
+		}
 		if len(one.ContractAddress) == 0 {
 			continue
 		}
@@ -224,16 +230,22 @@ func oldRefresh(ctx context.Context, client *ent.Client, address string, tokens 
 	}
 
 	totalValue := decimal.Zero
-	for _, detail := range details {
-		if detail.AssetAmount.Cmp(decimal.Zero) == 0 {
-			continue
+	if len(details) > 0 {
+		for _, detail := range details {
+			if detail.AssetAmount.Cmp(decimal.Zero) == 0 {
+				continue
+			}
+			contractAddress := strings.ToLower(detail.ContractAddress)
+			price := tokenMap[contractAddress]
+			oneValue := price.Mul(detail.AssetAmount)
+			totalValue = totalValue.Add(oneValue)
+			client.AaAssetDetail.Update().SetAssetValue(oneValue).SetLastTime(time.Now().UnixMilli()).Where(aaassetdetail.IDEQ(detail.ID)).Exec(ctx)
 		}
-		contractAddress := strings.ToLower(detail.ContractAddress)
-		price := tokenMap[contractAddress]
-		oneValue := price.Mul(detail.AssetAmount)
-		totalValue = totalValue.Add(oneValue)
-
 	}
+	if balance.Cmp(decimal.Zero) > 0 {
+		totalValue = totalValue.Add(nativePrice.Mul(balance))
+	}
+
 	err = client.AaAsset.Update().SetAssetValue(totalValue).SetLastTime(time.Now().UnixMilli()).Where(aaasset.IDEqualFold(address)).Exec(ctx)
 	if err != nil {
 		logger.Info("oldRefresh update asset err, ", "userAddress", address, "network", network, "msg", err)

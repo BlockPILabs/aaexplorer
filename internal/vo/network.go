@@ -19,9 +19,10 @@ type NetworkVo struct {
 	// ScanAddress holds the value of the "scan_address" field.
 	ScanAddress string `json:"scanAddress"`
 	// ScanName holds the value of the "scan_name" field.
-	ScanName  string `json:"scanName"`
-	ChainIcon string `json:"chainIcon"`
-	CoinIcon  string `json:"coinIcon"`
+	ScanName     string `json:"scanName"`
+	ChainIcon    string `json:"chainIcon"`
+	CoinIcon     string `json:"coinIcon"`
+	NativeSymbol string `json:"nativeSymbol"`
 }
 type GetNetworksResponse struct {
 	Pagination

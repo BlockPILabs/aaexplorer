@@ -4,12 +4,15 @@ import (
 	"context"
 	constConfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaasset"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaassetdetail"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/token"
 	"github.com/BlockPILabs/aaexplorer/third/cmc"
 	"github.com/BlockPILabs/aaexplorer/third/schedule"
 	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -93,10 +96,95 @@ func InitRefreshPrice(ctx context.Context) {
 	hourScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := hourScheduler.ScheduleWithCron(func(ctx context.Context) {
 		RefreshPrice(ctx)
+		RefreshOldAsset(ctx)
 	}, "0 1 2 * * *")
 
 	if err == nil {
 		log.Print("RefreshPrice has been scheduled")
+	}
+}
+
+func RefreshOldAsset(ctx context.Context) {
+	cli, err := entity.Client(ctx)
+	if err != nil {
+		logger.Error("AssetRefreshTask err, ", "msg", err)
+		return
+	}
+	networks, err := cli.Network.Query().All(ctx)
+	if err != nil {
+		return
+	}
+	if len(networks) == 0 {
+		return
+	}
+
+	for _, net := range networks {
+		network := net.ID
+		client, err := entity.Client(ctx, network)
+		if err != nil {
+			continue
+		}
+		aas, err := client.AaAsset.Query().All(ctx)
+		if err != nil {
+			logger.Error("AssetRefreshTask query asset err ", "msg", err)
+			continue
+		}
+		if len(aas) == 0 {
+			continue
+		}
+		tokens, err := client.Token.Query().All(ctx)
+		if len(tokens) == 0 {
+			continue
+		}
+
+		var tokenMap = make(map[string]decimal.Decimal)
+		var nativePrice = decimal.Zero
+		for _, one := range tokens {
+			if one.Type != nil && *one.Type == "base" {
+				nativePrice = one.TokenPrice
+			}
+			if len(one.ContractAddress) == 0 {
+				continue
+			}
+			contractAddress := strings.ToLower(one.ContractAddress)
+			tokenMap[contractAddress] = one.TokenPrice
+		}
+
+		for _, aa := range aas {
+			address := aa.ID
+			balance := aa.Balance
+			details, err := client.AaAssetDetail.Query().Where(aaassetdetail.UserAddressEqualFold(address)).All(ctx)
+			if err != nil {
+				continue
+			}
+			if len(details) == 0 && balance.Cmp(decimal.Zero) == 0 {
+				continue
+			}
+
+			totalValue := decimal.Zero
+			if len(details) > 0 {
+				for _, detail := range details {
+					if detail.AssetAmount.Cmp(decimal.Zero) == 0 {
+						continue
+					}
+					contractAddress := strings.ToLower(detail.ContractAddress)
+					price := tokenMap[contractAddress]
+					oneValue := price.Mul(detail.AssetAmount)
+					totalValue = totalValue.Add(oneValue)
+					client.AaAssetDetail.Update().SetAssetValue(oneValue).SetLastTime(time.Now().UnixMilli()).Where(aaassetdetail.IDEQ(detail.ID)).Exec(ctx)
+				}
+			}
+			if balance.Cmp(decimal.Zero) > 0 {
+				totalValue = totalValue.Add(nativePrice.Mul(balance))
+			}
+
+			err = client.AaAsset.Update().SetAssetValue(totalValue).SetLastTime(time.Now().UnixMilli()).Where(aaasset.IDEqualFold(address)).Exec(ctx)
+			if err != nil {
+				logger.Info("RefreshOldAsset update asset err, ", "userAddress", address, "network", network, "msg", err)
+			} else {
+				logger.Info("RefreshOldAsset update asset success, ", "userAddress", address, "network", network)
+			}
+		}
 	}
 }
 

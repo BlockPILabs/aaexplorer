@@ -35,18 +35,19 @@ func GetNetworks(fcx *fiber.Ctx) error {
 
 	for i, network := range networks {
 		res.Records[i] = &vo.NetworkVo{
-			Name:        network.Name,
-			ChainName:   network.ChainName,
-			Network:     network.ID,
-			ChainID:     network.ChainID,
-			IsTestnet:   network.IsTestnet,
-			Scan:        network.Scan,
-			ScanTx:      network.ScanTx,
-			ScanBlock:   network.ScanBlock,
-			ScanAddress: network.ScanAddress,
-			ScanName:    network.ScanName,
-			ChainIcon:   network.ChainIcon,
-			CoinIcon:    network.CoinIcon,
+			Name:         network.Name,
+			ChainName:    network.ChainName,
+			Network:      network.ID,
+			ChainID:      network.ChainID,
+			IsTestnet:    network.IsTestnet,
+			Scan:         network.Scan,
+			ScanTx:       network.ScanTx,
+			ScanBlock:    network.ScanBlock,
+			ScanAddress:  network.ScanAddress,
+			ScanName:     network.ScanName,
+			ChainIcon:    network.ChainIcon,
+			CoinIcon:     network.CoinIcon,
+			NativeSymbol: network.NativeSymbol,
 		}
 	}
 	log.Context(ctx).Debug("get networks success", "totalCount", res.TotalCount)
@@ -56,18 +57,19 @@ func GetNetwork(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()
 	network, _ := dao.NetworkDao.ContextValue(ctx)
 	return vo.NewResultJsonResponse(vo.NetworkVo{
-		Name:        network.Name,
-		ChainName:   network.ChainName,
-		Network:     network.ID,
-		ChainID:     network.ChainID,
-		IsTestnet:   network.IsTestnet,
-		Scan:        network.Scan,
-		ScanTx:      network.ScanTx,
-		ScanBlock:   network.ScanBlock,
-		ScanAddress: network.ScanAddress,
-		ScanName:    network.ScanName,
-		ChainIcon:   network.ChainIcon,
-		CoinIcon:    network.CoinIcon,
+		Name:         network.Name,
+		ChainName:    network.ChainName,
+		Network:      network.ID,
+		ChainID:      network.ChainID,
+		IsTestnet:    network.IsTestnet,
+		Scan:         network.Scan,
+		ScanTx:       network.ScanTx,
+		ScanBlock:    network.ScanBlock,
+		ScanAddress:  network.ScanAddress,
+		ScanName:     network.ScanName,
+		ChainIcon:    network.ChainIcon,
+		CoinIcon:     network.CoinIcon,
+		NativeSymbol: network.NativeSymbol,
 	}).JSON(fcx)
 }
 

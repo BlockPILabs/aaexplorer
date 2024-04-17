@@ -31,6 +31,7 @@ func (Network) Fields() []ent.Field {
 		field.String("scan").StructTag(`json:"scan"`),
 		field.String("chain_icon").StructTag(`json:"chainIcon"`),
 		field.String("coin_icon").StructTag(`json:"coinIcon"`),
+		field.String("native_symbol").StructTag(`json:"nativeSymbol"`),
 		field.String("scan_tx").StructTag(`json:"scanTx"`),
 		field.String("scan_block").StructTag(`json:"scanBlock"`),
 		field.String("scan_address").StructTag(`json:"scanAddress"`),
