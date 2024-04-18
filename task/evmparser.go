@@ -61,6 +61,7 @@ const EmptyMethod = "00000000"
 var defaultEvmParser = &_evmParser{}
 
 var initEvmParserOnce = sync.Mutex{}
+var methodRWLck = sync.RWMutex{}
 
 func initEvmParser(ctx context.Context, config *internalconfig.Config, logger log.Logger) (retErr error) {
 	initEvmParserOnce.Lock()
@@ -105,7 +106,9 @@ func initEvmParser(ctx context.Context, config *internalconfig.Config, logger lo
 }
 
 func (t *_evmParser) SelectABI(sign string) {
+	methodRWLck.RLock()
 	_, ok := t.handleOpsMethod[sign]
+	methodRWLck.RUnlock()
 	if ok {
 		return
 	}
@@ -116,7 +119,10 @@ func (t *_evmParser) SelectABI(sign string) {
 	}
 
 	opsMethod, err := jsonAbi.MethodById(hexutil.MustDecode(sign))
+
+	methodRWLck.Lock()
 	t.handleOpsMethod[sign] = opsMethod
+	methodRWLck.Unlock()
 	if err != nil {
 		logger.Error("abi method parse error", "err", err)
 		return
