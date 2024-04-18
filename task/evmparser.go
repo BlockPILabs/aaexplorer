@@ -551,7 +551,7 @@ func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *e
 		}
 
 		sign := input[:10]
-		aaVersion, ok := internalconfig.HandleOpsMap[sign]
+		_, ok := internalconfig.HandleOpsMap[sign]
 		if !ok {
 			continue
 		}
@@ -559,7 +559,7 @@ func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *e
 
 		t.SelectABI(sign)
 
-		err := t.parseUserOps(ctx, client, network, block, parserTx, sign, aaVersion)
+		err := t.parseUserOps(ctx, client, network, block, parserTx, sign)
 
 		if err != nil {
 			logger.Error("error in parseUserOps", "err", err)
@@ -1031,7 +1031,7 @@ func (t *_evmParser) insertAaAccounts(ctx context.Context, client *ent.Client, n
 
 }
 
-func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, network *ent.Network, block *parserBlock, parserTx *parserTransaction, sign string, version string) error {
+func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, network *ent.Network, block *parserBlock, parserTx *parserTransaction, sign string) error {
 	ctx, logger := log.With(ctx, "transaction", parserTx.transaction.ID)
 	logger.Debug("start parse transaction")
 	data, err := hexutil.Decode(parserTx.transaction.Input)
@@ -1058,9 +1058,11 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 	opsBytes, _ := json.Marshal(unpack[0])
 	var ops []*aa.UserOperation
 
-	if version == "0.6" {
+	switch internalconfig.HandleOpsMap[sign] {
+	case "0.6":
 		_ = json.Unmarshal(opsBytes, &ops)
-	} else if version == "0.7" {
+		break
+	case "0.7":
 		var opsV07 []*aa.UserOperationV07
 		_ = json.Unmarshal(opsBytes, &opsV07)
 
