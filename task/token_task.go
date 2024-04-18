@@ -260,7 +260,7 @@ func RefreshPrice(ctx context.Context) {
 		now := time.Now().UnixMilli()
 		for _, one := range tokens {
 			if now-one.LastTime < PriceExpire {
-				//continue
+				continue
 			}
 			price := cmc.GetTokenPrice(one.Symbol)
 			logger.Info("RefreshPrice get price success, ", "symbol", one.Symbol, "price", price)
