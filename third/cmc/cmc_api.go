@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 const CmcUrl = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/map?sort=cmc_rank"
@@ -122,6 +123,7 @@ type QuoteUsd struct {
 func GetTokenPrice(symbol string) decimal.Decimal {
 	url := CmcPriceUrl
 
+	symbol = strings.ToUpper(symbol)
 	req, _ := http.NewRequest("GET", url+"symbol="+symbol, nil)
 
 	req.Header.Add("X-CMC_PRO_API_KEY", CmcAuthVal)

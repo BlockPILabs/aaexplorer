@@ -279,4 +279,6 @@ func RefreshPrice(ctx context.Context) {
 		}
 	}
 
+	RefreshOldAsset(ctx)
+
 }
