@@ -104,16 +104,19 @@ func initEvmParser(ctx context.Context, config *internalconfig.Config, logger lo
 	return
 }
 
-func (t *_evmParser) SelectABI(version string, sign string, txHash string) {
-	jsonAbi, err := abi.JSON(bytes.NewBufferString(defaultEvmParser.config.EvmParser.GetAbi(version)))
+func (t *_evmParser) SelectABI(sign string) {
+	_, ok := t.handleOpsMethod[sign]
+	if ok {
+		return
+	}
+	jsonAbi, err := abi.JSON(bytes.NewBufferString(t.config.EvmParser.GetAbi(internalconfig.HandleOpsMap[sign])))
 	if err != nil {
 		logger.Error("abi parse error", "err", err)
 		return
 	}
 
-	defaultEvmParser.abi = jsonAbi
 	opsMethod, err := jsonAbi.MethodById(hexutil.MustDecode(sign))
-	defaultEvmParser.handleOpsMethod[txHash] = opsMethod
+	t.handleOpsMethod[sign] = opsMethod
 	if err != nil {
 		logger.Error("abi method parse error", "err", err)
 		return
@@ -548,15 +551,15 @@ func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *e
 		}
 
 		sign := input[:10]
-		aaVersion := internalconfig.HandleOpsMap[sign]
-		if aaVersion == "" {
+		aaVersion, ok := internalconfig.HandleOpsMap[sign]
+		if !ok {
 			continue
 		}
 		input = input[10:]
 
-		t.SelectABI(aaVersion, sign, tx.ID)
+		t.SelectABI(sign)
 
-		err := t.parseUserOps(ctx, client, network, block, parserTx, aaVersion)
+		err := t.parseUserOps(ctx, client, network, block, parserTx, sign, aaVersion)
 
 		if err != nil {
 			logger.Error("error in parseUserOps", "err", err)
@@ -1028,7 +1031,7 @@ func (t *_evmParser) insertAaAccounts(ctx context.Context, client *ent.Client, n
 
 }
 
-func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, network *ent.Network, block *parserBlock, parserTx *parserTransaction, version string) error {
+func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, network *ent.Network, block *parserBlock, parserTx *parserTransaction, sign string, version string) error {
 	ctx, logger := log.With(ctx, "transaction", parserTx.transaction.ID)
 	logger.Debug("start parse transaction")
 	data, err := hexutil.Decode(parserTx.transaction.Input)
@@ -1037,7 +1040,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 		return err
 	}
 
-	unpack, err := t.handleOpsMethod[parserTx.transaction.ID].Inputs.UnpackValues(data[4:])
+	unpack, err := t.handleOpsMethod[sign].Inputs.UnpackValues(data[4:])
 	if err != nil {
 		logger.Warn("abi unpack input error", "err", err)
 		return err
