@@ -1084,6 +1084,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 				Signature:            opV07.Signature,
 			})
 		}
+		break
 	}
 
 	err = json.Unmarshal([]byte(parserTx.receipt.Logs), &parserTx.logs)
