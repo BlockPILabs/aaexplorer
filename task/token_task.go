@@ -93,7 +93,6 @@ func InitRefreshToken(ctx context.Context) {
 }
 
 func InitRefreshPrice(ctx context.Context) {
-	go RefreshPrice(ctx)
 	hourScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := hourScheduler.ScheduleWithCron(func(ctx context.Context) {
 		RefreshPrice(ctx)
@@ -278,7 +277,5 @@ func RefreshPrice(ctx context.Context) {
 			time.Sleep(3 * time.Second)
 		}
 	}
-
-	RefreshOldAsset(ctx)
 
 }
