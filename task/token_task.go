@@ -93,6 +93,7 @@ func InitRefreshToken(ctx context.Context) {
 }
 
 func InitRefreshPrice(ctx context.Context) {
+	go RefreshPrice(ctx)
 	hourScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := hourScheduler.ScheduleWithCron(func(ctx context.Context) {
 		RefreshPrice(ctx)
@@ -260,7 +261,7 @@ func RefreshPrice(ctx context.Context) {
 		now := time.Now().UnixMilli()
 		for _, one := range tokens {
 			if now-one.LastTime < PriceExpire {
-				continue
+				//continue
 			}
 			price := cmc.GetTokenPrice(one.Symbol)
 			logger.Info("RefreshPrice get price success, ", "symbol", one.Symbol, "price", price)
@@ -271,10 +272,10 @@ func RefreshPrice(ctx context.Context) {
 			if err != nil {
 				logger.Error("RefreshTokenPrice err ", "symbol", one.Symbol, "msg", err)
 			} else {
-				logger.Error("RefreshTokenPrice success ", "symbol", one.Symbol, "msg", err)
+				logger.Info("RefreshTokenPrice success ", "symbol", one.Symbol)
 
 			}
-			time.Sleep(time.Second)
+			time.Sleep(3 * time.Second)
 		}
 	}
 
