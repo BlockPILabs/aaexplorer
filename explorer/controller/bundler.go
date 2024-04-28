@@ -60,3 +60,29 @@ func GetBundler(fcx *fiber.Ctx) error {
 	res, err = service.BundlerService.GetBundler(ctx, req)
 	return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(err)).JSON(fcx)
 }
+
+const NameListBundler = "list_bundler"
+
+func ListBundler(fcx *fiber.Ctx) error {
+	ctx := fcx.UserContext()
+	logger := log.Context(ctx)
+
+	logger.Debug("start list bundlers", "")
+
+	req := vo.ListBundlersRequest{}
+	res := &vo.ListBundlersResponse{}
+	err := fcx.ParamsParser(&req)
+	if err != nil {
+		logger.Warn("params parse error", "err", err)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
+	}
+
+	err = fcx.QueryParser(&req)
+	if err != nil {
+		logger.Warn("query params parse error", "err", err)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
+	}
+
+	res, err = service.BundlerService.ListBundlers(ctx, &req)
+	return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(err)).JSON(fcx)
+}

@@ -102,3 +102,8 @@ func (*bundlerService) GetBundler(ctx context.Context, req vo.GetBundlerRequest)
 	}
 	return
 }
+
+func (*bundlerService) ListBundlers(ctx context.Context, req *vo.ListBundlersRequest) (res *vo.ListBundlersResponse, err error) {
+
+	return nil, err
+}
