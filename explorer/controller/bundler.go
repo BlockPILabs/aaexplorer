@@ -69,7 +69,7 @@ func ListBundler(fcx *fiber.Ctx) error {
 
 	logger.Debug("start list bundlers", "")
 
-	req := vo.ListBundlersRequest{}
+	req := vo.GetBundlersRequest{}
 	res := &vo.ListBundlersResponse{}
 	err := fcx.ParamsParser(&req)
 	if err != nil {
@@ -83,6 +83,6 @@ func ListBundler(fcx *fiber.Ctx) error {
 		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
 	}
 
-	res, err = service.BundlerService.ListBundlers(ctx, &req)
+	res, err = service.BundlerService.ListBundlers(ctx, req)
 	return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(err)).JSON(fcx)
 }
