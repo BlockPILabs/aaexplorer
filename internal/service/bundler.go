@@ -103,30 +103,11 @@ func (*bundlerService) GetBundler(ctx context.Context, req vo.GetBundlerRequest)
 	return
 }
 
-func (*bundlerService) ListBundlers(ctx context.Context, req vo.GetBundlersRequest) (res *vo.ListBundlersResponse, err error) {
+func (*bundlerService) ListMEVBundlers(ctx context.Context, req vo.ListMEVBundlersRequest) (res *vo.ListMEVBundlersResponse, err error) {
 
-	client, err := entity.Client(ctx, req.Network)
+	_, err = entity.Client(ctx, req.Network)
 	if err != nil {
 		return nil, err
-	}
-
-	list, total, err := dao.BundlerDao.Pagination(ctx, client, req)
-	if err != nil {
-		return nil, err
-	}
-
-	res = &vo.ListBundlersResponse{}
-	res.TotalCount = total
-
-	for _, bundler := range list {
-		res.Records = append(res.Records, &vo.BundlerAssets{
-			Address:      bundler.ID,
-			TotalBundles: bundler.BundlesNum,
-			TotalSuccess: bundler.SuccessRate,
-			Success24H:   bundler.SuccessRateD1,
-			TotalUserOps: bundler.UserOpsNum,
-			Bundles24H:   bundler.BundlesNumD1,
-		})
 	}
 
 	return res, err

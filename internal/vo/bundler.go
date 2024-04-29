@@ -55,17 +55,22 @@ type GetBundlerResponse struct {
 	Label         []string        `json:"label"`
 }
 
-type ListBundlersResponse struct {
-	Pagination
-	Records []*BundlerAssets `json:"records"`
+type ListMEVBundlersRequest struct {
+	PaginationRequest
+	Network string `json:"network" params:"network" validate:"required,min=3"`
 }
 
-type BundlerAssets struct {
-	Address      string          `json:"address"`
-	TotalBundles int64           `json:"totalBundles"`
-	TotalSuccess decimal.Decimal `json:"totalSuccess"`
-	Success24H   decimal.Decimal `json:"success24H"`
-	TotalUserOps int64           `json:"totalUserOps"`
-	Bundles24H   int64           `json:"bundles24H"`
-	Profits      float64         `json:"profits"`
+type ListMEVBundlersResponse struct {
+	Pagination
+	Records []*MEVBundlerAssets `json:"records"`
+}
+
+type MEVBundlerAssets struct {
+	Timestamp   string          `json:"timestamp"`
+	UserOpHash  string          `json:"userOpHash"`
+	MEVType     string          `json:"MEVType"`
+	Victim      string          `json:"victim"`
+	Attacker    string          `json:"attacker"`
+	BundlerLoss decimal.Decimal `json:"bundlerLoss"`
+	MEVProfits  decimal.Decimal `json:"MEVProfits"`
 }
