@@ -102,3 +102,13 @@ func (*bundlerService) GetBundler(ctx context.Context, req vo.GetBundlerRequest)
 	}
 	return
 }
+
+func (*bundlerService) ListMEVBundlers(ctx context.Context, req vo.ListMEVBundlersRequest) (res *vo.ListMEVBundlersResponse, err error) {
+
+	_, err = entity.Client(ctx, req.Network)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, err
+}

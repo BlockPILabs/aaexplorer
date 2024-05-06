@@ -54,3 +54,23 @@ type GetBundlerResponse struct {
 	TotalBundlers int64           `json:"totalBundlers"`
 	Label         []string        `json:"label"`
 }
+
+type ListMEVBundlersRequest struct {
+	PaginationRequest
+	Network string `json:"network" params:"network" validate:"required,min=3"`
+}
+
+type ListMEVBundlersResponse struct {
+	Pagination
+	Records []*MEVBundlerAssets `json:"records"`
+}
+
+type MEVBundlerAssets struct {
+	Timestamp   string          `json:"timestamp"`
+	UserOpHash  string          `json:"userOpHash"`
+	MEVType     string          `json:"MEVType"`
+	Victim      string          `json:"victim"`
+	Attacker    string          `json:"attacker"`
+	BundlerLoss decimal.Decimal `json:"bundlerLoss"`
+	MEVProfits  decimal.Decimal `json:"MEVProfits"`
+}

@@ -61,6 +61,7 @@ const EmptyMethod = "00000000"
 var defaultEvmParser = &_evmParser{}
 
 var initEvmParserOnce = sync.Mutex{}
+var methodRWLck = sync.RWMutex{}
 
 func initEvmParser(ctx context.Context, config *internalconfig.Config, logger log.Logger) (retErr error) {
 	initEvmParserOnce.Lock()
@@ -104,16 +105,24 @@ func initEvmParser(ctx context.Context, config *internalconfig.Config, logger lo
 	return
 }
 
-func (t *_evmParser) SelectABI(version string, sign string, txHash string) {
-	jsonAbi, err := abi.JSON(bytes.NewBufferString(defaultEvmParser.config.EvmParser.GetAbi(version)))
+func (t *_evmParser) SelectABI(sign string) {
+	methodRWLck.RLock()
+	_, ok := t.handleOpsMethod[sign]
+	methodRWLck.RUnlock()
+	if ok {
+		return
+	}
+	jsonAbi, err := abi.JSON(bytes.NewBufferString(t.config.EvmParser.GetAbi(internalconfig.HandleOpsMap[sign])))
 	if err != nil {
 		logger.Error("abi parse error", "err", err)
 		return
 	}
 
-	defaultEvmParser.abi = jsonAbi
 	opsMethod, err := jsonAbi.MethodById(hexutil.MustDecode(sign))
-	defaultEvmParser.handleOpsMethod[txHash] = opsMethod
+
+	methodRWLck.Lock()
+	t.handleOpsMethod[sign] = opsMethod
+	methodRWLck.Unlock()
 	if err != nil {
 		logger.Error("abi method parse error", "err", err)
 		return
@@ -548,15 +557,15 @@ func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *e
 		}
 
 		sign := input[:10]
-		aaVersion := internalconfig.HandleOpsMap[sign]
-		if aaVersion == "" {
+		_, ok := internalconfig.HandleOpsMap[sign]
+		if !ok {
 			continue
 		}
 		input = input[10:]
 
-		t.SelectABI(aaVersion, sign, tx.ID)
+		t.SelectABI(sign)
 
-		err := t.parseUserOps(ctx, client, network, block, parserTx, aaVersion)
+		err := t.parseUserOps(ctx, client, network, block, parserTx, sign)
 
 		if err != nil {
 			logger.Error("error in parseUserOps", "err", err)
@@ -1028,7 +1037,7 @@ func (t *_evmParser) insertAaAccounts(ctx context.Context, client *ent.Client, n
 
 }
 
-func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, network *ent.Network, block *parserBlock, parserTx *parserTransaction, version string) error {
+func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, network *ent.Network, block *parserBlock, parserTx *parserTransaction, sign string) error {
 	ctx, logger := log.With(ctx, "transaction", parserTx.transaction.ID)
 	logger.Debug("start parse transaction")
 	data, err := hexutil.Decode(parserTx.transaction.Input)
@@ -1037,7 +1046,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 		return err
 	}
 
-	unpack, err := t.handleOpsMethod[parserTx.transaction.ID].Inputs.UnpackValues(data[4:])
+	unpack, err := t.handleOpsMethod[sign].Inputs.UnpackValues(data[4:])
 	if err != nil {
 		logger.Warn("abi unpack input error", "err", err)
 		return err
@@ -1055,9 +1064,11 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 	opsBytes, _ := json.Marshal(unpack[0])
 	var ops []*aa.UserOperation
 
-	if version == "0.6" {
+	switch internalconfig.HandleOpsMap[sign] {
+	case "0.6":
 		_ = json.Unmarshal(opsBytes, &ops)
-	} else if version == "0.7" {
+		break
+	case "0.7":
 		var opsV07 []*aa.UserOperationV07
 		_ = json.Unmarshal(opsBytes, &opsV07)
 
@@ -1079,6 +1090,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 				Signature:            opV07.Signature,
 			})
 		}
+		break
 	}
 
 	err = json.Unmarshal([]byte(parserTx.receipt.Logs), &parserTx.logs)

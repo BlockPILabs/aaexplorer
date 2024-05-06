@@ -26,6 +26,7 @@ func (*bundlerDao) GetSortFields(ctx context.Context) []string {
 		bundlerinfo.FieldFeeEarnedD1,
 	}
 }
+
 func (dao *bundlerDao) Sort(ctx context.Context, query *ent.BundlerInfoQuery, sort int, order int) *ent.BundlerInfoQuery {
 	opts := dao.orderOptions(ctx, order)
 	if len(opts) > 0 {
