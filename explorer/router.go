@@ -44,6 +44,7 @@ func Resister(router fiber.Router) {
 	networksV1.Get("/blocks", controller.GetBlocks).Name(controller.NameGetBlocks)
 	networksV1.Get("/aaBlocks", controller.GetAABlocksPage).Name(controller.NameGetAABlocksPage)
 	networksV1.Get("/block/:block<regex((^0x[a-z0-9]{64}$|^\\d+$))}>", controller.GetBlock).Name(controller.NameGetBlock)
+	networksV1.Get("/block/mev", controller.MEVBlock).Name(controller.NameMEVBlock)
 
 	//transaction
 	networksV1.Get("/transaction", controller.GetTransaction).Name(controller.NameGetTransaction)

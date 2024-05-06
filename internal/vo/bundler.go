@@ -66,11 +66,11 @@ type ListMEVBundlersResponse struct {
 }
 
 type MEVBundlerAssets struct {
-	Timestamp   string          `json:"timestamp"`
+	Timestamp   int64           `json:"timestamp"`
 	UserOpHash  string          `json:"userOpHash"`
-	MEVType     string          `json:"MEVType"`
+	MevType     string          `json:"mevType"`
 	Victim      string          `json:"victim"`
 	Attacker    string          `json:"attacker"`
 	BundlerLoss decimal.Decimal `json:"bundlerLoss"`
-	MEVProfits  decimal.Decimal `json:"MEVProfits"`
+	MevProfits  decimal.Decimal `json:"mevProfits"`
 }
