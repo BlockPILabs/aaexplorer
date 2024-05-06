@@ -40,6 +40,8 @@ const (
 	WhaleNum        = 500
 
 	WhaleTxDay = 7
+
+	MevFront = "front run"
 )
 
 const (

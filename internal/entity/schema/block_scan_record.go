@@ -33,6 +33,8 @@ func (BlockScanRecord) Fields() []ent.Field {
 			StructTag(`json:"lastBlockNumber"`),
 		field.Time("last_scan_time").
 			StructTag(`json:"lastScanTime"`),
+		field.String("type").
+			StructTag(`json:"type"`),
 		field.Time("create_time").
 			Default(time.Now).
 			StructTag(`json:"createTime"`).
