@@ -10,6 +10,7 @@ import (
 const NameGetDailyStatistic = "get_daily_statistic"
 const NameGetAATxnDominance = "get_aa_txn_dominance"
 const NameGetLatestUserOps = "get_latest_user_ops"
+const NameGetMevTx = "get_mev_tx"
 
 func GetDailyStatistic(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()
@@ -95,6 +96,28 @@ func GetAccountInfo(fcx *fiber.Ctx) error {
 	res, err := service.GetDailyStatistic(ctx, req)
 	if err != nil {
 		logger.Error("get daily statistic error", "err", err)
+	}
+	return vo.NewResultJsonResponse(res).JSON(fcx)
+}
+
+func GetMevTx(fcx *fiber.Ctx) error {
+	ctx := fcx.UserContext()
+	logger := log.Context(fcx.UserContext())
+
+	logger.Debug("start get mev transaction")
+	req := vo.HomeMevRequest{}
+	err := fcx.ParamsParser(&req)
+	if err != nil {
+		logger.Warn("params parse error", "err", err)
+	}
+	err = fcx.QueryParser(&req)
+	if err != nil {
+		logger.Warn("query params parse error", "err", err, "network", req.Network)
+	}
+
+	res, err := service.GetMevTx(ctx, req)
+	if err != nil {
+		logger.Error("get mev transaction error", "err", err)
 	}
 	return vo.NewResultJsonResponse(res).JSON(fcx)
 }

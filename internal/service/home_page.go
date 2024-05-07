@@ -8,6 +8,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aauseropsinfo"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/dailystatisticday"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/dailystatistichour"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/mevtransaction"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
 	"github.com/shopspring/decimal"
 	"log"
@@ -276,4 +277,40 @@ func GetLatestUserOps(ctx context.Context, req vo.LatestUserOpsRequest) (*vo.Lat
 
 func rayDiv(gas decimal.Decimal) decimal.Decimal {
 	return gas.DivRound(decimal.NewFromFloat(math.Pow10(18)), 18)
+}
+
+func GetMevTx(ctx context.Context, req vo.HomeMevRequest) (*vo.HomeMevResponse, error) {
+
+	network := req.Network
+	client, err := entity.Client(ctx, network)
+	if err != nil {
+		return nil, err
+	}
+	var resp = &vo.HomeMevResponse{
+		Pagination: vo.Pagination{
+			TotalCount: 0,
+			PerPage:    req.GetPerPage(),
+			Page:       req.GetPage(),
+		},
+	}
+	mevTxs, err := client.MevTransaction.Query().Order(ent.Desc(mevtransaction.FieldTime)).Offset(req.GetOffset()).Limit(req.GetPerPage()).All(ctx)
+	if len(mevTxs) == 0 {
+		return nil, nil
+	}
+	var mevInfos []vo.MevInfo
+	for _, mevTx := range mevTxs {
+		mevInfo := vo.MevInfo{
+			Time:         mevTx.Time.UnixMilli(),
+			Type:         mevTx.MevType,
+			Victim:       mevTx.Victim,
+			VictimType:   mevTx.VictimType,
+			Attacker:     mevTx.Attacker,
+			MevProfit:    mevTx.MevProfit,
+			MevProfitUsd: mevTx.MevProfitUsd,
+		}
+		mevInfos = append(mevInfos, mevInfo)
+	}
+	resp.MevInfos = mevInfos
+
+	return resp, nil
 }

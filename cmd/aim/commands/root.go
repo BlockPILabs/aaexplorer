@@ -5,6 +5,7 @@ import (
 	cfg "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/config/cli"
 	"github.com/BlockPILabs/aaexplorer/internal/log"
+	"github.com/BlockPILabs/aaexplorer/internal/service"
 	"github.com/BlockPILabs/aaexplorer/task"
 	"github.com/BlockPILabs/aaexplorer/third/cmc"
 	"github.com/BlockPILabs/aaexplorer/version"
@@ -21,6 +22,7 @@ func init() {
 	task.SetLogger(logger)
 	log.SetDefaultLogger(logger)
 	cmc.SetLogger(logger)
+	service.SetLogger(logger)
 
 	cobra.OnInitialize(func() {
 		//conf := cfg.DefaultConfig()
