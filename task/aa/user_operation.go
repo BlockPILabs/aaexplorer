@@ -47,6 +47,7 @@ type UserOperation struct {
 	PreVerificationGas   *big.Int       `json:"preVerificationGas"   mapstructure:"preVerificationGas"   validate:"required"`
 	MaxFeePerGas         *big.Int       `json:"maxFeePerGas"         mapstructure:"maxFeePerGas"         validate:"required"`
 	MaxPriorityFeePerGas *big.Int       `json:"maxPriorityFeePerGas" mapstructure:"maxPriorityFeePerGas" validate:"required"`
+	Paymaster            common.Address `json:"paymaster"            mapstructure:"paymaster"            validate:"required"`
 	PaymasterAndData     []byte         `json:"paymasterAndData"     mapstructure:"paymasterAndData"     validate:"required"`
 	Signature            []byte         `json:"signature"            mapstructure:"signature"            validate:"required"`
 }

@@ -556,24 +556,18 @@ func (t *_evmParser) doParse(ctx context.Context, client *ent.Client, network *e
 			continue
 		}
 
-		sign := input[:10]
-		_, ok := internalconfig.HandleOpsMap[sign]
-		if !ok {
-			continue
-		}
-		input = input[10:]
-
-		t.SelectABI(sign)
-
-		err := t.parseUserOps(ctx, client, network, block, parserTx, sign)
+		err := t.parseUserOps(ctx, client, network, block, parserTx)
 
 		if err != nil {
 			logger.Error("error in parseUserOps", "err", err)
 			return err
 		}
 
-		block.userOpInfo.BundlerProfit = block.userOpInfo.BundlerProfit.Add(parserTx.userOpInfo.BundlerProfit)
-		block.userOpInfo.UseropCount += len(parserTx.userops)
+		if parserTx.userOpInfo != nil {
+			block.userOpInfo.BundlerProfit = block.userOpInfo.BundlerProfit.Add(parserTx.userOpInfo.BundlerProfit)
+			block.userOpInfo.UseropCount += len(parserTx.userops)
+		}
+
 	}
 	block.userOpInfo.BundlerProfitUsd = block.userOpInfo.BundlerProfit.Mul(block.nativePrice)
 	return nil
@@ -1037,69 +1031,100 @@ func (t *_evmParser) insertAaAccounts(ctx context.Context, client *ent.Client, n
 
 }
 
-func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, network *ent.Network, block *parserBlock, parserTx *parserTransaction, sign string) error {
+func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, network *ent.Network, block *parserBlock, parserTx *parserTransaction) error {
 	ctx, logger := log.With(ctx, "transaction", parserTx.transaction.ID)
 	logger.Debug("start parse transaction")
-	data, err := hexutil.Decode(parserTx.transaction.Input)
-	if err != nil {
-		logger.Warn("decode input error", "err", err)
-		return err
-	}
 
-	unpack, err := t.handleOpsMethod[sign].Inputs.UnpackValues(data[4:])
-	if err != nil {
-		logger.Warn("abi unpack input error", "err", err)
-		return err
-	}
-	if len(unpack) < 2 {
-		logger.Warn("abi unpack data error", "err", err)
-		return errors.New("abi unpack error")
-	}
-	logger.Debug("abi packed")
-	//beneficiary := parserTx.transaction.FromAddr
-	//if beneficiaryAddr, ok := unpack[1].(common.Address); ok {
-	//	beneficiary = strings.ToLower(beneficiaryAddr.Hex())
-	//}
-
-	opsBytes, _ := json.Marshal(unpack[0])
-	var ops []*aa.UserOperation
-
-	switch internalconfig.HandleOpsMap[sign] {
-	case "0.6":
-		_ = json.Unmarshal(opsBytes, &ops)
-		break
-	case "0.7":
-		var opsV07 []*aa.UserOperationV07
-		_ = json.Unmarshal(opsBytes, &opsV07)
-
-		for _, opV07 := range opsV07 {
-			callGasLimit, verificationGasLimit := opV07.UnpackAccountGasLimits()
-			maxFeePerGas, maxPriorityFeePerGas := opV07.UnpackGasFees()
-
-			ops = append(ops, &aa.UserOperation{
-				Sender:               opV07.Sender,
-				Nonce:                opV07.Nonce,
-				InitCode:             opV07.InitCode,
-				CallData:             opV07.CallData,
-				CallGasLimit:         callGasLimit,
-				VerificationGasLimit: verificationGasLimit,
-				PreVerificationGas:   opV07.PreVerificationGas,
-				MaxFeePerGas:         maxFeePerGas,
-				MaxPriorityFeePerGas: maxPriorityFeePerGas,
-				PaymasterAndData:     opV07.PaymasterAndData,
-				Signature:            opV07.Signature,
-			})
-		}
-		break
-	}
-
-	err = json.Unmarshal([]byte(parserTx.receipt.Logs), &parserTx.logs)
+	err := json.Unmarshal([]byte(parserTx.receipt.Logs), &parserTx.logs)
 	if err != nil {
 		logger.Warn("abi  Unmarshal error", "err", err)
 		return err
 	}
-
 	events, _ := t.parseLogs(ctx, parserTx.logs)
+	var ops []*aa.UserOperation
+	sign := parserTx.transaction.Input[:10]
+	_, ok := internalconfig.HandleOpsMap[sign]
+
+	if !ok {
+		// filter logs
+		if len(events) == 0 {
+			return nil
+		}
+
+		for _, event := range events {
+			ops = append(ops, &aa.UserOperation{
+				Sender:               common.HexToAddress(event.Sender),
+				Nonce:                big.NewInt(event.Nonce),
+				InitCode:             []byte{},
+				CallData:             []byte{},
+				CallGasLimit:         &big.Int{},
+				VerificationGasLimit: &big.Int{},
+				PreVerificationGas:   &big.Int{},
+				MaxFeePerGas:         &big.Int{},
+				MaxPriorityFeePerGas: &big.Int{},
+				PaymasterAndData:     []byte{},
+				Paymaster:            common.HexToAddress(event.Paymaster),
+				Signature:            []byte{},
+			})
+		}
+
+	} else {
+		// parse input
+		t.SelectABI(sign)
+
+		data, err := hexutil.Decode(parserTx.transaction.Input)
+		if err != nil {
+			logger.Warn("decode input error", "err", err)
+			return err
+		}
+
+		unpack, err := t.handleOpsMethod[sign].Inputs.UnpackValues(data[4:])
+		if err != nil {
+			logger.Warn("abi unpack input error", "err", err)
+			return err
+		}
+		if len(unpack) < 2 {
+			logger.Warn("abi unpack data error", "err", err)
+			return errors.New("abi unpack error")
+		}
+		logger.Debug("abi packed")
+		//beneficiary := parserTx.transaction.FromAddr
+		//if beneficiaryAddr, ok := unpack[1].(common.Address); ok {
+		//	beneficiary = strings.ToLower(beneficiaryAddr.Hex())
+		//}
+
+		opsBytes, _ := json.Marshal(unpack[0])
+
+		switch internalconfig.HandleOpsMap[sign] {
+		case "0.6":
+			_ = json.Unmarshal(opsBytes, &ops)
+			break
+		case "0.7":
+			var opsV07 []*aa.UserOperationV07
+			_ = json.Unmarshal(opsBytes, &opsV07)
+
+			for _, opV07 := range opsV07 {
+				callGasLimit, verificationGasLimit := opV07.UnpackAccountGasLimits()
+				maxFeePerGas, maxPriorityFeePerGas := opV07.UnpackGasFees()
+
+				ops = append(ops, &aa.UserOperation{
+					Sender:               opV07.Sender,
+					Nonce:                opV07.Nonce,
+					InitCode:             opV07.InitCode,
+					CallData:             opV07.CallData,
+					CallGasLimit:         callGasLimit,
+					VerificationGasLimit: verificationGasLimit,
+					PreVerificationGas:   opV07.PreVerificationGas,
+					MaxFeePerGas:         maxFeePerGas,
+					MaxPriorityFeePerGas: maxPriorityFeePerGas,
+					PaymasterAndData:     opV07.PaymasterAndData,
+					Signature:            opV07.Signature,
+				})
+			}
+			break
+		}
+
+	}
 
 	tx := parserTx.transaction
 	receipt := parserTx.receipt
@@ -1206,8 +1231,12 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 		sender := block.AaAccountData(userOpsInfo.Sender)
 		sender.AaType = internalconfig.AaAccountTypeAA
 		factoryAddr, paymaster := t.getAddr(ctx, userOpsInfo.InitCode, userOpsInfo.PaymasterAndData)
+		if paymaster != "" {
+			userOpsInfo.Paymaster = strings.ToLower(paymaster)
+		} else {
+			userOpsInfo.Paymaster = op.Paymaster.String()
+		}
 		userOpsInfo.Factory = strings.ToLower(factoryAddr)
-		userOpsInfo.Paymaster = strings.ToLower(paymaster)
 
 		if len(userOpsInfo.Paymaster) > 0 {
 			paymaster := block.AaAccountData(userOpsInfo.Paymaster)
