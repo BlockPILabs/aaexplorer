@@ -7,6 +7,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+const NameAddMonitor = "add_monitor"
+const NameRemoveMonitor = "remove_monitor"
+
 func AddMonitor(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()
 	logger := log.Context(fcx.UserContext())

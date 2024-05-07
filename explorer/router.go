@@ -66,6 +66,7 @@ func Resister(router fiber.Router) {
 	networksV1.Get("/dailyStatistic", controller.GetDailyStatistic).Name(controller.NameGetDailyStatistic)
 	networksV1.Get("/aaTxnDominance", controller.GetAATxnDominance).Name(controller.NameGetAATxnDominance)
 	networksV1.Get("/latestUserOps", controller.GetLatestUserOps).Name(controller.NameGetLatestUserOps)
+	networksV1.Get("/mevTx", controller.GetMevTx).Name(controller.NameGetMevTx)
 
 	//user op type analyze
 	networksV1.Get("/userOpType", controller.GetUserOpType).Name(controller.NameGetUserOpType)
@@ -80,6 +81,11 @@ func Resister(router fiber.Router) {
 	//whale
 	networksV1.Get("/whaleOverview", controller.GetWhaleOverview).Name(controller.NameGetWhaleOverview)
 	networksV1.Get("/whaleChart", controller.GetWhaleChart).Name(controller.NameGetWhaleChart)
+
+	//monitor
+	networksV1.Post("/addMonitor", controller.AddMonitor).Name(controller.NameAddMonitor)
+	networksV1.Post("/removeMonitor", controller.RemoveMonitor).Name(controller.NameRemoveMonitor)
+
 }
 
 func Error() {
