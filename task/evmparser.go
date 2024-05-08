@@ -1064,6 +1064,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 				MaxPriorityFeePerGas: &big.Int{},
 				PaymasterAndData:     []byte{},
 				Paymaster:            common.HexToAddress(event.Paymaster),
+				UserOpHash:           []byte(event.OpsHash),
 				Signature:            []byte{},
 			})
 		}
@@ -1192,7 +1193,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 		userOpHash := op.GetUserOpHash(common.HexToAddress(parserTx.transaction.ToAddr), big.NewInt(network.ChainID))
 		now := time.Now()
 		userOpsInfo := &ent.AAUserOpsInfo{
-			ID:                   userOpHash.Hex(),
+			ID:                   userOpHash,
 			Time:                 parserTx.transaction.Time,
 			TxHash:               parserTx.transaction.ID,
 			BlockNumber:          parserTx.transaction.BlockNumber,
@@ -1234,7 +1235,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 		if paymaster != "" {
 			userOpsInfo.Paymaster = strings.ToLower(paymaster)
 		} else {
-			userOpsInfo.Paymaster = op.Paymaster.String()
+			userOpsInfo.Paymaster = strings.ToLower(op.Paymaster.String())
 		}
 		userOpsInfo.Factory = strings.ToLower(factoryAddr)
 
