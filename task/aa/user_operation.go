@@ -47,7 +47,9 @@ type UserOperation struct {
 	PreVerificationGas   *big.Int       `json:"preVerificationGas"   mapstructure:"preVerificationGas"   validate:"required"`
 	MaxFeePerGas         *big.Int       `json:"maxFeePerGas"         mapstructure:"maxFeePerGas"         validate:"required"`
 	MaxPriorityFeePerGas *big.Int       `json:"maxPriorityFeePerGas" mapstructure:"maxPriorityFeePerGas" validate:"required"`
+	Paymaster            common.Address `json:"paymaster"            mapstructure:"paymaster"            validate:"required"`
 	PaymasterAndData     []byte         `json:"paymasterAndData"     mapstructure:"paymasterAndData"     validate:"required"`
+	UserOpHash           []byte         `json:"userOpHash"           mapstructure:"userOpHash"           validate:"required"`
 	Signature            []byte         `json:"signature"            mapstructure:"signature"            validate:"required"`
 }
 
@@ -173,12 +175,17 @@ func (op *UserOperation) PackForSignature() []byte {
 }
 
 // GetUserOpHash returns the hash of the userOp + entryPoint address + chainID.
-func (op *UserOperation) GetUserOpHash(entryPoint common.Address, chainID *big.Int) common.Hash {
-	return crypto.Keccak256Hash(
-		crypto.Keccak256(op.PackForSignature()),
-		common.LeftPadBytes(entryPoint.Bytes(), 32),
-		common.LeftPadBytes(chainID.Bytes(), 32),
-	)
+func (op *UserOperation) GetUserOpHash(entryPoint common.Address, chainID *big.Int) string {
+	if op.UserOpHash != nil {
+		return string(op.UserOpHash)
+	} else {
+		return crypto.Keccak256Hash(
+			crypto.Keccak256(op.PackForSignature()),
+			common.LeftPadBytes(entryPoint.Bytes(), 32),
+			common.LeftPadBytes(chainID.Bytes(), 32),
+		).Hex()
+	}
+
 }
 
 // MarshalJSON returns a JSON encoding of the UserOperation.
