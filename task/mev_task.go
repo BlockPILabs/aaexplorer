@@ -17,6 +17,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactionreceiptdecode"
 	"github.com/BlockPILabs/aaexplorer/task/aa"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
 	"log"
 	"math"
@@ -26,7 +27,19 @@ import (
 	"time"
 )
 
-func MEVTask(blockNumber int64, network string) {
+func InitMEVTask(ctx context.Context) {
+	mevScheduler := chrono.NewDefaultTaskScheduler()
+	_, err := mevScheduler.ScheduleWithCron(func(ctx context.Context) {
+		MEVTask(ctx)
+	}, "0/30 * * * * *")
+
+	if err == nil {
+		logger.Info("whaleHourStatistic has been scheduled")
+	}
+
+}
+
+func MEVTask0(blockNumber int64, network string) {
 
 	client, err := entity.Client(context.Background())
 	if err != nil {
@@ -146,7 +159,7 @@ func mapToString(myMap map[string]string) string {
 	return result
 }
 
-func TestMEV(ctx context.Context) {
+func MEVTask(ctx context.Context) {
 	cli, err := entity.Client(ctx)
 	if err != nil {
 		return
@@ -248,9 +261,9 @@ func TestMEV(ctx context.Context) {
 						if err != nil {
 							continue
 						}
-						//if len(successUserOps) == 0 {
-						//	continue
-						//}
+						if len(successUserOps) == 0 {
+							continue
+						}
 						var totalUserCost = decimal.Zero
 						for _, oneUserOps := range successUserOps {
 							totalUserCost = totalUserCost.Add(RayDiv(decimal.NewFromInt(oneUserOps.ActualGasCost)))
@@ -272,14 +285,14 @@ func TestMEV(ctx context.Context) {
 						victimGas := (*tx.GasPrice).DivRound(decimal.NewFromInt(10).Pow(decimal.NewFromInt(18)), 18).Mul(victimReceipt.GasUsed)
 
 						bundlerLossUsd := victimGas.Mul(tokenPrice)
-						mevProfitUsd := attackerGas.Sub(totalUserCost).Mul(tokenPrice)
+						mevProfitUsd := totalUserCost.Sub(attackerGas).Mul(tokenPrice)
 
 						mevTx := client.MevTransaction.Create().
 							SetCreateTime(time.Now()).SetID(receipt.ID).SetTime(receipt.Time).SetFromAddr(receipt.FromAddr).
 							SetToAddr(receipt.ToAddr).SetBlockNumber(receipt.BlockNumber).SetBlockHash(receipt.BlockHash).
 							SetValue(decimal.Zero).SetGas(decimal.NewFromInt(receipt.CumulativeGasUsed)).SetGasPrice(*tx.GasPrice).SetTransactionIndex(*tx.TransactionIndex).SetVictim(*tx.FromAddr).
 							SetAttacker(receipt.FromAddr).SetVictimTxHash(txHash).SetVictimFromAddr(*tx.FromAddr).SetVictimType(victimType).SetVictimToAddr(*tx.ToAddr).
-							SetVictimBlockNumber(tx.BlockNumber).SetMevType(constConfig.MevFront).SetBundlerLoss(victimGas).SetBundlerLossUsd(bundlerLossUsd).SetMevProfit(attackerGas.Sub(totalUserCost)).
+							SetVictimBlockNumber(tx.BlockNumber).SetMevType(constConfig.MevFront).SetBundlerLoss(victimGas).SetBundlerLossUsd(bundlerLossUsd).SetMevProfit(totalUserCost.Sub(attackerGas)).
 							SetMevProfitUsd(mevProfitUsd)
 						logger.Info("find mev tx success ", "userHash", txHash, "mevHash", receipt.ID, "sender", userOpsKey)
 						_, err = mevTx.Save(ctx)

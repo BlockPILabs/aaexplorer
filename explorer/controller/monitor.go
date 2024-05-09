@@ -20,9 +20,10 @@ func AddMonitor(fcx *fiber.Ctx) error {
 	if err != nil {
 		logger.Warn("params parse error", "err", err)
 	}
-	err = fcx.QueryParser(&req)
+	err = fcx.BodyParser(&req)
 	if err != nil {
-		logger.Warn("query params parse error", "err", err, "network", req.Network)
+		logger.Warn("params parse error", "err", err)
+		return err
 	}
 
 	res, err := service.AddMonitor(ctx, req)
@@ -42,9 +43,10 @@ func RemoveMonitor(fcx *fiber.Ctx) error {
 	if err != nil {
 		logger.Warn("params parse error", "err", err)
 	}
-	err = fcx.QueryParser(&req)
+	err = fcx.BodyParser(&req)
 	if err != nil {
-		logger.Warn("query params parse error", "err", err, "network", req.Network)
+		logger.Warn("params parse error", "err", err)
+		return err
 	}
 
 	res, err := service.RemoveMonitor(ctx, req)
