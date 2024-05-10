@@ -15,7 +15,7 @@ func MEVBlock(fcx *fiber.Ctx) error {
 
 	logger.Debug("start MEVBlock")
 
-	req := vo.ListMEVBundlersRequest{
+	req := vo.ListBlockMEVBundlersRequest{
 		PaginationRequest: vo.NewDefaultPaginationRequest(),
 	}
 
@@ -28,7 +28,7 @@ func MEVBlock(fcx *fiber.Ctx) error {
 	if err != nil {
 		logger.Warn("query params parse error", "err", err, "network", req.Network)
 	}
-	res, err := service.MevService.MevList(ctx, req)
+	res, err := service.MevService.BlockMevList(ctx, req)
 	if err != nil {
 		logger.Error("MEVBlock error", "err", err)
 	}

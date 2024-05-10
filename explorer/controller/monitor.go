@@ -55,3 +55,35 @@ func RemoveMonitor(fcx *fiber.Ctx) error {
 	}
 	return vo.NewResultJsonResponse(res).JSON(fcx)
 }
+
+const NameListBundler = "list_mev_bundler"
+
+func ListMEVBundlers(fcx *fiber.Ctx) error {
+	ctx := fcx.UserContext()
+	logger := log.Context(ctx)
+
+	logger.Debug("start list bundlers", "")
+
+	req := vo.ListMEVBundlersRequest{}
+	res := &vo.ListMEVBundlersResponse{
+		Pagination: vo.Pagination{
+			TotalCount: 0,
+			PerPage:    req.GetPerPage(),
+			Page:       req.GetPage(),
+		},
+	}
+	err := fcx.ParamsParser(&req)
+	if err != nil {
+		logger.Warn("params parse error", "err", err)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
+	}
+
+	err = fcx.QueryParser(&req)
+	if err != nil {
+		logger.Warn("query params parse error", "err", err)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
+	}
+
+	res, err = service.MevService.MevList(ctx, req)
+	return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(err)).JSON(fcx)
+}

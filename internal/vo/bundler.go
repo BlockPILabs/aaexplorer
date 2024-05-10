@@ -1,6 +1,9 @@
 package vo
 
-import "github.com/shopspring/decimal"
+import (
+	"github.com/shopspring/decimal"
+	"time"
+)
 
 type BundlersVo struct {
 	// Bundler holds the value of the "bundler" field.
@@ -60,17 +63,25 @@ type ListMEVBundlersRequest struct {
 	Network string `json:"network" params:"network" validate:"required,min=3"`
 }
 
+type ListBlockMEVBundlersRequest struct {
+	PaginationRequest
+	Network     string `json:"network" params:"network" validate:"required,min=3"`
+	BlockNumber int64  `json:"blockNumber" params:"network" validate:"required"`
+}
+
 type ListMEVBundlersResponse struct {
 	Pagination
 	Records []*MEVBundlerAssets `json:"records"`
 }
 
 type MEVBundlerAssets struct {
-	Timestamp   int64           `json:"timestamp"`
-	UserOpHash  string          `json:"userOpHash"`
-	MevType     string          `json:"mevType"`
-	Victim      string          `json:"victim"`
-	Attacker    string          `json:"attacker"`
-	BundlerLoss decimal.Decimal `json:"bundlerLoss"`
-	MevProfits  decimal.Decimal `json:"mevProfits"`
+	Timestamp        time.Time       `json:"timestamp"`
+	UserOpHash       string          `json:"userOpHash"`
+	MevType          string          `json:"mevType"`
+	Victim           string          `json:"victim"`
+	Attacker         string          `json:"attacker"`
+	BundlerLoss      decimal.Decimal `json:"bundlerLoss"`
+	BundlerLossInUsd decimal.Decimal `json:"bundlerLossInUsd"`
+	MevProfits       decimal.Decimal `json:"mevProfits"`
+	MevProfitsInUsd  decimal.Decimal `json:"mevProfitsInUsd"`
 }
