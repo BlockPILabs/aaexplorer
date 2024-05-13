@@ -172,9 +172,9 @@ func MEVTask(ctx context.Context) {
 
 	for _, net := range networks {
 		network := net.ID
-		if network != "ethereum" {
-			continue
-		}
+		//if network != "ethereum" {
+		//	continue
+		//}
 		client, err := entity.Client(ctx, network)
 		if err != nil {
 			continue
@@ -187,7 +187,7 @@ func MEVTask(ctx context.Context) {
 			continue
 		}
 		lastBlockNum := lastRecords[0].LastBlockNumber
-		failedTxs, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.StatusEQ("0x0"), aatransactioninfo.BlockNumberGT(lastBlockNum)).Order(ent.Desc(aatransactioninfo.FieldTime)).All(ctx)
+		failedTxs, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.StatusEQ("0x0"), aatransactioninfo.BlockNumberGT(lastBlockNum)).Order(ent.Asc(aatransactioninfo.FieldBlockNumber)).All(ctx)
 		if len(failedTxs) == 0 {
 			continue
 		}

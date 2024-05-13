@@ -66,7 +66,7 @@ func Resister(router fiber.Router) {
 	networksV1.Get("/dailyStatistic", controller.GetDailyStatistic).Name(controller.NameGetDailyStatistic)
 	networksV1.Get("/aaTxnDominance", controller.GetAATxnDominance).Name(controller.NameGetAATxnDominance)
 	networksV1.Get("/latestUserOps", controller.GetLatestUserOps).Name(controller.NameGetLatestUserOps)
-	networksV1.Get("/mevTx", controller.GetMevTx).Name(controller.NameGetMevTx)
+	networksV1.Get("/mevTransaction", controller.GetMevTx).Name(controller.NameGetMevTx)
 
 	//user op type analyze
 	networksV1.Get("/userOpType", controller.GetUserOpType).Name(controller.NameGetUserOpType)
