@@ -86,3 +86,28 @@ func (dao *mevDao) BlockMevPagination(ctx context.Context, tx *ent.Client, req v
 	}
 	return list, total, err
 }
+
+func (dao *mevDao) BundlerMevPagination(ctx context.Context, tx *ent.Client, req vo.ListBundlerMEVBundlersRequest) (list ent.MevTransactions, total int, err error) {
+	query := tx.MevTransaction.Query().Where(mevtransaction.FromAddrEQ(req.Bundler))
+
+	if req.TotalCount > 0 {
+		total = req.TotalCount
+	} else {
+		total = query.CountX(ctx)
+	}
+
+	if total < 1 || req.GetOffset() > total {
+		return
+	}
+
+	query = dao.Sort(ctx, query, req.Sort, req.Order)
+
+	query = query.Offset(req.GetOffset()).Limit(req.PerPage)
+
+	list, err = query.All(ctx)
+
+	if err != nil {
+		return
+	}
+	return list, total, err
+}

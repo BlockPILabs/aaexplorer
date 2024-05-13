@@ -66,7 +66,13 @@ type ListMEVBundlersRequest struct {
 type ListBlockMEVBundlersRequest struct {
 	PaginationRequest
 	Network     string `json:"network" params:"network" validate:"required,min=3"`
-	BlockNumber int64  `json:"blockNumber" params:"network" validate:"required"`
+	BlockNumber int64  `json:"blockNumber" params:"blockNumber" validate:"required"`
+}
+
+type ListBundlerMEVBundlersRequest struct {
+	PaginationRequest
+	Network string `json:"network" params:"network" validate:"required,min=3"`
+	Bundler string `json:"bundler" params:"bundler" validate:"required"`
 }
 
 type ListMEVBundlersResponse struct {

@@ -84,3 +84,39 @@ func (*mevService) BlockMevList(ctx context.Context, req vo.ListBlockMEVBundlers
 
 	return res, nil
 }
+
+func (*mevService) BundlerMevList(ctx context.Context, req vo.ListBundlerMEVBundlersRequest) (res *vo.ListMEVBundlersResponse, err error) {
+	client, err := entity.Client(ctx, req.Network)
+	if err != nil {
+		return nil, err
+	}
+	res = &vo.ListMEVBundlersResponse{
+		Pagination: vo.Pagination{
+			TotalCount: 0,
+			PerPage:    req.GetPerPage(),
+			Page:       req.GetPage(),
+		},
+	}
+	list, total, err := dao.MevDao.BundlerMevPagination(ctx, client, req)
+	if err != nil {
+		return nil, err
+	}
+
+	res.TotalCount = total
+
+	for _, mev := range list {
+		res.Records = append(res.Records, &vo.MEVBundlerAssets{
+			Timestamp:        mev.Time,
+			UserOpHash:       mev.VictimTxHash,
+			MevType:          mev.MevType,
+			Victim:           mev.Victim,
+			Attacker:         mev.Attacker,
+			BundlerLoss:      mev.BundlerLoss,
+			BundlerLossInUsd: mev.BundlerLossUsd,
+			MevProfits:       mev.MevProfit,
+			MevProfitsInUsd:  mev.MevProfitUsd,
+		})
+	}
+
+	return res, nil
+}
