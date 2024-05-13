@@ -22,7 +22,7 @@ func Resister(router fiber.Router) {
 	// Bundlers
 	networksV1.Get("/bundlers", controller.GetBundlers).Name(controller.NameGetBundlers)
 	networksV1.Get("/bundler/:bundler<regex(0x[a-z0-9]{40}$)}>", controller.GetBundler).Name(controller.NameGetBundler)
-	networksV1.Get("/listMEVBundlers", controller.ListMEVBundlers).Name(controller.NameListBundler)
+
 	// bundles
 	networksV1.Get("/bundles", controller.GetBundles).Name(controller.NameGetBundles)
 	networksV1.Get("/bundle/:bundle<regex(0x[a-z0-9]{40}$)}>", controller.GetBundle).Name(controller.NameGetBundle)
@@ -85,7 +85,7 @@ func Resister(router fiber.Router) {
 	//monitor
 	networksV1.Post("/addMonitor", controller.AddMonitor).Name(controller.NameAddMonitor)
 	networksV1.Post("/removeMonitor", controller.RemoveMonitor).Name(controller.NameRemoveMonitor)
-
+	networksV1.Get("/monitor/listMev", controller.ListMEVBundlers).Name(controller.NameListBundler)
 }
 
 func Error() {

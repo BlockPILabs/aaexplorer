@@ -18,7 +18,13 @@ func (*mevService) MevList(ctx context.Context, req vo.ListMEVBundlersRequest) (
 		return nil, err
 	}
 
-	res = &vo.ListMEVBundlersResponse{}
+	res = &vo.ListMEVBundlersResponse{
+		Pagination: vo.Pagination{
+			TotalCount: 0,
+			PerPage:    req.GetPerPage(),
+			Page:       req.GetPage(),
+		},
+	}
 	list, total, err := dao.MevDao.Pagination(ctx, client, req)
 	if err != nil {
 		return nil, err
@@ -28,13 +34,51 @@ func (*mevService) MevList(ctx context.Context, req vo.ListMEVBundlersRequest) (
 
 	for _, mev := range list {
 		res.Records = append(res.Records, &vo.MEVBundlerAssets{
-			Timestamp:   mev.TxTime,
-			UserOpHash:  mev.TxHash,
-			MevType:     mev.TxFrom, // undo
-			Victim:      mev.TxFrom,
-			Attacker:    mev.TxFrom,
-			BundlerLoss: *mev.GasFee,
-			MevProfits:  *mev.Profit,
+			Timestamp:        mev.Time,
+			UserOpHash:       mev.VictimTxHash,
+			MevType:          mev.MevType,
+			Victim:           mev.Victim,
+			Attacker:         mev.Attacker,
+			BundlerLoss:      mev.BundlerLoss,
+			BundlerLossInUsd: mev.BundlerLossUsd,
+			MevProfits:       mev.MevProfit,
+			MevProfitsInUsd:  mev.MevProfitUsd,
+		})
+	}
+
+	return res, nil
+}
+
+func (*mevService) BlockMevList(ctx context.Context, req vo.ListBlockMEVBundlersRequest) (res *vo.ListMEVBundlersResponse, err error) {
+	client, err := entity.Client(ctx, req.Network)
+	if err != nil {
+		return nil, err
+	}
+	res = &vo.ListMEVBundlersResponse{
+		Pagination: vo.Pagination{
+			TotalCount: 0,
+			PerPage:    req.GetPerPage(),
+			Page:       req.GetPage(),
+		},
+	}
+	list, total, err := dao.MevDao.BlockMevPagination(ctx, client, req)
+	if err != nil {
+		return nil, err
+	}
+
+	res.TotalCount = total
+
+	for _, mev := range list {
+		res.Records = append(res.Records, &vo.MEVBundlerAssets{
+			Timestamp:        mev.Time,
+			UserOpHash:       mev.VictimTxHash,
+			MevType:          mev.MevType,
+			Victim:           mev.Victim,
+			Attacker:         mev.Attacker,
+			BundlerLoss:      mev.BundlerLoss,
+			BundlerLossInUsd: mev.BundlerLossUsd,
+			MevProfits:       mev.MevProfit,
+			MevProfitsInUsd:  mev.MevProfitUsd,
 		})
 	}
 
