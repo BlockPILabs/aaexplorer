@@ -269,7 +269,7 @@ func MEVTask(ctx context.Context) {
 							totalUserCost = totalUserCost.Add(RayDiv(decimal.NewFromInt(oneUserOps.ActualGasCost)))
 						}
 
-						accounts, err := client.AaAccountData.Query().Where(aaaccountdata.IDEqualFold(tx.ID)).All(ctx)
+						accounts, err := client.AaAccountData.Query().Where(aaaccountdata.IDEqualFold(*tx.FromAddr)).All(ctx)
 						victimType := ""
 						if len(accounts) > 0 {
 							victimType = accounts[0].AaType
