@@ -282,6 +282,7 @@ func rayDiv(gas decimal.Decimal) decimal.Decimal {
 func GetMevTx(ctx context.Context, req vo.HomeMevRequest) (*vo.HomeMevResponse, error) {
 
 	network := req.Network
+	blockNum := req.BlockNum
 	client, err := entity.Client(ctx, network)
 	if err != nil {
 		return nil, err
@@ -293,7 +294,7 @@ func GetMevTx(ctx context.Context, req vo.HomeMevRequest) (*vo.HomeMevResponse, 
 			Page:       req.GetPage(),
 		},
 	}
-	mevTxs, err := client.MevTransaction.Query().Order(ent.Desc(mevtransaction.FieldTime)).Offset(req.GetOffset()).Limit(req.GetPerPage()).All(ctx)
+	mevTxs, err := client.MevTransaction.Query().Where(mevtransaction.BlockNumberGT(blockNum)).Order(ent.Desc(mevtransaction.FieldTime)).Offset(req.GetOffset()).Limit(req.GetPerPage()).All(ctx)
 	if len(mevTxs) == 0 {
 		return nil, nil
 	}
@@ -307,6 +308,7 @@ func GetMevTx(ctx context.Context, req vo.HomeMevRequest) (*vo.HomeMevResponse, 
 			Attacker:     mevTx.Attacker,
 			MevProfit:    mevTx.MevProfit,
 			MevProfitUsd: mevTx.MevProfitUsd,
+			BlockNum:     mevTx.BlockNumber,
 		}
 		mevInfos = append(mevInfos, mevInfo)
 	}

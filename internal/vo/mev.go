@@ -3,7 +3,8 @@ package vo
 import "github.com/shopspring/decimal"
 
 type HomeMevRequest struct {
-	Network string `json:"network"`
+	Network  string `json:"network"`
+	BlockNum int64  `json:"blockNum"`
 	PaginationRequest
 }
 
@@ -20,4 +21,5 @@ type MevInfo struct {
 	Attacker     string          `json:"attacker"`
 	MevProfit    decimal.Decimal `json:"mevProfit"`
 	MevProfitUsd decimal.Decimal `json:"mevProfitUsd"`
+	BlockNum     int64           `json:"blockNum"`
 }
