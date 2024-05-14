@@ -87,3 +87,10 @@ func ListMEVBundlers(fcx *fiber.Ctx) error {
 	res, err = service.MevService.MevList(ctx, req)
 	return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(err)).JSON(fcx)
 }
+
+const NameListWatchingAddress = "list_watching_address"
+
+func ListWatchingAddress(fcx *fiber.Ctx) error {
+
+	return nil
+}

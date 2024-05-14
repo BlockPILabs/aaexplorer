@@ -88,7 +88,7 @@ func (dao *mevDao) BlockMevPagination(ctx context.Context, tx *ent.Client, req v
 }
 
 func (dao *mevDao) BundlerMevPagination(ctx context.Context, tx *ent.Client, req vo.ListBundlerMEVBundlersRequest) (list ent.MevTransactions, total int, err error) {
-	query := tx.MevTransaction.Query().Where(mevtransaction.FromAddrEQ(req.Bundler))
+	query := tx.MevTransaction.Query().Where(mevtransaction.VictimEQ(req.Bundler))
 
 	if req.TotalCount > 0 {
 		total = req.TotalCount

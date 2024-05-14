@@ -2,7 +2,6 @@ package vo
 
 import (
 	"github.com/shopspring/decimal"
-	"time"
 )
 
 type BundlersVo struct {
@@ -81,7 +80,7 @@ type ListMEVBundlersResponse struct {
 }
 
 type MEVBundlerAssets struct {
-	Timestamp        time.Time       `json:"timestamp"`
+	Timestamp        int64           `json:"timestamp"`
 	UserOpHash       string          `json:"userOpHash"`
 	TxHash           string          `json:"txHash"`
 	MevType          string          `json:"mevType"`

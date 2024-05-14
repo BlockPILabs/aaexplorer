@@ -34,7 +34,7 @@ func (*mevService) MevList(ctx context.Context, req vo.ListMEVBundlersRequest) (
 
 	for _, mev := range list {
 		res.Records = append(res.Records, &vo.MEVBundlerAssets{
-			Timestamp:        mev.Time,
+			Timestamp:        mev.Time.UnixMilli(),
 			TxHash:           mev.ID,
 			UserOpHash:       mev.VictimTxHash,
 			MevType:          mev.MevType,
@@ -72,7 +72,7 @@ func (*mevService) BlockMevList(ctx context.Context, req vo.ListBlockMEVBundlers
 
 	for _, mev := range list {
 		res.Records = append(res.Records, &vo.MEVBundlerAssets{
-			Timestamp:        mev.Time,
+			Timestamp:        mev.Time.UnixMilli(),
 			TxHash:           mev.ID,
 			UserOpHash:       mev.VictimTxHash,
 			MevType:          mev.MevType,
@@ -110,7 +110,7 @@ func (*mevService) BundlerMevList(ctx context.Context, req vo.ListBundlerMEVBund
 
 	for _, mev := range list {
 		res.Records = append(res.Records, &vo.MEVBundlerAssets{
-			Timestamp:        mev.Time,
+			Timestamp:        mev.Time.UnixMilli(),
 			TxHash:           mev.ID,
 			UserOpHash:       mev.VictimTxHash,
 			MevType:          mev.MevType,

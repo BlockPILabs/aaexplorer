@@ -19,3 +19,23 @@ type RemoveMonitorRequest struct {
 
 type RemoveMonitorResponse struct {
 }
+
+type ListWatchingAddressRequest struct {
+	PaginationRequest
+	UserAddress string `json:"userAddress"`
+}
+
+type ListWatchingAddressResponse struct {
+	Pagination
+	Monitors []*WatchingAddress
+}
+
+type WatchingAddress struct {
+	ChainName       string  `json:"chainName"`
+	AddressType     string  `json:"addressType"`
+	MonitorAddress  string  `json:"monitorAddress"`
+	Balance         string  `json:"balance"`
+	Profits24H      float64 `json:"profits24H"`
+	SponsoredGas24H float64 `json:"sponsoredGas24H"`
+	TotalUserOps    int64   `json:"totalUserOps"`
+}
