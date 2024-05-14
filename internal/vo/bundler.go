@@ -83,8 +83,10 @@ type ListMEVBundlersResponse struct {
 type MEVBundlerAssets struct {
 	Timestamp        time.Time       `json:"timestamp"`
 	UserOpHash       string          `json:"userOpHash"`
+	TxHash           string          `json:"txHash"`
 	MevType          string          `json:"mevType"`
 	Victim           string          `json:"victim"`
+	VictimType       string          `json:"victimType"`
 	Attacker         string          `json:"attacker"`
 	BundlerLoss      decimal.Decimal `json:"bundlerLoss"`
 	BundlerLossInUsd decimal.Decimal `json:"bundlerLossInUsd"`

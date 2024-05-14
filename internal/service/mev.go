@@ -35,9 +35,11 @@ func (*mevService) MevList(ctx context.Context, req vo.ListMEVBundlersRequest) (
 	for _, mev := range list {
 		res.Records = append(res.Records, &vo.MEVBundlerAssets{
 			Timestamp:        mev.Time,
+			TxHash:           mev.ID,
 			UserOpHash:       mev.VictimTxHash,
 			MevType:          mev.MevType,
 			Victim:           mev.Victim,
+			VictimType:       mev.VictimType,
 			Attacker:         mev.Attacker,
 			BundlerLoss:      mev.BundlerLoss,
 			BundlerLossInUsd: mev.BundlerLossUsd,
@@ -71,9 +73,11 @@ func (*mevService) BlockMevList(ctx context.Context, req vo.ListBlockMEVBundlers
 	for _, mev := range list {
 		res.Records = append(res.Records, &vo.MEVBundlerAssets{
 			Timestamp:        mev.Time,
+			TxHash:           mev.ID,
 			UserOpHash:       mev.VictimTxHash,
 			MevType:          mev.MevType,
 			Victim:           mev.Victim,
+			VictimType:       mev.VictimType,
 			Attacker:         mev.Attacker,
 			BundlerLoss:      mev.BundlerLoss,
 			BundlerLossInUsd: mev.BundlerLossUsd,
@@ -107,9 +111,11 @@ func (*mevService) BundlerMevList(ctx context.Context, req vo.ListBundlerMEVBund
 	for _, mev := range list {
 		res.Records = append(res.Records, &vo.MEVBundlerAssets{
 			Timestamp:        mev.Time,
+			TxHash:           mev.ID,
 			UserOpHash:       mev.VictimTxHash,
 			MevType:          mev.MevType,
 			Victim:           mev.Victim,
+			VictimType:       mev.VictimType,
 			Attacker:         mev.Attacker,
 			BundlerLoss:      mev.BundlerLoss,
 			BundlerLossInUsd: mev.BundlerLossUsd,
