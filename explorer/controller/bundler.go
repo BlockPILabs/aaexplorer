@@ -60,3 +60,29 @@ func GetBundler(fcx *fiber.Ctx) error {
 	res, err = service.BundlerService.GetBundler(ctx, req)
 	return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(err)).JSON(fcx)
 }
+
+const NameGetBundlerMev = "get_bundler_mev"
+
+func GetBundlerMev(fcx *fiber.Ctx) error {
+	ctx := fcx.UserContext()
+	logger := log.Context(ctx)
+
+	logger.Debug("start get bundler mev", "")
+	req := vo.ListBundlerMEVBundlersRequest{}
+	res := &vo.ListMEVBundlersResponse{}
+	err := fcx.ParamsParser(&req)
+	if err != nil {
+		logger.Warn("params parse error", "err", err)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
+	}
+
+	ctx, logger = log.With(ctx, "bundler", req.Bundler, "network", req.Network)
+
+	err = fcx.QueryParser(&req)
+	if err != nil {
+		logger.Warn("query params parse error", "err", err)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
+	}
+	res, err = service.MevService.BundlerMevList(ctx, req)
+	return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(err)).JSON(fcx)
+}
