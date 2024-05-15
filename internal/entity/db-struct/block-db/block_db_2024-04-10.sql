@@ -945,6 +945,54 @@ create index if not exists aa_account_data_aa_type
 create index if not exists aa_account_data_factory
     on public.aa_account_data (factory);
 
+create table mev_transaction
+(
+    time                timestamp,
+    tx_hash             varchar(255) not null
+        primary key,
+    block_hash          varchar(255),
+    block_number        bigint,
+    transaction_index   bigint,
+    from_addr           varchar(255),
+    to_addr             varchar(255),
+    value               numeric(50, 20),
+    gas_price           numeric(50, 20),
+    gas                 numeric(50, 20),
+    mev_type            varchar(255),
+    victim              varchar(255),
+    victim_type         varchar(255),
+    victim_tx_hash      varchar(255),
+    victim_block_number bigint,
+    victim_from_addr    varchar(255),
+    victim_to_addr      varchar(255),
+    attacker            varchar(255),
+    bundler_loss        numeric(50, 20),
+    bundler_loss_usd    numeric(50, 20),
+    mev_profit          numeric(50, 20),
+    mev_profit_usd      numeric(50, 20),
+    create_time         timestamp
+);
+
+create index mev_tx_from_addr_idx
+    on mev_transaction using hash (from_addr);
+
+create index mev_tx_to_addr_idx
+    on mev_transaction using hash (to_addr);
+
+create index mev_tx_victim_idx
+    on mev_transaction using hash (victim);
+
+create index mev_tx_attacker_idx
+    on mev_transaction using hash (attacker);
+
+create index mev_tx_time_idx
+    on mev_transaction (time);
+
+create index mev_tx_block_number_idx
+    on mev_transaction (block_number);
+
+alter table public.block_scan_record
+    add type varchar;
 -- Cyclic dependencies found
 
 create table aa_account_data_p1 partition of aa_account_data for values with (modulus 30, remainder 0);

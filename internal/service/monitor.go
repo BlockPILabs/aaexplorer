@@ -3,11 +3,14 @@ package service
 import (
 	"context"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaaccountdata"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaassetdetail"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/monitor"
 	interlog "github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
 	"github.com/BlockPILabs/aaexplorer/util"
+	"github.com/shopspring/decimal"
 	"strings"
 	"time"
 )
@@ -94,5 +97,57 @@ func RemoveMonitor(ctx context.Context, req vo.RemoveMonitorRequest) (*vo.Remove
 	if err != nil {
 		return nil, err
 	}
+	return resp, nil
+}
+
+func GetAssetDetail(ctx context.Context, req vo.AssetDetailRequest) (*vo.AssetDetailResponse, error) {
+	userAddress := req.UserAddress
+	network := req.Network
+	if len(userAddress) == 0 {
+		return nil, nil
+	}
+	userAddress = strings.ToLower(userAddress)
+	client, err := entity.Client(ctx, network)
+	if err != nil {
+		return nil, err
+	}
+	var resp = &vo.AssetDetailResponse{
+		Pagination: vo.Pagination{
+			TotalCount: 0,
+			PerPage:    req.GetPerPage(),
+			Page:       req.GetPage(),
+		},
+	}
+	var assetDetails []vo.AssetDetail
+
+	details, err := client.AaAssetDetail.Query().Where(aaassetdetail.UserAddressEqualFold(userAddress), aaassetdetail.AssetAmountGT(decimal.Zero)).Order(ent.Desc(aaassetdetail.FieldAssetValue)).Offset(req.GetOffset()).Limit(req.GetPerPage()).All(ctx)
+	if len(details) == 0 {
+		return resp, nil
+	}
+
+	counts, err := client.AaAssetDetail.Query().Where(aaassetdetail.UserAddressEqualFold(userAddress), aaassetdetail.AssetAmountGT(decimal.Zero)).Count(ctx)
+
+	totalUsd := decimal.Zero
+	for _, detail := range details {
+		totalUsd = totalUsd.Add(detail.AssetValue)
+	}
+	for _, detail := range details {
+		assetDetail := vo.AssetDetail{
+			Symbol:    detail.Symbol,
+			Network:   network,
+			Amount:    detail.AssetAmount,
+			AmountUsd: detail.AssetValue.RoundDown(6),
+		}
+		percent := decimal.Zero
+		if totalUsd.Cmp(decimal.Zero) > 0 {
+			percent = detail.AssetValue.DivRound(totalUsd, 4)
+		}
+		assetDetail.Percent = percent
+		assetDetails = append(assetDetails, assetDetail)
+	}
+	resp.AssetDetails = assetDetails
+	resp.TotalAssetUsd = totalUsd.RoundDown(6)
+	resp.Pagination.TotalCount = counts
+
 	return resp, nil
 }

@@ -298,6 +298,7 @@ func GetMevTx(ctx context.Context, req vo.HomeMevRequest) (*vo.HomeMevResponse, 
 	if len(mevTxs) == 0 {
 		return nil, nil
 	}
+	counts, err := client.MevTransaction.Query().Where(mevtransaction.BlockNumberGT(blockNum)).Count(ctx)
 	var mevInfos []vo.MevInfo
 	for _, mevTx := range mevTxs {
 		mevInfo := vo.MevInfo{
@@ -313,6 +314,7 @@ func GetMevTx(ctx context.Context, req vo.HomeMevRequest) (*vo.HomeMevResponse, 
 		mevInfos = append(mevInfos, mevInfo)
 	}
 	resp.MevInfos = mevInfos
+	resp.Pagination.TotalCount = counts
 
 	return resp, nil
 }

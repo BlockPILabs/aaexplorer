@@ -88,6 +88,8 @@ func Resister(router fiber.Router) {
 	networksV1.Post("/removeMonitor", controller.RemoveMonitor).Name(controller.NameRemoveMonitor)
 	networksV1.Get("/monitor/listMev", controller.ListMEVBundlers).Name(controller.NameListBundler)
 	networksV1.Get("/monitor/trackerList", controller.ListWatchingAddress).Name(controller.NameListWatchingAddress)
+	networksV1.Get("/monitor/assetDetail", controller.GetAssetDetail).Name(controller.NameAssetDetail)
+
 }
 
 func Error() {

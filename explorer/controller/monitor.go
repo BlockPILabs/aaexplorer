@@ -9,6 +9,7 @@ import (
 
 const NameAddMonitor = "add_monitor"
 const NameRemoveMonitor = "remove_monitor"
+const NameAssetDetail = "get_asset_detail"
 
 func AddMonitor(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()
@@ -93,4 +94,27 @@ const NameListWatchingAddress = "list_watching_address"
 func ListWatchingAddress(fcx *fiber.Ctx) error {
 
 	return nil
+}
+
+func GetAssetDetail(fcx *fiber.Ctx) error {
+	ctx := fcx.UserContext()
+	logger := log.Context(fcx.UserContext())
+
+	logger.Debug("start get mev transaction")
+	req := vo.AssetDetailRequest{}
+	err := fcx.ParamsParser(&req)
+	if err != nil {
+		logger.Warn("params parse error", "err", err)
+	}
+	err = fcx.QueryParser(&req)
+	if err != nil {
+		logger.Warn("params parse error", "err", err)
+		return err
+	}
+
+	res, err := service.GetAssetDetail(ctx, req)
+	if err != nil {
+		logger.Error("get mev transaction error", "err", err)
+	}
+	return vo.NewResultJsonResponse(res).JSON(fcx)
 }

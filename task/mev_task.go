@@ -419,3 +419,29 @@ func truncateString(s string, length int) string {
 func DivRav(data int64) decimal.Decimal {
 	return decimal.NewFromInt(data).DivRound(decimal.NewFromFloat(math.Pow10(18)), 20)
 }
+
+func FixTask1(ctx context.Context) {
+	client, err := entity.Client(ctx, "ethereum")
+	if err != nil {
+		return
+	}
+	txs, err := client.MevTransaction.Query().All(ctx)
+	if len(txs) == 0 {
+		return
+	}
+	for _, tx := range txs {
+		accounts, err := client.AaAccountData.Query().Where(aaaccountdata.IDEqualFold(tx.Victim)).All(ctx)
+		if err != nil {
+			continue
+		}
+		victimType := ""
+		if len(accounts) > 0 {
+			victimType = accounts[0].AaType
+		}
+		err = client.MevTransaction.Update().SetVictimType(victimType).Where(mevtransaction.IDEQ(tx.ID)).Exec(ctx)
+		if err != nil {
+			logger.Error("err", err)
+		}
+	}
+
+}

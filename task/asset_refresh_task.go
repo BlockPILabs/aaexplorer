@@ -190,12 +190,23 @@ func doRefresh(ctx context.Context, client *ent.Client, tokens []*ent.Token, w3 
 		nativeBalance := decimal.NewFromBigInt(balance, 0).Div(decimal.NewFromInt(10).Pow(decimal.NewFromInt(constConfig.DefaultDecimals)))
 		nativeTokens, err := client.Token.Query().Where(token.TypeEQ("base"), token.NetworkEQ(network)).Limit(1).All(ctx)
 		nativePrice := decimal.Zero
+		nativeSymbol := ""
 		if len(nativeTokens) > 0 {
 			nativePrice = nativeTokens[0].TokenPrice
+			nativeSymbol = nativeTokens[0].Symbol
 		}
 		nativeValue := nativeBalance.Mul(nativePrice)
 		totalValue = totalValue.Add(nativeValue)
 		client.AaAsset.Update().SetAssetValue(totalValue).SetLastTime(time.Now().UnixMilli()).SetBalance(nativeBalance).Where(aaasset.IDEqualFold(userAddress)).Exec(ctx)
+		nativeDetails, err := client.AaAssetDetail.Query().Where(aaassetdetail.UserAddressEqualFold(userAddress), aaassetdetail.IsNativeEqualFold("true")).All(ctx)
+		if err != nil {
+			continue
+		}
+		if len(nativeDetails) > 0 {
+			client.AaAssetDetail.Update().SetAssetAmount(nativeBalance).SetAssetValue(nativeValue).SetLastTime(time.Now().UnixMilli()).Where(aaassetdetail.IDEQ(nativeDetails[0].ID)).Exec(ctx)
+		} else {
+			client.AaAssetDetail.Create().SetAssetValue(nativeValue).SetLastTime(time.Now().UnixMilli()).SetCreateTime(time.Now()).SetAssetAmount(nativeBalance).SetUserAddress(userAddress).SetContractAddress("").SetSymbol(nativeSymbol).SetNetwork(network).SetIsNative("true").SetUpdateTime(time.Now()).Save(ctx)
+		}
 		if nativeBalance.Cmp(decimal.Zero) > 0 {
 			logger.Info("AssetRefreshTask update balance success, ", "userAddress", aa.ID, "network", network)
 		} else {
