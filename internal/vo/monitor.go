@@ -24,24 +24,24 @@ type RemoveMonitorResponse struct {
 
 type ListWatchingAddressRequest struct {
 	PaginationRequest
-	UserAddress string `json:"userAddress"`
+	Network     string `json:"network" params:"network" validate:"required,min=3"`
+	UserAddress string `json:"userAddress" param:"userAddress" validate:"required"`
 }
 
 type ListWatchingAddressResponse struct {
 	Pagination
-	Monitors []*WatchingAddress
+	Monitors []*WatchingAddress `json:"monitors"`
 }
 
 type WatchingAddress struct {
-	ChainName       string  `json:"chainName"`
+	Network         string  `json:"network"`
 	AddressType     string  `json:"addressType"`
 	MonitorAddress  string  `json:"monitorAddress"`
-	Balance         string  `json:"balance"`
+	Balance         float64 `json:"balance"`
 	Profits24H      float64 `json:"profits24H"`
 	SponsoredGas24H float64 `json:"sponsoredGas24H"`
 	TotalUserOps    int64   `json:"totalUserOps"`
 }
-
 type AssetDetailRequest struct {
 	Network     string `json:"network"`
 	UserAddress string `json:"userAddress"`

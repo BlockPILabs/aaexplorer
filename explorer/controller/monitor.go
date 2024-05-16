@@ -63,7 +63,7 @@ func ListMEVBundlers(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()
 	logger := log.Context(ctx)
 
-	logger.Debug("start list bundlers", "")
+	logger.Debug("start list mev bundlers", "")
 
 	req := vo.ListMEVBundlersRequest{}
 	res := &vo.ListMEVBundlersResponse{
@@ -92,8 +92,28 @@ func ListMEVBundlers(fcx *fiber.Ctx) error {
 const NameListWatchingAddress = "list_watching_address"
 
 func ListWatchingAddress(fcx *fiber.Ctx) error {
+	ctx := fcx.UserContext()
+	logger := log.Context(ctx)
+	logger.Debug("start list watching address", "")
 
-	return nil
+	req := vo.ListWatchingAddressRequest{}
+	res := &vo.ListWatchingAddressResponse{}
+
+	err := fcx.ParamsParser(&req)
+	if err != nil {
+		logger.Warn("params parse error", "err", err)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
+	}
+
+	err = fcx.QueryParser(&req)
+
+	if err != nil {
+		logger.Warn("query params parse error", "err", err)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
+	}
+
+	res, err = service.ListWatchingAddress(ctx, req)
+	return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(err)).JSON(fcx)
 }
 
 func GetAssetDetail(fcx *fiber.Ctx) error {
