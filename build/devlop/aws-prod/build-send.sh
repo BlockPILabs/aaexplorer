@@ -29,4 +29,11 @@ ssh -o StrictHostKeyChecking=no  root@ec2-54-85-44-73.compute-1.amazonaws.com su
 #ssh -o StrictHostKeyChecking=no  root@ec2-54-85-44-73.compute-1.amazonaws.com systemctl start aim
 #ssh -o StrictHostKeyChecking=no  root@ec2-54-85-44-73.compute-1.amazonaws.com systemctl start aim-task
 
+#new db
+ssh -o StrictHostKeyChecking=no  root@65.108.127.107 mkdir -p /blockpi/aaexplorer/log/ || exit 1
+ssh -o StrictHostKeyChecking=no  root@65.108.127.107 mkdir -p ${version_dir} || exit 1
+scp -o StrictHostKeyChecking=no  ./dist/aim root@65.108.127.107:"${version_dir}/${version}" || exit 1
+ssh -o StrictHostKeyChecking=no  root@65.108.127.107 ln -f -s ${version_dir}/${version} /blockpi/aaexplorer/aim || exit 1
+
+ssh -o StrictHostKeyChecking=no  root@65.108.127.107 supervisorctl restart aim
 #./aim --home ./.aim start

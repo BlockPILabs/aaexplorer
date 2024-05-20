@@ -45,13 +45,11 @@ type WatchingAddress struct {
 type AssetDetailRequest struct {
 	Network     string `json:"network"`
 	UserAddress string `json:"userAddress"`
-	PaginationRequest
 }
 
 type AssetDetailResponse struct {
 	TotalAssetUsd decimal.Decimal `json:"totalAssetUsd"`
 	AssetDetails  []AssetDetail   `json:"assetDetails"`
-	Pagination
 }
 
 type AssetDetail struct {

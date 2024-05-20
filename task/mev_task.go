@@ -307,7 +307,7 @@ func MEVTask(ctx context.Context) {
 			logger.Info("complete tx ", "hash", txHash)
 		}
 
-		err = client.BlockScanRecord.Update().SetLastBlockNumber(lastBlockNum).SetLastScanTime(time.Now()).Where(blockscanrecord.IDEQ(lastRecords[0].ID)).Exec(ctx)
+		err = client.BlockScanRecord.Update().SetLastBlockNumber(failedTxs[len(failedTxs)-1].BlockNumber).SetLastScanTime(time.Now()).Where(blockscanrecord.IDEQ(lastRecords[0].ID)).Exec(ctx)
 		if err != nil {
 			logger.Error("MEVTask update block num err ", "network", "blockNum", "msg", network, lastBlockNum, err)
 		}

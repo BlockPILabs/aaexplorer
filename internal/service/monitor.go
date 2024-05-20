@@ -111,27 +111,26 @@ func GetAssetDetail(ctx context.Context, req vo.AssetDetailRequest) (*vo.AssetDe
 	if err != nil {
 		return nil, err
 	}
-	var resp = &vo.AssetDetailResponse{
-		Pagination: vo.Pagination{
-			TotalCount: 0,
-			PerPage:    req.GetPerPage(),
-			Page:       req.GetPage(),
-		},
-	}
+	var resp = &vo.AssetDetailResponse{}
 	var assetDetails []vo.AssetDetail
 
-	details, err := client.AaAssetDetail.Query().Where(aaassetdetail.UserAddressEqualFold(userAddress), aaassetdetail.AssetAmountGT(decimal.Zero)).Order(ent.Desc(aaassetdetail.FieldAssetValue)).Offset(req.GetOffset()).Limit(req.GetPerPage()).All(ctx)
+	details, err := client.AaAssetDetail.Query().Where(aaassetdetail.UserAddressEqualFold(userAddress), aaassetdetail.AssetAmountGT(decimal.Zero)).Order(ent.Desc(aaassetdetail.FieldAssetValue)).All(ctx)
 	if len(details) == 0 {
 		return resp, nil
 	}
 
-	counts, err := client.AaAssetDetail.Query().Where(aaassetdetail.UserAddressEqualFold(userAddress), aaassetdetail.AssetAmountGT(decimal.Zero)).Count(ctx)
+	//counts, err := client.AaAssetDetail.Query().Where(aaassetdetail.UserAddressEqualFold(userAddress), aaassetdetail.AssetAmountGT(decimal.Zero)).Count(ctx)
 
 	totalUsd := decimal.Zero
 	for _, detail := range details {
 		totalUsd = totalUsd.Add(detail.AssetValue)
 	}
-	for _, detail := range details {
+	otherUsd := decimal.Zero
+	for idx, detail := range details {
+		if idx >= 7 {
+			otherUsd = otherUsd.Add(detail.AssetValue.RoundDown(6))
+			continue
+		}
 		assetDetail := vo.AssetDetail{
 			Symbol:    detail.Symbol,
 			Network:   network,
@@ -145,9 +144,20 @@ func GetAssetDetail(ctx context.Context, req vo.AssetDetailRequest) (*vo.AssetDe
 		assetDetail.Percent = percent
 		assetDetails = append(assetDetails, assetDetail)
 	}
+	if otherUsd.Cmp(decimal.Zero) > 0 {
+		percent := otherUsd.DivRound(totalUsd, 4)
+		otherDetail := vo.AssetDetail{
+			Symbol:    "other",
+			Network:   network,
+			AmountUsd: otherUsd,
+			Percent:   percent,
+		}
+		assetDetails = append(assetDetails, otherDetail)
+	}
+
 	resp.AssetDetails = assetDetails
 	resp.TotalAssetUsd = totalUsd.RoundDown(6)
-	resp.Pagination.TotalCount = counts
+	//resp.Pagination.TotalCount = counts
 
 	return resp, nil
 }
