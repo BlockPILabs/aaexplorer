@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"errors"
+	"github.com/BlockPILabs/aaexplorer/internal/dao"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaaccountdata"
@@ -160,4 +162,23 @@ func GetAssetDetail(ctx context.Context, req vo.AssetDetailRequest) (*vo.AssetDe
 	//resp.Pagination.TotalCount = counts
 
 	return resp, nil
+}
+
+func ListWatchingAddress(ctx context.Context, req vo.ListWatchingAddressRequest) (*vo.ListWatchingAddressResponse, error) {
+	if len(req.UserAddress) == 0 {
+		return nil, errors.New("UserAddress Fields is nil")
+	}
+	list, total, err := dao.MonitorDao.ListMonitorDao(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &vo.ListWatchingAddressResponse{
+		Pagination: vo.Pagination{
+			TotalCount: total,
+			PerPage:    req.GetPerPage(),
+			Page:       req.GetPage(),
+		},
+		Monitors: list,
+	}, nil
 }
