@@ -8,6 +8,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaaccountdata"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaassetdetail"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/mevtransaction"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/monitor"
 	interlog "github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
@@ -181,4 +182,44 @@ func ListWatchingAddress(ctx context.Context, req vo.ListWatchingAddressRequest)
 		},
 		Monitors: list,
 	}, nil
+}
+
+func GetMonitorMevInfo(ctx context.Context, req vo.MevInfoRequest) (*vo.MevInfoResponse, error) {
+	client, err := entity.Client(ctx, req.Network)
+	if err != nil {
+		return nil, err
+	}
+	res := &vo.MevInfoResponse{}
+
+	sum, err := client.MevTransaction.Query().Aggregate(ent.Sum(mevtransaction.FieldMevProfitUsd)).Float64(ctx)
+	res.AttackerTotalProfit = sum
+	if err != nil {
+		return nil, err
+	}
+
+	mevTotal, err := client.MevTransaction.Query().Count(ctx)
+	if err != nil {
+		return nil, err
+	}
+	userOpsTotal, err := client.AAUserOpsInfo.Query().Count(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if userOpsTotal == 0 {
+		logger.Info("UserOpsTotal is zero")
+		return nil, nil
+	}
+
+	res.MevUserOpsRatio = float64(mevTotal) / float64(userOpsTotal)
+
+	attackerAccounts, err := client.MevTransaction.Query().GroupBy(mevtransaction.FieldAttacker).Strings(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	res.AttackerAccounts = len(attackerAccounts)
+
+	return res, nil
 }

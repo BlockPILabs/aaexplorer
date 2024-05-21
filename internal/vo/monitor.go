@@ -59,3 +59,13 @@ type AssetDetail struct {
 	Amount    decimal.Decimal `json:"amount"`
 	AmountUsd decimal.Decimal `json:"amountUsd"`
 }
+
+type MevInfoRequest struct {
+	Network string `json:"network"`
+}
+
+type MevInfoResponse struct {
+	AttackerTotalProfit float64 `json:"attackerTotalProfit"`
+	MevUserOpsRatio     float64 `json:"mevUserOpsRatio"`
+	AttackerAccounts    int     `json:"attackerAccounts"`
+}

@@ -138,3 +138,30 @@ func GetAssetDetail(fcx *fiber.Ctx) error {
 	}
 	return vo.NewResultJsonResponse(res).JSON(fcx)
 }
+
+const NameGerMonitorMevInfo = "get_monitor_mev_info"
+
+func GetMonitorMevInfo(fcx *fiber.Ctx) error {
+	ctx := fcx.UserContext()
+
+	logger := log.Context(fcx.UserContext())
+	logger.Debug("start get monitor mev info")
+
+	req := vo.MevInfoRequest{}
+	err := fcx.ParamsParser(&req)
+	if err != nil {
+		logger.Warn("params parse error", "err", err)
+	}
+
+	err = fcx.QueryParser(&req)
+	if err != nil {
+		logger.Warn("params parse error", "err", err)
+		return err
+	}
+
+	res, err := service.GetMonitorMevInfo(ctx, req)
+	if err != nil {
+		logger.Error("get mev transaction error", "err", err)
+	}
+	return vo.NewResultJsonResponse(res).JSON(fcx)
+}
