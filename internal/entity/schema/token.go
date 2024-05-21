@@ -32,6 +32,9 @@ func (Token) Fields() []ent.Field {
 		field.String("full_name").
 			MaxLen(255).
 			StructTag(`json:"fullName"`),
+		field.String("image_url").
+			MaxLen(255).
+			StructTag(`json:"imageUrl"`),
 		field.Int64("decimals").
 			StructTag(`json:"decimals"`),
 		field.Int64("token_price").StructTag(`json:"tokenPrice"`).GoType(decimal.Zero).
