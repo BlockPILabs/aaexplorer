@@ -90,6 +90,7 @@ func Resister(router fiber.Router) {
 	networksV1.Get("/monitor/trackerList", controller.ListWatchingAddress).Name(controller.NameListWatchingAddress)
 	networksV1.Get("/monitor/assetDetail", controller.GetAssetDetail).Name(controller.NameAssetDetail)
 	networksV1.Get("/monitor/mevInfo", controller.GetMonitorMevInfo).Name(controller.NameGerMonitorMevInfo)
+	networksV1.Get("/monitor/accountType", controller.GetAccountType).Name(controller.NameAccountType)
 }
 
 func Error() {

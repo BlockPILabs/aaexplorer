@@ -223,3 +223,28 @@ func GetMonitorMevInfo(ctx context.Context, req vo.MevInfoRequest) (*vo.MevInfoR
 
 	return res, nil
 }
+
+func GetAccountType(ctx context.Context, req vo.AccountTypeRequest) (*vo.AccountTypeResponse, error) {
+	network := req.Network
+	address := req.AccountAddress
+	if len(address) == 0 {
+		return nil, nil
+	}
+	client, err := entity.Client(ctx, network)
+	if err != nil {
+		return nil, err
+	}
+	res := &vo.AccountTypeResponse{}
+	address = strings.ToLower(address)
+
+	accountDatas, err := client.AaAccountData.Query().Where(aaaccountdata.IDEqualFold(address)).All(ctx)
+	if len(accountDatas) == 0 {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	res.Type = accountDatas[0].AaType
+	res.AccountAddress = address
+	return res, nil
+}

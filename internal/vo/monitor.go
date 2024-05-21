@@ -69,3 +69,13 @@ type MevInfoResponse struct {
 	MevUserOpsRatio     float64 `json:"mevUserOpsRatio"`
 	AttackerAccounts    int     `json:"attackerAccounts"`
 }
+
+type AccountTypeRequest struct {
+	AccountAddress string `json:"accountAddress"`
+	Network        string `json:"network"`
+}
+
+type AccountTypeResponse struct {
+	AccountAddress string `json:"accountAddress"`
+	Type           string `json:"type"`
+}

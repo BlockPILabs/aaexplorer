@@ -10,6 +10,7 @@ import (
 const NameAddMonitor = "add_monitor"
 const NameRemoveMonitor = "remove_monitor"
 const NameAssetDetail = "get_asset_detail"
+const NameAccountType = "get_account_type"
 
 func AddMonitor(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()
@@ -162,6 +163,31 @@ func GetMonitorMevInfo(fcx *fiber.Ctx) error {
 	res, err := service.GetMonitorMevInfo(ctx, req)
 	if err != nil {
 		logger.Error("get mev transaction error", "err", err)
+	}
+	return vo.NewResultJsonResponse(res).JSON(fcx)
+}
+
+func GetAccountType(fcx *fiber.Ctx) error {
+	ctx := fcx.UserContext()
+
+	logger := log.Context(fcx.UserContext())
+	logger.Debug("start get account type")
+
+	req := vo.AccountTypeRequest{}
+	err := fcx.ParamsParser(&req)
+	if err != nil {
+		logger.Warn("params parse error", "err", err)
+	}
+
+	err = fcx.QueryParser(&req)
+	if err != nil {
+		logger.Warn("params parse error", "err", err)
+		return err
+	}
+
+	res, err := service.GetAccountType(ctx, req)
+	if err != nil {
+		logger.Error("get account type error", "err", err)
 	}
 	return vo.NewResultJsonResponse(res).JSON(fcx)
 }
