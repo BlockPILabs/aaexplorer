@@ -642,39 +642,41 @@ func (t *_evmParser) insertTransactions(ctx context.Context, client *ent.Client,
 	err := client.AaTransactionInfo.
 		CreateBulk(transactionInfoCreates...).
 		OnConflictColumns(aatransactioninfo.FieldTime, aatransactioninfo.FieldID).
-		Update(func(upsert *ent.AaTransactionInfoUpsert) {
-			upsert.UpdateTime().
-				UpdateBlockHash().
-				UpdateBlockNumber().
-				UpdateUseropCount().
-				UpdateIsMev().
-				UpdateBundlerProfit().
-				UpdateBundlerProfitUsd().
-				UpdateNonce().
-				UpdateTransactionIndex().
-				UpdateFromAddr().
-				UpdateToAddr().
-				UpdateValue().
-				UpdateGasPrice().
-				UpdateGas().
-				UpdateInput().
-				UpdateR().
-				UpdateS().
-				UpdateV().
-				UpdateChainID().
-				UpdateType().
-				UpdateMaxFeePerGas().
-				UpdateMaxPriorityFeePerGas().
-				UpdateAccessList().
-				UpdateMethod().
-				UpdateContractAddress().
-				UpdateCumulativeGasUsed().
-				UpdateEffectiveGasPrice().
-				UpdateGasUsed().
-				UpdateLogs().
-				UpdateLogsBloom().
-				UpdateStatus()
-		}).
+		DoNothing().
+		//Update(func(upsert *ent.AaTransactionInfoUpsert) {
+		//
+		//	upsert.
+		//		UpdateBlockHash().
+		//		UpdateBlockNumber().
+		//		UpdateUseropCount().
+		//		UpdateIsMev().
+		//		UpdateBundlerProfit().
+		//		UpdateBundlerProfitUsd().
+		//		UpdateNonce().
+		//		UpdateTransactionIndex().
+		//		UpdateFromAddr().
+		//		UpdateToAddr().
+		//		UpdateValue().
+		//		UpdateGasPrice().
+		//		UpdateGas().
+		//		UpdateInput().
+		//		UpdateR().
+		//		UpdateS().
+		//		UpdateV().
+		//		UpdateChainID().
+		//		UpdateType().
+		//		UpdateMaxFeePerGas().
+		//		UpdateMaxPriorityFeePerGas().
+		//		UpdateAccessList().
+		//		UpdateMethod().
+		//		UpdateContractAddress().
+		//		UpdateCumulativeGasUsed().
+		//		UpdateEffectiveGasPrice().
+		//		UpdateGasUsed().
+		//		UpdateLogs().
+		//		UpdateLogsBloom().
+		//		UpdateStatus()
+		//}).
 		Exec(context.Background())
 	if err != nil {
 		log.Context(ctx).Info("insert AaTransactionInfo error", "err", err)
@@ -702,14 +704,15 @@ func (t *_evmParser) insertBlockInfos(ctx context.Context, client *ent.Client, n
 	err := client.AaBlockInfo.
 		CreateBulk(transactionInfoCreates...).
 		OnConflictColumns(aablockinfo.FieldTime, aablockinfo.FieldID).
-		Update(func(upsert *ent.AaBlockInfoUpsert) {
-			upsert.UpdateTime().
-				UpdateHash().
-				UpdateUseropCount().
-				UpdateUseropMevCount().
-				UpdateBundlerProfit().
-				UpdateBundlerProfitUsd()
-		}).
+		//Update(func(upsert *ent.AaBlockInfoUpsert) {
+		//	upsert.
+		//		UpdateHash().
+		//		UpdateUseropCount().
+		//		UpdateUseropMevCount().
+		//		UpdateBundlerProfit().
+		//		UpdateBundlerProfitUsd()
+		//}).
+		DoNothing().
 		Exec(context.Background())
 	if err != nil {
 		log.Context(ctx).Info("insert AaBlockInfo error", "err", err)
@@ -743,23 +746,24 @@ func (t *_evmParser) insertuserOpsInfoCalldatas(ctx context.Context, client *ent
 	err := client.AAUserOpsCalldata.
 		CreateBulk(transactionInfoCreates...).
 		OnConflictColumns(aauseropscalldata.FieldTime, aauseropscalldata.FieldID).
-		Update(func(upsert *ent.AAUserOpsCalldataUpsert) {
-
-			upsert.UpdateTime().
-				UpdateUserOpsHash().
-				UpdateTxHash().
-				UpdateBlockNumber().
-				UpdateNetwork().
-				UpdateSender().
-				UpdateTarget().
-				UpdateTxValue().
-				UpdateSource().
-				UpdateCalldata().
-				UpdateTxTime().
-				UpdateUpdateTime().
-				UpdateAaIndex()
-
-		}).
+		//Update(func(upsert *ent.AAUserOpsCalldataUpsert) {
+		//
+		//	upsert.
+		//		UpdateUserOpsHash().
+		//		UpdateTxHash().
+		//		UpdateBlockNumber().
+		//		UpdateNetwork().
+		//		UpdateSender().
+		//		UpdateTarget().
+		//		UpdateTxValue().
+		//		UpdateSource().
+		//		UpdateCalldata().
+		//		UpdateTxTime().
+		//		UpdateUpdateTime().
+		//		UpdateAaIndex()
+		//
+		//}).
+		DoNothing().
 		Exec(context.Background())
 	if err != nil {
 		log.Context(ctx).Info("insert AAUserOpsCalldata error", "err", err)
@@ -816,43 +820,44 @@ func (t *_evmParser) insertUserOpsInfo(ctx context.Context, client *ent.Client, 
 		OnConflict(
 			sql.ConflictColumns(aauseropsinfo.FieldTime, aauseropsinfo.FieldTxHash, aauseropsinfo.FieldID),
 		).
-		Update(func(upsert *ent.AAUserOpsInfoUpsert) {
-			upsert.UpdateTime().
-				UpdateTxHash().
-				UpdateBlockNumber().
-				UpdateNetwork().
-				UpdateSender().
-				UpdateTarget().
-				UpdateTargets().
-				UpdateTxValue().
-				UpdateFee().
-				UpdateBundler().
-				UpdateEntryPoint().
-				UpdateFactory().
-				UpdatePaymaster().
-				UpdatePaymasterAndData().
-				UpdateSignature().
-				UpdateCalldata().
-				UpdateCalldataContract().
-				UpdateNonce().
-				UpdateCallGasLimit().
-				UpdatePreVerificationGas().
-				UpdateVerificationGasLimit().
-				UpdateMaxFeePerGas().
-				UpdateMaxPriorityFeePerGas().
-				UpdateTxTime().
-				UpdateInitCode().
-				UpdateStatus().
-				UpdateSource().
-				UpdateActualGasCost().
-				UpdateActualGasUsed().
-				UpdateUpdateTime().
-				UpdateUsdAmount().
-				UpdateAaIndex().
-				UpdateTargetsCount().
-				UpdateFeeUsd().
-				UpdateTxValueUsd()
-		}).Exec(context.Background())
+		//Update(func(upsert *ent.AAUserOpsInfoUpsert) {
+		//	upsert.
+		//		UpdateBlockNumber().
+		//		UpdateNetwork().
+		//		UpdateSender().
+		//		UpdateTarget().
+		//		UpdateTargets().
+		//		UpdateTxValue().
+		//		UpdateFee().
+		//		UpdateBundler().
+		//		UpdateEntryPoint().
+		//		UpdateFactory().
+		//		UpdatePaymaster().
+		//		UpdatePaymasterAndData().
+		//		UpdateSignature().
+		//		UpdateCalldata().
+		//		UpdateCalldataContract().
+		//		UpdateNonce().
+		//		UpdateCallGasLimit().
+		//		UpdatePreVerificationGas().
+		//		UpdateVerificationGasLimit().
+		//		UpdateMaxFeePerGas().
+		//		UpdateMaxPriorityFeePerGas().
+		//		UpdateTxTime().
+		//		UpdateInitCode().
+		//		UpdateStatus().
+		//		UpdateSource().
+		//		UpdateActualGasCost().
+		//		UpdateActualGasUsed().
+		//		UpdateUpdateTime().
+		//		UpdateUsdAmount().
+		//		UpdateAaIndex().
+		//		UpdateTargetsCount().
+		//		UpdateFeeUsd().
+		//		UpdateTxValueUsd()
+		//}).
+		DoNothing().
+		Exec(context.Background())
 
 	if err != nil {
 		log.Context(ctx).Info("insert AAUserOpsInfo error", "err", err)

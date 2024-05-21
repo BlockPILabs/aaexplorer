@@ -993,6 +993,9 @@ create index mev_tx_block_number_idx
 
 alter table public.block_scan_record
     add type varchar;
+
+alter table public.token
+    add token varchar;
 -- Cyclic dependencies found
 
 create table aa_account_data_p1 partition of aa_account_data for values with (modulus 30, remainder 0);

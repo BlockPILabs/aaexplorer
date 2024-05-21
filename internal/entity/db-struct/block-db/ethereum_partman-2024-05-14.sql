@@ -97,4 +97,4 @@ SET infinite_time_partitions = TRUE
 WHERE parent_table = 'public.aa_user_ops_info';
 
 
-INSERT INTO public.block_sync (block_num, scanned, create_time, update_time) VALUES (14502, false, '2024-01-10 09:41:27.088000 +00:00', '2024-01-10 09:41:31.477000 +00:00');
+INSERT INTO public.block_sync (block_num, scanned, create_time, update_time) VALUES (13920457, false, '2024-01-10 09:41:27.088000 +00:00', '2024-01-10 09:41:31.477000 +00:00');
