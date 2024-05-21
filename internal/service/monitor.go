@@ -244,7 +244,11 @@ func GetAccountType(ctx context.Context, req vo.AccountTypeRequest) (*vo.Account
 	if err != nil {
 		return nil, err
 	}
-	res.Type = accountDatas[0].AaType
+	typeStr := accountDatas[0].AaType
+	if typeStr == "aa" {
+		typeStr = "account"
+	}
+	res.Type = typeStr
 	res.AccountAddress = address
 	return res, nil
 }
