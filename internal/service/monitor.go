@@ -169,6 +169,7 @@ func ListWatchingAddress(ctx context.Context, req vo.ListWatchingAddressRequest)
 	if len(req.UserAddress) == 0 {
 		return nil, errors.New("UserAddress Fields is nil")
 	}
+	req.UserAddress = strings.ToLower(req.UserAddress)
 	list, total, err := dao.MonitorDao.ListMonitorDao(ctx, req)
 	if err != nil {
 		return nil, err
