@@ -16,6 +16,8 @@ import (
 	"github.com/shopspring/decimal"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 )
 
 var logger = interlog.L()
@@ -247,9 +249,18 @@ func GetAccountType(ctx context.Context, req vo.AccountTypeRequest) (*vo.Account
 	}
 	typeStr := accountDatas[0].AaType
 	if typeStr == "aa" {
-		typeStr = "account"
+		typeStr = "Account"
 	}
+	typeStr = capitalizeFirstLetter(typeStr)
 	res.Type = typeStr
 	res.AccountAddress = address
 	return res, nil
+}
+
+func capitalizeFirstLetter(s string) string {
+	if s == "" {
+		return s
+	}
+	r, size := utf8.DecodeRuneInString(s)
+	return string(unicode.ToUpper(r)) + s[size:]
 }
