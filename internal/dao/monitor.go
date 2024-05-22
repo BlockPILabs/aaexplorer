@@ -8,6 +8,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/monitor"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/paymasterinfo"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
+	"strings"
 )
 
 type monitorDao struct {
@@ -60,7 +61,7 @@ func (dao *monitorDao) ListMonitorDao(ctx context.Context, req vo.ListWatchingAd
 
 			list = append(list, &vo.WatchingAddress{
 				Network:         req.Network,
-				AddressType:     monitorItem.MonitorAddressType,
+				AddressType:     "Bundler",
 				MonitorAddress:  monitorItem.MonitorAddress,
 				Balance:         monitorBalance,
 				Profits24H:      profits,
@@ -77,7 +78,7 @@ func (dao *monitorDao) ListMonitorDao(ctx context.Context, req vo.ListWatchingAd
 
 			list = append(list, &vo.WatchingAddress{
 				Network:         req.Network,
-				AddressType:     monitorItem.MonitorAddressType,
+				AddressType:     "Paymaster",
 				MonitorAddress:  monitorItem.MonitorAddress,
 				Balance:         monitorBalance,
 				Profits24H:      float64(0),
@@ -87,7 +88,7 @@ func (dao *monitorDao) ListMonitorDao(ctx context.Context, req vo.ListWatchingAd
 		default:
 			list = append(list, &vo.WatchingAddress{
 				Network:         req.Network,
-				AddressType:     monitorItem.MonitorAddressType,
+				AddressType:     strings.ToTitle(monitorItem.MonitorAddressType),
 				MonitorAddress:  monitorItem.MonitorAddress,
 				Balance:         monitorBalance,
 				Profits24H:      float64(0),
