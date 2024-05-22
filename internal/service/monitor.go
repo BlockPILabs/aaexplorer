@@ -49,7 +49,7 @@ func AddMonitor(ctx context.Context, req vo.AddMonitorRequest) (*vo.AddMonitorRe
 
 	olds, err := client.Monitor.Query().Where(monitor.MonitorAddressEqualFold(monitorAddress), monitor.UserAddressEqualFold(userAddress)).All(ctx)
 	if len(olds) > 0 {
-		return nil, nil
+		return nil, vo.MonitorExist
 	}
 
 	nClient, err := entity.Client(ctx, network)
@@ -94,10 +94,10 @@ func RemoveMonitor(ctx context.Context, req vo.RemoveMonitorRequest) (*vo.Remove
 	olds, err := client.Monitor.Query().Where(monitor.MonitorAddressEqualFold(monitorAddress), monitor.UserAddressEqualFold(userAddress)).All(ctx)
 	if len(olds) == 0 {
 		logger.Info("RemoveMonitor not exist ", "userAddress", userAddress, "monitorAddress", monitorAddress)
-		return nil, nil
+		return nil, vo.MonitorNotExist
 	}
 
-	client.Monitor.Delete().Where(monitor.UserAddressEqualFold(userAddress), monitor.UserAddressEqualFold(monitorAddress)).Exec(ctx)
+	_, err = client.Monitor.Delete().Where(monitor.UserAddressEqualFold(userAddress), monitor.MonitorAddressEqualFold(monitorAddress)).Exec(ctx)
 
 	if err != nil {
 		return nil, err

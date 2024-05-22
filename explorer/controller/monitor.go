@@ -31,6 +31,7 @@ func AddMonitor(fcx *fiber.Ctx) error {
 	res, err := service.AddMonitor(ctx, req)
 	if err != nil {
 		logger.Error("get mev transaction error", "err", err)
+		return err
 	}
 	return vo.NewResultJsonResponse(res).JSON(fcx)
 }
@@ -54,6 +55,7 @@ func RemoveMonitor(fcx *fiber.Ctx) error {
 	res, err := service.RemoveMonitor(ctx, req)
 	if err != nil {
 		logger.Error("get mev transaction error", "err", err)
+		return err
 	}
 	return vo.NewResultJsonResponse(res).JSON(fcx)
 }

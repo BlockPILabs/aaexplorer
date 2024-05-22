@@ -13,4 +13,7 @@ var (
 	ErrParams          = _newError(10002, SetErrorMessage("params error"))
 	ErrDataNotFound    = _newError(10004, SetErrorMessage("data not found"))
 	ErrNetworkNotFound = ErrDataNotFound.SetMessage("network not found")
+
+	MonitorNotExist = _newError(20001, SetErrorMessage("The address is not in monitor list."))
+	MonitorExist    = _newError(20002, SetErrorMessage("The address is already in monitor list."))
 )
