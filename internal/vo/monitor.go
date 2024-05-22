@@ -34,13 +34,13 @@ type ListWatchingAddressResponse struct {
 }
 
 type WatchingAddress struct {
-	Network         string  `json:"network"`
-	AddressType     string  `json:"addressType"`
-	MonitorAddress  string  `json:"monitorAddress"`
-	Balance         float64 `json:"balance"`
-	Profits24H      float64 `json:"profits24H"`
-	SponsoredGas24H float64 `json:"sponsoredGas24H"`
-	TotalUserOps    int64   `json:"totalUserOps"`
+	Network         string          `json:"network"`
+	AddressType     string          `json:"addressType"`
+	MonitorAddress  string          `json:"monitorAddress"`
+	Balance         decimal.Decimal `json:"balance"`
+	Profits24H      decimal.Decimal `json:"profits24H"`
+	SponsoredGas24H decimal.Decimal `json:"sponsoredGas24H"`
+	TotalUserOps    int64           `json:"totalUserOps"`
 }
 type AssetDetailRequest struct {
 	Network     string `json:"network"`

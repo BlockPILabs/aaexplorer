@@ -8,6 +8,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/monitor"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/paymasterinfo"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
+	"github.com/shopspring/decimal"
 	"strings"
 )
 
@@ -45,19 +46,27 @@ func (dao *monitorDao) ListMonitorDao(ctx context.Context, req vo.ListWatchingAd
 	var list []*vo.WatchingAddress
 
 	for _, monitorItem := range monitorList {
-		monitorAsset, err := client.AaAsset.Query().Where(aaasset.IDEQ(monitorItem.MonitorAddress)).Only(ctx)
+		monitorAsset, err := client.AaAsset.Query().Where(aaasset.IDEQ(monitorItem.MonitorAddress)).All(ctx)
 		if err != nil {
 			continue
 		}
-
-		monitorBalance, _ := monitorAsset.AssetValue.Float64()
+		monitorBalance := decimal.Zero
+		if len(monitorAsset) > 0 {
+			monitorBalance = monitorAsset[0].AssetValue
+		}
+		monitorAddress := monitorItem.MonitorAddress
 		switch monitorItem.MonitorAddressType {
 		case "bundler":
-			bundlerInfo, err := client.BundlerInfo.Query().Where(bundlerinfo.IDEQ(monitorItem.MonitorAddress)).Only(ctx)
+			bundlerInfo, err := client.BundlerInfo.Query().Where(bundlerinfo.IDEqualFold(monitorAddress)).All(ctx)
 			if err != nil {
 				continue
 			}
-			profits, _ := bundlerInfo.FeeEarnedD1.Float64()
+			profits := decimal.Zero
+			userOpsNum := int64(0)
+			if len(bundlerInfo) > 0 {
+				profits = bundlerInfo[0].FeeEarnedD1
+				userOpsNum = bundlerInfo[0].UserOpsNum
+			}
 
 			list = append(list, &vo.WatchingAddress{
 				Network:         req.Network,
@@ -65,25 +74,29 @@ func (dao *monitorDao) ListMonitorDao(ctx context.Context, req vo.ListWatchingAd
 				MonitorAddress:  monitorItem.MonitorAddress,
 				Balance:         monitorBalance,
 				Profits24H:      profits,
-				SponsoredGas24H: float64(0),
-				TotalUserOps:    bundlerInfo.UserOpsNum,
+				SponsoredGas24H: decimal.Zero,
+				TotalUserOps:    userOpsNum,
 			})
 		case "paymaster":
-			paymaster, err := client.PaymasterInfo.Query().Where(paymasterinfo.IDEQ(monitorItem.MonitorAddress)).Only(ctx)
+			paymaster, err := client.PaymasterInfo.Query().Where(paymasterinfo.IDEQ(monitorItem.MonitorAddress)).All(ctx)
 			if err != nil {
 				continue
 			}
-
-			gasSponsored, _ := paymaster.GasSponsoredD1.Float64()
+			gasSponsored := decimal.Zero
+			userOpsNum := int64(0)
+			if len(paymaster) > 0 {
+				gasSponsored = paymaster[0].GasSponsoredD1
+				userOpsNum = paymaster[0].UserOpsNum
+			}
 
 			list = append(list, &vo.WatchingAddress{
 				Network:         req.Network,
 				AddressType:     "Paymaster",
 				MonitorAddress:  monitorItem.MonitorAddress,
 				Balance:         monitorBalance,
-				Profits24H:      float64(0),
+				Profits24H:      decimal.Zero,
 				SponsoredGas24H: gasSponsored,
-				TotalUserOps:    paymaster.UserOpsNum,
+				TotalUserOps:    userOpsNum,
 			})
 		default:
 			list = append(list, &vo.WatchingAddress{
@@ -91,8 +104,8 @@ func (dao *monitorDao) ListMonitorDao(ctx context.Context, req vo.ListWatchingAd
 				AddressType:     strings.ToTitle(monitorItem.MonitorAddressType),
 				MonitorAddress:  monitorItem.MonitorAddress,
 				Balance:         monitorBalance,
-				Profits24H:      float64(0),
-				SponsoredGas24H: float64(0),
+				Profits24H:      decimal.Zero,
+				SponsoredGas24H: decimal.Zero,
 				TotalUserOps:    int64(0),
 			})
 		}

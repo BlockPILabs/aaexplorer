@@ -43,7 +43,7 @@ func doAccountTask() {
 	inner:
 		for {
 			hour6Ago := time.Now().UnixMilli() - 6*3600*1000
-			accountDatas, err := client.AaAccountData.Query().Where(aaaccountdata.LastTimeLT(hour6Ago), aaaccountdata.AaTypeEQ("aa")).Limit(1000).All(context.Background())
+			accountDatas, err := client.AaAccountData.Query().Where(aaaccountdata.LastTimeLT(hour6Ago), aaaccountdata.AaTypeIn("aa", "bundler", "paymaster")).Limit(1000).All(context.Background())
 
 			if err != nil {
 				log.Println(err)
