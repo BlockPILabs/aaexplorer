@@ -98,6 +98,26 @@ func (dao *monitorDao) ListMonitorDao(ctx context.Context, req vo.ListWatchingAd
 				SponsoredGas24H: gasSponsored,
 				TotalUserOps:    userOpsNum,
 			})
+		case "aa":
+			list = append(list, &vo.WatchingAddress{
+				Network:         req.Network,
+				AddressType:     "Account",
+				MonitorAddress:  monitorItem.MonitorAddress,
+				Balance:         monitorBalance,
+				Profits24H:      decimal.Zero,
+				SponsoredGas24H: decimal.Zero,
+				TotalUserOps:    int64(0),
+			})
+		case "entry_point":
+			list = append(list, &vo.WatchingAddress{
+				Network:         req.Network,
+				AddressType:     "Contract Account",
+				MonitorAddress:  monitorItem.MonitorAddress,
+				Balance:         monitorBalance,
+				Profits24H:      decimal.Zero,
+				SponsoredGas24H: decimal.Zero,
+				TotalUserOps:    int64(0),
+			})
 		default:
 			list = append(list, &vo.WatchingAddress{
 				Network:         req.Network,
