@@ -231,13 +231,13 @@ func GetNativeTokenBalance(accountAddress string, network string) decimal.Decima
 
 func checkStatus(res *http.Response) {
 	if res == nil {
-		log.Printf("call morialis err")
+		//log.Printf("call morialis err")
 		return
 	}
 	code := res.StatusCode
-	status := res.Status
+	//status := res.Status
 	if code != 200 {
-		log.Printf("call morialis failed, %s, %s", status, res.Request.URL)
+		//log.Printf("call morialis failed, %s, %s", status, res.Request.URL)
 	}
 }
 
