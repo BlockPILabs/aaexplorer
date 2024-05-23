@@ -103,7 +103,11 @@ func doTopFactoryDay() {
 			if len(factory) == 0 {
 				continue
 			}
-			factoryInfo.Dominance = decimal.NewFromInt(int64(factoryInfo.AccountDeployNum)).DivRound(decimal.NewFromInt(totalNum), 4)
+			dominance := decimal.Zero
+			if totalNum != 0 {
+				dominance = decimal.NewFromInt(int64(factoryInfo.AccountDeployNum)).DivRound(decimal.NewFromInt(totalNum), 4)
+			}
+			factoryInfo.Dominance = dominance
 			saveOrUpdateFactoryDay(client, factory, factoryInfo)
 		}
 		now1 := time.Now()
