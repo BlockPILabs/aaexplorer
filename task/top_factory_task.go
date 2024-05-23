@@ -129,7 +129,11 @@ func refreshDominance(client *ent.Client) {
 		totalNum += info.AccountDeployNum
 	}
 	for _, info := range factoryInfos {
-		dominance := decimal.NewFromInt(int64(info.AccountDeployNum)).DivRound(decimal.NewFromInt(int64(totalNum)), 4)
+		dominance := decimal.Zero
+		if totalNum != 0 {
+			dominance = decimal.NewFromInt(int64(info.AccountDeployNum)).DivRound(decimal.NewFromInt(int64(totalNum)), 4)
+		}
+
 		err = client.FactoryInfo.UpdateOneID(info.ID).
 			SetDominance(dominance).
 			Exec(context.Background())
