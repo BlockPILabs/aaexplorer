@@ -6,6 +6,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaaccountdata"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/token"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/tokenpriceinfo"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/userassetinfo"
 	"github.com/BlockPILabs/aaexplorer/third/moralis"
@@ -117,6 +118,7 @@ func GetNativePrice(network string) decimal.Decimal {
 	if err != nil {
 		return decimal.Zero
 	}
+	/**
 	var contract string
 	if network == config.EthNetwork {
 		contract = config.WETH
@@ -144,7 +146,13 @@ func GetNativePrice(network string) decimal.Decimal {
 		return token.UsdPrice
 	}
 
-	return prices[0].TokenPrice
+	*/
+	tokens, err := client.Token.Query().Where(token.TypeEQ("base")).All(context.Background())
+	if len(tokens) == 0 {
+		return decimal.Zero
+	}
+
+	return tokens[0].TokenPrice
 }
 
 func GetTokenPrice(tokenAddress string, network string) decimal.Decimal {
