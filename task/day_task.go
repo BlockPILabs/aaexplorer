@@ -444,6 +444,9 @@ func calPaymasterStatisDay(client *ent.Client, bundlerMap map[string]map[string]
 		if len(key) <= 2 {
 			continue
 		}
+		if key == "0x0000000000000000000000000000000000000000" {
+			continue
+		}
 		if len(allTimeUserOpsInfoList) == 0 {
 			continue
 		}
