@@ -26,10 +26,9 @@ import (
 )
 
 func InitHourStatis() {
-	go doHourStatistic()
 	hourScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := hourScheduler.ScheduleWithCron(func(ctx context.Context) {
-		//doHourStatistic()
+		doHourStatistic()
 	}, "0 1 * * * *")
 
 	if err == nil {

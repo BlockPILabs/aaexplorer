@@ -15,8 +15,11 @@ import (
 )
 
 func TopPaymaster() {
-	paymasterScheduler := chrono.NewDefaultTaskScheduler()
 
+	go doTopPaymasterDay()
+	go doTopPaymasterHour(1)
+
+	paymasterScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := paymasterScheduler.ScheduleWithCron(func(ctx context.Context) {
 		doTopPaymasterHour(1)
 		//doTopPaymasterHour(7)
@@ -52,7 +55,7 @@ func doTopPaymasterDay() {
 			continue
 		}
 		now := time.Now()
-		startTime := time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, now.Location())
+		startTime := time.Date(now.Year(), now.Month(), now.Day()-700, 0, 0, 0, 0, now.Location())
 		endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		paymasterStatisDays, err := client.PaymasterStatisDay.
 			Query().

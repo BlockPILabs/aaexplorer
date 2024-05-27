@@ -13,7 +13,6 @@ import (
 
 func AccountTask() {
 	logger.Info("account-task init ")
-	go doAccountTask()
 	d1Scheduler := chrono.NewDefaultTaskScheduler()
 	_, err := d1Scheduler.ScheduleWithCron(func(ctx context.Context) {
 		doAccountTask()
