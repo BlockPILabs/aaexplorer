@@ -142,6 +142,9 @@ func doTopBundlersDay() {
 				feeEarned = decimal.Zero
 			}
 			feeEarnedMap[bundler] = feeEarned.Add(bundlerStatisDay.FeeEarned)
+			if bundler == "0x6892bef4ae1b5cb33f9a175ab822518c9025fc3c" {
+				logger.Info("check-bundler ", "bundler", bundler, "feeEarn", feeEarnedMap[bundler])
+			}
 
 			totalBundleNum += bundlerStatisDay.BundlesNum
 			bundleNum, ok := bundleNumMap[bundlerStatisDay.Bundler]
@@ -182,8 +185,8 @@ func doTopBundlersDay() {
 
 			if feeEarnedMap != nil {
 				feeEarnUsd := price.Mul(feeEarnedMap[bundler])
-				bundlerInfo.FeeEarned = bundlerInfo.FeeEarned.Add(feeEarnedMap[bundler])
-				bundlerInfo.FeeEarnedUsd = bundlerInfo.FeeEarnedUsd.Add(feeEarnUsd)
+				bundlerInfo.FeeEarned = feeEarnedMap[bundler]
+				bundlerInfo.FeeEarnedUsd = feeEarnUsd
 			}
 
 			bundlerInfo.ID = bundlerStatisDay.Bundler
