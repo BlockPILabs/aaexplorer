@@ -58,6 +58,7 @@ type AssetDetail struct {
 	Network   string          `json:"network"`
 	Amount    decimal.Decimal `json:"amount"`
 	AmountUsd decimal.Decimal `json:"amountUsd"`
+	TokenUrl  string          `json:"tokenUrl"`
 }
 
 type MevInfoRequest struct {

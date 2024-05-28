@@ -10,6 +10,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaassetdetail"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/mevtransaction"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/monitor"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/token"
 	interlog "github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
 	"github.com/BlockPILabs/aaexplorer/util"
@@ -136,11 +137,17 @@ func GetAssetDetail(ctx context.Context, req vo.AssetDetailRequest) (*vo.AssetDe
 			otherUsd = otherUsd.Add(detail.AssetValue.RoundDown(6))
 			continue
 		}
+		tokens, _ := client.Token.Query().Where(token.SymbolEqualFold(detail.Symbol)).All(ctx)
+		tokenUrl := ""
+		if len(tokens) > 0 {
+			tokenUrl = tokens[0].ImageURL
+		}
 		assetDetail := vo.AssetDetail{
 			Symbol:    detail.Symbol,
 			Network:   network,
 			Amount:    detail.AssetAmount,
 			AmountUsd: detail.AssetValue.RoundDown(6),
+			TokenUrl:  tokenUrl,
 		}
 		percent := decimal.Zero
 		if totalUsd.Cmp(decimal.Zero) > 0 {
