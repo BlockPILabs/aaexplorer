@@ -30,5 +30,10 @@ type AaBlocksVo struct {
 	BundlerProfit    decimal.Decimal `json:"bundlerProfit,omitempty"`
 	BundlerProfitUsd decimal.Decimal `json:"bundlerProfitUsd,omitempty"`
 	// CreateTime holds the value of the "create_time" field.
-	CreateTime int64 `json:"createTime,omitempty"`
+	CreateTime     int64           `json:"createTime,omitempty"`
+	MevCount       int64           `json:"mevCount"`
+	BundlerLoss    decimal.Decimal `json:"BundlerLoss"`
+	BundlerLossUsd decimal.Decimal `json:"BundlerLossUsd"`
+	MevProfits     decimal.Decimal `json:"MevProfits"`
+	MevProfitsUsd  decimal.Decimal `json:"MevProfitsUsd"`
 }

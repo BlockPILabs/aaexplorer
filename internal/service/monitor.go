@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/dao"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
@@ -140,7 +141,7 @@ func GetAssetDetail(ctx context.Context, req vo.AssetDetailRequest) (*vo.AssetDe
 		tokens, _ := client.Token.Query().Where(token.SymbolEqualFold(detail.Symbol)).All(ctx)
 		tokenUrl := ""
 		if len(tokens) > 0 {
-			tokenUrl = tokens[0].ImageURL
+			tokenUrl = config.UrlPrefix + tokens[0].ImageURL
 		}
 		assetDetail := vo.AssetDetail{
 			Symbol:    detail.Symbol,
@@ -159,11 +160,12 @@ func GetAssetDetail(ctx context.Context, req vo.AssetDetailRequest) (*vo.AssetDe
 	if otherUsd.Cmp(decimal.Zero) > 0 {
 		percent := otherUsd.DivRound(totalUsd, 4)
 		otherDetail := vo.AssetDetail{
-			Symbol:    "other",
+			Symbol:    "Other",
 			Network:   network,
 			AmountUsd: otherUsd,
 			Percent:   percent,
 		}
+		otherDetail.TokenUrl = config.OtherCoinUrl
 		assetDetails = append(assetDetails, otherDetail)
 	}
 

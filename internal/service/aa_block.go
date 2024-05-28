@@ -4,8 +4,10 @@ import (
 	"context"
 	"github.com/BlockPILabs/aaexplorer/internal/dao"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/mevtransaction"
 	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
+	"github.com/shopspring/decimal"
 )
 
 type aaBlockService struct {
@@ -33,6 +35,19 @@ func (*aaBlockService) GetAaBlockInfo(ctx context.Context, client *ent.Client, r
 
 	res.Records = make([]*vo.AaBlocksVo, len(pages))
 	for i, info := range pages {
+		mevTxs, _ := client.MevTransaction.Query().Where(mevtransaction.BlockNumberEQ(info.ID)).All(ctx)
+		bundlerLoss := decimal.Zero
+		bundlerLossUsd := decimal.Zero
+		mevProfit := decimal.Zero
+		mevProfitUsd := decimal.Zero
+		if len(mevTxs) > 0 {
+			for _, tx := range mevTxs {
+				bundlerLoss = bundlerLoss.Add(tx.BundlerLoss)
+				bundlerLossUsd = bundlerLossUsd.Add(tx.BundlerLossUsd)
+				mevProfit = mevProfit.Add(tx.MevProfit)
+				mevProfitUsd = mevProfitUsd.Add(tx.MevProfitUsd)
+			}
+		}
 		res.Records[i] = &vo.AaBlocksVo{
 			Number:           info.ID,
 			Time:             info.Time.UnixMilli(),
@@ -42,6 +57,11 @@ func (*aaBlockService) GetAaBlockInfo(ctx context.Context, client *ent.Client, r
 			BundlerProfit:    info.BundlerProfit,
 			BundlerProfitUsd: info.BundlerProfitUsd,
 			CreateTime:       info.CreateTime.UnixMilli(),
+			MevCount:         int64(len(mevTxs)),
+			MevProfits:       mevProfit,
+			MevProfitsUsd:    mevProfitUsd,
+			BundlerLoss:      bundlerLoss,
+			BundlerLossUsd:   bundlerLossUsd,
 		}
 
 	}

@@ -42,6 +42,9 @@ const (
 	WhaleTxDay = 7
 
 	MevFront = "front run"
+
+	UrlPrefix    = "https://static.blockpi.io/"
+	OtherCoinUrl = "https://static.blockpi.io/coins-logo/others.svg"
 )
 
 const (
