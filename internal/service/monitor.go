@@ -8,6 +8,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaaccountdata"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaasset"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaassetdetail"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/mevtransaction"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/monitor"
@@ -15,7 +16,10 @@ import (
 	interlog "github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
 	"github.com/BlockPILabs/aaexplorer/util"
+	"github.com/chenzhijie/go-web3"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/shopspring/decimal"
+	"math/big"
 	"strings"
 	"time"
 	"unicode"
@@ -120,6 +124,12 @@ func GetAssetDetail(ctx context.Context, req vo.AssetDetailRequest) (*vo.AssetDe
 	}
 	var resp = &vo.AssetDetailResponse{}
 	var assetDetails []vo.AssetDetail
+
+	existUsers, _ := client.AaAssetDetail.Query().Where(aaassetdetail.UserAddressEqualFold(userAddress)).All(ctx)
+	if len(existUsers) == 0 {
+		go AddOne(ctx, userAddress)
+		return resp, vo.NewUserErr
+	}
 
 	details, err := client.AaAssetDetail.Query().Where(aaassetdetail.UserAddressEqualFold(userAddress), aaassetdetail.AssetAmountGT(decimal.Zero)).Order(ent.Desc(aaassetdetail.FieldAssetValue)).All(ctx)
 	if len(details) == 0 {
@@ -272,4 +282,133 @@ func capitalizeFirstLetter(s string) string {
 	}
 	r, size := utf8.DecodeRuneInString(s)
 	return string(unicode.ToUpper(r)) + s[size:]
+}
+
+func AddOne(ctx context.Context, address string) {
+	cli, err := entity.Client(ctx)
+	if err != nil {
+		logger.Error("AddOne err, ", "msg", err)
+		return
+	}
+	networks, err := cli.Network.Query().All(ctx)
+	if err != nil {
+		return
+	}
+	if len(networks) == 0 {
+		return
+	}
+
+	for _, net := range networks {
+		network := net.ID
+		client, err := entity.Client(ctx, network)
+		if err != nil {
+			continue
+		}
+		aas, err := client.AaAsset.Query().Where(aaasset.IDEqualFold(address)).All(ctx)
+		if err != nil {
+			logger.Error("AddOne query asset err ", "msg", err)
+			continue
+		}
+		if len(aas) > 0 {
+			continue
+		}
+		w3, err := web3.NewWeb3(net.HTTPRPC)
+		if err != nil {
+			logger.Error("AddOne newWeb3 err ", "msg", err)
+			continue
+		}
+		w3.Eth.SetChainId(net.ChainID)
+		tokens, err := client.Token.Query().All(ctx)
+		if len(tokens) == 0 {
+			continue
+		}
+		blockNum, err := w3.Eth.GetBlockNumber()
+		if err != nil {
+			logger.Error("AddOne blockNum err ", "msg", err)
+			continue
+		}
+		doAddOne(ctx, client, tokens, w3, blockNum, network, address)
+	}
+}
+
+func doAddOne(ctx context.Context, client *ent.Client, tokens []*ent.Token, w3 *web3.Web3, blockNum uint64, network string, userAddress string) {
+	logger.Info("AddOne-doAddOne start.")
+	totalValue := decimal.Zero
+	for _, token := range tokens {
+		contractAddress := token.ContractAddress
+		if len(contractAddress) == 0 {
+			continue
+		}
+		decimals := token.Decimals
+		balance := getBalance(ctx, contractAddress, userAddress, decimals, w3)
+		assetValue := balance.Mul(token.TokenPrice)
+		addOrUpdateAssetDetail(ctx, contractAddress, userAddress, assetValue, client, network, token.Symbol, balance)
+		totalValue = totalValue.Add(assetValue)
+	}
+	balance, err := w3.Eth.GetBalance(common.HexToAddress(userAddress), big.NewInt(int64(blockNum)))
+	if err != nil {
+		logger.Error("AddOne get balance err ", "user", userAddress, "network", network, "msg", err)
+		return
+	}
+	nativeBalance := decimal.NewFromBigInt(balance, 0).Div(decimal.NewFromInt(10).Pow(decimal.NewFromInt(config.DefaultDecimals)))
+	nativeTokens, err := client.Token.Query().Where(token.TypeEQ("base"), token.NetworkEQ(network)).Limit(1).All(ctx)
+	nativePrice := decimal.Zero
+	nativeSymbol := ""
+	if len(nativeTokens) > 0 {
+		nativePrice = nativeTokens[0].TokenPrice
+		nativeSymbol = nativeTokens[0].Symbol
+	}
+	nativeValue := nativeBalance.Mul(nativePrice)
+	totalValue = totalValue.Add(nativeValue)
+	client.AaAsset.Create().SetAssetValue(totalValue).
+		SetLastTime(time.Now().UnixMilli()).SetCreateTime(time.Now()).SetUpdateTime(time.Now()).
+		SetID(userAddress).SetNetwork(network).SetBalance(nativeBalance).Save(ctx)
+	nativeDetails, err := client.AaAssetDetail.Query().Where(aaassetdetail.UserAddressEqualFold(userAddress), aaassetdetail.IsNativeEqualFold("true")).All(ctx)
+	if err != nil {
+		return
+	}
+	if len(nativeDetails) > 0 {
+		client.AaAssetDetail.Update().SetAssetAmount(nativeBalance).SetAssetValue(nativeValue).SetLastTime(time.Now().UnixMilli()).Where(aaassetdetail.IDEQ(nativeDetails[0].ID)).Exec(ctx)
+	} else {
+		client.AaAssetDetail.Create().SetAssetValue(nativeValue).SetLastTime(time.Now().UnixMilli()).SetCreateTime(time.Now()).SetAssetAmount(nativeBalance).SetUserAddress(userAddress).SetContractAddress("").SetSymbol(nativeSymbol).SetNetwork(network).SetIsNative("true").SetUpdateTime(time.Now()).Save(ctx)
+	}
+	if nativeBalance.Cmp(decimal.Zero) > 0 {
+		logger.Info("AddOne update balance success, ", "userAddress", userAddress, "network", network)
+	} else {
+		logger.Info("AddOne update balance success empty, ", "userAddress", userAddress, "network", network)
+	}
+}
+
+func getBalance(ctx context.Context, tokenAddress string, userAddress string, decimals int64, web3 *web3.Web3) decimal.Decimal {
+
+	contract, err := web3.Eth.NewContract(config.Abi, tokenAddress)
+
+	res, err := contract.Call("balanceOf", common.HexToAddress(userAddress))
+	if err != nil {
+		logger.Error("GetBalance balanceOf err ", "msg", err)
+		return decimal.Zero
+	}
+	value, ok := res.(*big.Int)
+	if ok {
+		balance := decimal.NewFromBigInt(value, 0).Div(decimal.NewFromInt(10).Pow(decimal.NewFromInt(decimals)))
+		return balance
+	}
+	return decimal.Zero
+}
+
+func addOrUpdateAssetDetail(ctx context.Context, contractAddress string, userAddress string, value decimal.Decimal, client *ent.Client, network string, symbol string, amount decimal.Decimal) {
+	details, err := client.AaAssetDetail.Query().Where(aaassetdetail.UserAddressEqualFold(userAddress), aaassetdetail.ContractAddressEqualFold(contractAddress)).All(ctx)
+	if err != nil {
+		return
+	}
+	if len(details) > 0 {
+		detail := details[0]
+		client.AaAssetDetail.Update().SetAssetValue(value).SetLastTime(time.Now().UnixMilli()).Where(aaassetdetail.IDEQ(detail.ID)).Exec(ctx)
+	} else {
+		detail := client.AaAssetDetail.Create().SetAssetValue(value).SetLastTime(time.Now().UnixMilli()).SetCreateTime(time.Now()).SetUpdateTime(time.Now()).SetNetwork(network).SetContractAddress(contractAddress).SetSymbol(symbol).SetUserAddress(userAddress).SetAssetAmount(amount).SetIsNative("false")
+		_, err := detail.Save(ctx)
+		if err != nil {
+			logger.Error("addOrUpdateAssetDetail err ", "symbol", symbol, "msg", err)
+		}
+	}
 }

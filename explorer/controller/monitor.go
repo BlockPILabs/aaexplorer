@@ -123,7 +123,7 @@ func GetAssetDetail(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()
 	logger := log.Context(fcx.UserContext())
 
-	logger.Debug("start get mev transaction")
+	logger.Debug("start get asset detail")
 	req := vo.AssetDetailRequest{}
 	err := fcx.ParamsParser(&req)
 	if err != nil {
@@ -137,7 +137,8 @@ func GetAssetDetail(fcx *fiber.Ctx) error {
 
 	res, err := service.GetAssetDetail(ctx, req)
 	if err != nil {
-		logger.Error("get mev transaction error", "err", err)
+		logger.Error("get asset detail error", "err", err)
+		return err
 	}
 	return vo.NewResultJsonResponse(res).JSON(fcx)
 }

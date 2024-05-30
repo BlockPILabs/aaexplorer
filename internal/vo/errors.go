@@ -16,4 +16,5 @@ var (
 
 	MonitorNotExist = _newError(20001, SetErrorMessage("The address is not in monitor list."))
 	MonitorExist    = _newError(20002, SetErrorMessage("The address is already in monitor list."))
+	NewUserErr      = _newError(20003, SetErrorMessage("The asset information is being synchronized."))
 )
