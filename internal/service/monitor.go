@@ -27,6 +27,7 @@ import (
 )
 
 var logger = interlog.L()
+var syncMap = map[string]int64{}
 
 func SetLogger(lg interlog.Logger) {
 	logger = lg
@@ -125,8 +126,13 @@ func GetAssetDetail(ctx context.Context, req vo.AssetDetailRequest) (*vo.AssetDe
 	var resp = &vo.AssetDetailResponse{}
 	var assetDetails []vo.AssetDetail
 
+	if syncMap[userAddress] == 1 {
+		return resp, vo.NewUserErr
+	}
+
 	existUsers, _ := client.AaAssetDetail.Query().Where(aaassetdetail.UserAddressEqualFold(userAddress)).All(ctx)
 	if len(existUsers) == 0 {
+		syncMap[userAddress] = 1
 		go AddOne(ctx, userAddress)
 		return resp, vo.NewUserErr
 	}
@@ -287,14 +293,17 @@ func capitalizeFirstLetter(s string) string {
 func AddOne(ctx context.Context, address string) {
 	cli, err := entity.Client(ctx)
 	if err != nil {
+		syncMap[address] = 0
 		logger.Error("AddOne err, ", "msg", err)
 		return
 	}
 	networks, err := cli.Network.Query().All(ctx)
 	if err != nil {
+		syncMap[address] = 0
 		return
 	}
 	if len(networks) == 0 {
+		syncMap[address] = 0
 		return
 	}
 
@@ -329,6 +338,7 @@ func AddOne(ctx context.Context, address string) {
 		}
 		doAddOne(ctx, client, tokens, w3, blockNum, network, address)
 	}
+	syncMap[address] = 0
 }
 
 func doAddOne(ctx context.Context, client *ent.Client, tokens []*ent.Token, w3 *web3.Web3, blockNum uint64, network string, userAddress string) {
