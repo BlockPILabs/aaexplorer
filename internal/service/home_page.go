@@ -296,7 +296,7 @@ func GetMevTx(ctx context.Context, req vo.HomeMevRequest) (*vo.HomeMevResponse, 
 	}
 	mevTxs, err := client.MevTransaction.Query().Where(mevtransaction.BlockNumberGT(blockNum)).Order(ent.Desc(mevtransaction.FieldTime)).Offset(req.GetOffset()).Limit(req.GetPerPage()).All(ctx)
 	if len(mevTxs) == 0 {
-		return nil, nil
+		return resp, nil
 	}
 	counts, err := client.MevTransaction.Query().Where(mevtransaction.BlockNumberGT(blockNum)).Count(ctx)
 	var mevInfos []vo.MevInfo
