@@ -119,9 +119,13 @@ func (dao *monitorDao) ListMonitorDao(ctx context.Context, req vo.ListWatchingAd
 				TotalUserOps:    int64(0),
 			})
 		default:
+			addrType := ""
+			if len(monitorItem.MonitorAddressType) > 1 {
+				addrType = strings.ToUpper(monitorItem.MonitorAddressType[:1]) + monitorItem.MonitorAddressType[1:]
+			}
 			list = append(list, &vo.WatchingAddress{
 				Network:         req.Network,
-				AddressType:     strings.ToUpper(monitorItem.MonitorAddressType[:1]) + monitorItem.MonitorAddressType[1:],
+				AddressType:     addrType,
 				MonitorAddress:  monitorItem.MonitorAddress,
 				Balance:         monitorBalance,
 				Profits24H:      decimal.Zero,
