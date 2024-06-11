@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/BlockPILabs/aaexplorer/internal/dao"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/token"
 	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
 	"github.com/shopspring/decimal"
@@ -65,9 +66,10 @@ func (*aaTransactionService) GetRecord(ctx context.Context, client *ent.Client, 
 		}
 		txr := txrlist[0]*/
 
-	tokenPrice, err := dao.TokenPriceInfoDao.GetBaseTokenPrice(ctx, client)
-	if err != nil {
-		return nil, err
+	tokens, err := client.Token.Query().Where(token.TypeEQ("base")).All(ctx)
+	price := decimal.Zero
+	if len(tokens) > 0 {
+		price = tokens[0].TokenPrice
 	}
 
 	ret := &vo.AaTransactionRecord{
@@ -104,9 +106,9 @@ func (*aaTransactionService) GetRecord(ctx context.Context, client *ent.Client, 
 		//LogsBloom:            txr.LogsBloom,
 		Status: *aatx.Status,
 
-		TokenPriceUsd: tokenPrice.TokenPrice,
-		GasPriceUsd:   aatx.GasPrice.Mul(tokenPrice.TokenPrice).Mul(decimal.NewFromInt(10).Pow(decimal.NewFromInt(18))),
-		ValueUsd:      aatx.Value.Mul(tokenPrice.TokenPrice).Mul(decimal.NewFromInt(10).Pow(decimal.NewFromInt(18))),
+		TokenPriceUsd: price,
+		GasPriceUsd:   aatx.GasPrice.Mul(price).Mul(decimal.NewFromInt(10).Pow(decimal.NewFromInt(18))),
+		ValueUsd:      aatx.Value.Mul(price).Mul(decimal.NewFromInt(10).Pow(decimal.NewFromInt(18))),
 	}
 
 	return ret, nil
