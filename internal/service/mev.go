@@ -36,7 +36,6 @@ func (*mevService) MevList(ctx context.Context, req vo.ListMEVBundlersRequest) (
 		res.Records = append(res.Records, &vo.MEVBundlerAssets{
 			Timestamp:        mev.Time.UnixMilli(),
 			TxHash:           mev.ID,
-			UserOpHash:       mev.VictimTxHash,
 			MevType:          mev.MevType,
 			Victim:           mev.Victim,
 			VictimType:       mev.VictimType,
