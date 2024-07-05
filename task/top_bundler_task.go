@@ -30,6 +30,7 @@ func InitTask() {
 	InitAssetRefreshTask()
 	InitRefreshPrice(context.Background())
 	InitMEVTask(context.Background())
+	InitTransferTask(context.Background())
 
 	go AATransactionFix()
 	//temp
