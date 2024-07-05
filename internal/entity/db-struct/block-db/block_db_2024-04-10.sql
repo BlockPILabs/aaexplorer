@@ -996,6 +996,71 @@ alter table public.block_scan_record
 
 alter table public.token
     add token varchar;
+
+CREATE TABLE "public"."token_all" (
+                                      id  bigserial primary key,
+                                      "network" "pg_catalog"."varchar" COLLATE "pg_catalog"."default",
+                                      "contract_address" "pg_catalog"."varchar" COLLATE "pg_catalog"."default",
+                                      "symbol" "pg_catalog"."varchar" COLLATE "pg_catalog"."default",
+                                      "full_name" "pg_catalog"."varchar" COLLATE "pg_catalog"."default",
+                                      "token_price" "pg_catalog"."numeric",
+                                      "last_time" "pg_catalog"."int8",
+                                      "create_time" "pg_catalog"."timestamp",
+                                      "update_time" "pg_catalog"."timestamp",
+                                      "market_rank" "pg_catalog"."int8",
+                                      "type" "pg_catalog"."varchar" COLLATE "pg_catalog"."default",
+                                      "decimals" "pg_catalog"."int8",
+                                      "image_url" "pg_catalog"."varchar" COLLATE "pg_catalog"."default"
+)
+;
+
+
+CREATE TABLE "public"."transfer_transaction" (
+                                                 id  bigserial primary key,
+                                                 "time" "pg_catalog"."timestamp",
+                                                 "create_time" "pg_catalog"."timestamp",
+                                                 "tx_hash" "pg_catalog"."varchar" COLLATE "pg_catalog"."default",
+                                                 "block_hash" "pg_catalog"."varchar" COLLATE "pg_catalog"."default",
+                                                 "block_number" "pg_catalog"."int8",
+                                                 "transaction_index" "pg_catalog"."int8",
+                                                 "from_addr" "pg_catalog"."varchar" COLLATE "pg_catalog"."default",
+                                                 "to_addr" "pg_catalog"."varchar" COLLATE "pg_catalog"."default",
+                                                 "value" "pg_catalog"."numeric",
+                                                 "gas_price" "pg_catalog"."numeric",
+                                                 "gas" "pg_catalog"."numeric",
+                                                 "transfer_value" "pg_catalog"."numeric",
+                                                 "token_symbol" "pg_catalog"."varchar" COLLATE "pg_catalog"."default",
+                                                 "token_address" "pg_catalog"."varchar" COLLATE "pg_catalog"."default",
+                                                 "token_url" "pg_catalog"."varchar" COLLATE "pg_catalog"."default"
+)
+;
+
+-- ----------------------------
+-- Indexes structure for table transfer_transaction
+-- ----------------------------
+CREATE INDEX "transfer_transaction_block_numer_idx" ON "public"."transfer_transaction" USING btree (
+    "block_number" "pg_catalog"."int8_ops" ASC NULLS LAST
+    );
+CREATE INDEX "transfer_transaction_create_time_idx" ON "public"."transfer_transaction" USING btree (
+    "create_time" "pg_catalog"."timestamp_ops" ASC NULLS LAST
+    );
+CREATE INDEX "transfer_transaction_from_addr_idx" ON "public"."transfer_transaction" USING hash (
+    "from_addr" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops"
+    );
+CREATE INDEX "transfer_transaction_time_idx" ON "public"."transfer_transaction" USING btree (
+    "time" "pg_catalog"."timestamp_ops" ASC NULLS LAST
+    );
+CREATE INDEX "transfer_transaction_to_addr_idx" ON "public"."transfer_transaction" USING hash (
+    "to_addr" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops"
+    );
+CREATE INDEX "transfer_transaction_token_address_idx" ON "public"."transfer_transaction" USING hash (
+    "token_address" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops"
+    );
+CREATE INDEX "transfer_transaction_tx_hash_idx" ON "public"."transfer_transaction" USING hash (
+    "tx_hash" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops"
+    );
+
+
 -- Cyclic dependencies found
 
 create table aa_account_data_p1 partition of aa_account_data for values with (modulus 30, remainder 0);
