@@ -7,6 +7,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aacontractinteract"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/functionsignature"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transfertransaction"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/useroptypestatistic"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
 	"github.com/shopspring/decimal"
@@ -173,4 +174,41 @@ func getAAContractInteractResponse(interacts []*ent.AAContractInteract) *vo.AACo
 	resp.AAContractInteract = finalContractInteracts
 	resp.TotalNum = totalNum
 	return resp
+}
+
+func GetHotAAToken(ctx context.Context, req vo.HotAARequest) (*vo.HotAAResponse, error) {
+	network := req.Network
+	client, err := entity.Client(ctx, network)
+	if err != nil {
+		return nil, err
+	}
+	var resp = &vo.HotAAResponse{}
+
+	//day1 := time.UnixMilli(time.Now().UnixMilli() - 24*3600*1000)
+	//Where(transfertransaction.TimeGTE(day1))
+	var results []HotAA
+	err = client.TransferTransaction.Query().GroupBy(transfertransaction.FieldTokenSymbol).Aggregate(ent.Count()).Scan(ctx, &results)
+	if err != nil {
+		return nil, err
+	}
+	if len(results) == 0 {
+		return nil, nil
+	}
+	var details []vo.TokenDetail
+	for _, res := range results {
+		detail := vo.TokenDetail{
+			TokenSymbol: res.TokenSymbol,
+			Count:       res.Count,
+		}
+		details = append(details, detail)
+
+	}
+	resp.TokenDetails = details
+
+	return resp, nil
+}
+
+type HotAA struct {
+	TokenSymbol string `json:"token_symbol"`
+	Count       int64  `json:"count"`
 }

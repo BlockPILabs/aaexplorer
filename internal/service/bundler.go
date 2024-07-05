@@ -2,11 +2,18 @@ package service
 
 import (
 	"context"
+	"github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/dao"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaassetdetail"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/bundlerinfo"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/token"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transfertransaction"
 	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
+	"github.com/shopspring/decimal"
+	"strings"
 )
 
 type bundlerService struct {
@@ -101,4 +108,118 @@ func (*bundlerService) GetBundler(ctx context.Context, req vo.GetBundlerRequest)
 		addresses[0].Label.AssignTo(&res.Label)
 	}
 	return
+}
+
+func (*bundlerService) GetBundlerTransfers(ctx context.Context, req vo.BundlerTransferRequest) (res *vo.BundlerTransferResponse, err error) {
+
+	client, err := entity.Client(ctx, req.Network)
+	if err != nil {
+		return nil, err
+	}
+
+	bundler := req.Address
+	if len(bundler) == 0 {
+		return nil, nil
+	}
+	bundler = strings.ToLower(bundler)
+
+	res = &vo.BundlerTransferResponse{
+		Pagination: vo.Pagination{
+			TotalCount: 0,
+			PerPage:    req.GetPerPage(),
+			Page:       req.GetPage(),
+		},
+	}
+
+	transferTxs, err := client.TransferTransaction.Query().Where(transfertransaction.FromAddr(bundler)).Order(ent.Desc(transfertransaction.FieldTime)).Offset(req.GetOffset()).Limit(req.PerPage).All(ctx)
+	totalCount, err := client.TransferTransaction.Query().Where(transfertransaction.FromAddr(bundler)).Count(ctx)
+
+	if len(transferTxs) == 0 {
+		return nil, nil
+	}
+	var details []vo.TransferInfo
+	for _, tx := range transferTxs {
+		info := vo.TransferInfo{
+			Id:          tx.ID,
+			TxnHash:     tx.TxHash,
+			Source:      "Transfer",
+			Timestamp:   tx.Time.UnixMilli(),
+			From:        tx.FromAddr,
+			To:          tx.ToAddr,
+			Value:       tx.TransferValue,
+			TokenSymbol: tx.TokenSymbol,
+			TokenImage:  tx.TokenURL,
+		}
+		details = append(details, info)
+	}
+	res.TransferList = details
+	res.TotalCount = totalCount
+
+	return res, nil
+}
+
+func (*bundlerService) GetBundlerBalance(ctx context.Context, req vo.BundlerBalanceRequest) (res *vo.BundlerBalanceResponse, err error) {
+
+	client, err := entity.Client(ctx, req.Network)
+	if err != nil {
+		return nil, err
+	}
+
+	bundler := req.Address
+	if len(bundler) == 0 {
+		return nil, nil
+	}
+	bundler = strings.ToLower(bundler)
+
+	res = &vo.BundlerBalanceResponse{}
+
+	details, err := client.AaAssetDetail.Query().Where(aaassetdetail.UserAddressEqualFold(bundler), aaassetdetail.AssetAmountGT(decimal.Zero)).Order(ent.Desc(aaassetdetail.FieldAssetValue)).All(ctx)
+	if len(details) == 0 {
+		return res, nil
+	}
+
+	totalUsd := decimal.Zero
+	for _, detail := range details {
+		totalUsd = totalUsd.Add(detail.AssetValue)
+	}
+	otherUsd := decimal.Zero
+	var assetDetails []vo.AssetInfo
+	for idx, detail := range details {
+		if idx >= 7 {
+			otherUsd = otherUsd.Add(detail.AssetValue.RoundDown(6))
+			continue
+		}
+		tokens, _ := client.Token.Query().Where(token.SymbolEqualFold(detail.Symbol)).All(ctx)
+		tokenUrl := ""
+		if len(tokens) > 0 {
+			tokenUrl = config.UrlPrefix + tokens[0].ImageURL
+		}
+		assetDetail := vo.AssetInfo{
+			Symbol:    detail.Symbol,
+			Amount:    detail.AssetAmount,
+			AmountUsd: detail.AssetValue.RoundDown(6),
+			TokenUrl:  tokenUrl,
+		}
+		percent := decimal.Zero
+		if totalUsd.Cmp(decimal.Zero) > 0 {
+			percent = detail.AssetValue.DivRound(totalUsd, 4)
+		}
+		assetDetail.Percent = percent
+		assetDetails = append(assetDetails, assetDetail)
+	}
+	if otherUsd.Cmp(decimal.Zero) > 0 {
+		percent := otherUsd.DivRound(totalUsd, 4)
+		otherDetail := vo.AssetInfo{
+			Symbol:    "Other",
+			AmountUsd: otherUsd,
+			Percent:   percent,
+		}
+		otherDetail.TokenUrl = config.OtherCoinUrl
+		assetDetails = append(assetDetails, otherDetail)
+	}
+
+	res.AssetDetails = assetDetails
+	res.TotalUsd = totalUsd.RoundDown(6)
+
+	return res, nil
 }

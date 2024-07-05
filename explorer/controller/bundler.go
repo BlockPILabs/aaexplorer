@@ -86,3 +86,55 @@ func GetBundlerMev(fcx *fiber.Ctx) error {
 	res, err = service.MevService.BundlerMevList(ctx, req)
 	return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(err)).JSON(fcx)
 }
+
+const NameGetBundlerTransfers = "get_bundler_transfers"
+
+func GetBundlerTransfers(fcx *fiber.Ctx) error {
+	ctx := fcx.UserContext()
+	logger := log.Context(ctx)
+
+	logger.Debug("start get bundler transfers", "")
+	req := vo.BundlerTransferRequest{}
+	res := &vo.BundlerTransferResponse{}
+	err := fcx.ParamsParser(&req)
+	if err != nil {
+		logger.Warn("params parse error", "err", err)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
+	}
+
+	ctx, logger = log.With(ctx, "bundler", req.Address, "network", req.Network)
+
+	err = fcx.QueryParser(&req)
+	if err != nil {
+		logger.Warn("query params parse error", "err", err)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
+	}
+	res, err = service.BundlerService.GetBundlerTransfers(ctx, req)
+	return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(err)).JSON(fcx)
+}
+
+const NameGetBundlerBalance = "get_bundler_balance"
+
+func GetBundlerBalance(fcx *fiber.Ctx) error {
+	ctx := fcx.UserContext()
+	logger := log.Context(ctx)
+
+	logger.Debug("start get bundler balance", "")
+	req := vo.BundlerBalanceRequest{}
+	res := &vo.BundlerBalanceResponse{}
+	err := fcx.ParamsParser(&req)
+	if err != nil {
+		logger.Warn("params parse error", "err", err)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
+	}
+
+	ctx, logger = log.With(ctx, "bundler", req.Address, "network", req.Network)
+
+	err = fcx.QueryParser(&req)
+	if err != nil {
+		logger.Warn("query params parse error", "err", err)
+		return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(vo.ErrParams)).JSON(fcx)
+	}
+	res, err = service.BundlerService.GetBundlerBalance(ctx, req)
+	return vo.NewResultJsonResponse(res, vo.SetResponseAutoDataError(err)).JSON(fcx)
+}

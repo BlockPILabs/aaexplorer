@@ -23,6 +23,9 @@ func Resister(router fiber.Router) {
 	networksV1.Get("/bundlers", controller.GetBundlers).Name(controller.NameGetBundlers)
 	networksV1.Get("/bundler/:bundler<regex(0x[a-z0-9]{40}$)}>", controller.GetBundler).Name(controller.NameGetBundler)
 	networksV1.Get("/bundler/mev", controller.GetBundlerMev).Name(controller.NameGetBundlerMev)
+	networksV1.Get("/aa/transfers", controller.GetBundlerTransfers).Name(controller.NameGetBundlerTransfers)
+	networksV1.Get("/aa/balance", controller.GetBundlerBalance).Name(controller.NameGetBundlerBalance)
+
 	// bundles
 	networksV1.Get("/bundles", controller.GetBundles).Name(controller.NameGetBundles)
 	networksV1.Get("/bundle/:bundle<regex(0x[a-z0-9]{40}$)}>", controller.GetBundle).Name(controller.NameGetBundle)
@@ -72,6 +75,7 @@ func Resister(router fiber.Router) {
 	//user op type analyze
 	networksV1.Get("/userOpType", controller.GetUserOpType).Name(controller.NameGetUserOpType)
 	networksV1.Get("/aaContractInteract", controller.GetAAContractInteract).Name(controller.NameGetAAContractInteract)
+	networksV1.Get("/hotAA", controller.GetHotAAToken).Name(controller.NameGetHotAAToken)
 
 	//top list
 	networksV1.Get("/topBundler", controller.GetTopBundler).Name(controller.NameGetTopBundler)

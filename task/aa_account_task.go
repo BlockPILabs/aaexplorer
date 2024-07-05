@@ -2,7 +2,6 @@ package task
 
 import (
 	"context"
-	constConfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaaccountdata"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaasset"
@@ -42,7 +41,7 @@ func AaAccountTask(ctx context.Context) {
 		if err != nil {
 			continue
 		}
-		accounts, err := client.AaAccountData.Query().Where(aaaccountdata.AaTypeEqualFold(constConfig.AaAccountTypeAA)).All(ctx)
+		accounts, err := client.AaAccountData.Query().Where(aaaccountdata.AaTypeIn("aa", "bundler", "paymaster")).All(ctx)
 		if len(accounts) == 0 {
 			continue
 		}

@@ -9,6 +9,7 @@ import (
 
 const NameGetUserOpType = "get_user_op_type"
 const NameGetAAContractInteract = "get_aa_contract_interact"
+const NameGetHotAAToken = "get_hot_aa_token"
 
 func GetUserOpType(fcx *fiber.Ctx) error {
 	ctx := fcx.UserContext()
@@ -50,6 +51,28 @@ func GetAAContractInteract(fcx *fiber.Ctx) error {
 	res, err := service.GetAAContractInteract(ctx, req)
 	if err != nil {
 		logger.Error("get aa contract interact error", "err", err)
+	}
+	return vo.NewResultJsonResponse(res).JSON(fcx)
+}
+
+func GetHotAAToken(fcx *fiber.Ctx) error {
+	ctx := fcx.UserContext()
+	logger := log.Context(fcx.UserContext())
+
+	logger.Debug("start get hot aa token")
+	req := vo.HotAARequest{}
+	err := fcx.ParamsParser(&req)
+	if err != nil {
+		logger.Warn("params parse error", "err", err)
+	}
+	err = fcx.QueryParser(&req)
+	if err != nil {
+		logger.Warn("query params parse error", "err", err, "network", req.Network)
+	}
+
+	res, err := service.GetHotAAToken(ctx, req)
+	if err != nil {
+		logger.Error("get hot aa token error", "err", err)
 	}
 	return vo.NewResultJsonResponse(res).JSON(fcx)
 }

@@ -47,3 +47,16 @@ func (b ByUserOpsTypeNum) Swap(i, j int) { b[i], b[j] = b[j], b[i] }
 func (b ByUserOpsTypeNum) Less(i, j int) bool {
 	return b[i].Rate.Cmp(b[j].Rate) > 0
 }
+
+type HotAARequest struct {
+	Network string `json:"network"`
+}
+
+type HotAAResponse struct {
+	TokenDetails []TokenDetail `json:"tokenDetails"`
+}
+
+type TokenDetail struct {
+	TokenSymbol string `json:"tokenSymbol"`
+	Count       int64  `json:"count"`
+}

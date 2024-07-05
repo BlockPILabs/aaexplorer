@@ -92,3 +92,44 @@ type MEVBundlerAssets struct {
 	MevProfits       decimal.Decimal `json:"mevProfits"`
 	MevProfitsInUsd  decimal.Decimal `json:"mevProfitsInUsd"`
 }
+
+type BundlerTransferRequest struct {
+	Network string `json:"network"`
+	Address string `json:"address"`
+	PaginationRequest
+}
+
+type BundlerTransferResponse struct {
+	Pagination
+	TransferList []TransferInfo `json:"transferList"`
+}
+
+type TransferInfo struct {
+	Id          int64           `json:"id"`
+	TxnHash     string          `json:"txnHash"`
+	Source      string          `json:"source"`
+	Timestamp   int64           `json:"timestamp"`
+	From        string          `json:"from"`
+	To          string          `json:"to"`
+	Value       decimal.Decimal `json:"value"`
+	TokenSymbol string          `json:"tokenSymbol"`
+	TokenImage  string          `json:"tokenImage"`
+}
+
+type BundlerBalanceRequest struct {
+	Network string `json:"network"`
+	Address string `json:"address"`
+}
+
+type BundlerBalanceResponse struct {
+	TotalUsd     decimal.Decimal `json:"totalUsd"`
+	AssetDetails []AssetInfo     `json:"assetDetails"`
+}
+
+type AssetInfo struct {
+	Percent   decimal.Decimal `json:"percent"`
+	Symbol    string          `json:"symbol"`
+	TokenUrl  string          `json:"tokenImage"`
+	Amount    decimal.Decimal `json:"amount"`
+	AmountUsd decimal.Decimal `json:"amountUsd"`
+}
