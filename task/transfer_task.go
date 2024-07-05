@@ -31,12 +31,13 @@ func InitTransferTask(ctx context.Context) {
 	}, "0/30 * * * * *")
 
 	if err == nil {
-		logger.Info("whaleHourStatistic has been scheduled")
+		logger.Info("TransferTask has been scheduled")
 	}
 
 }
 
 func TransferTask(ctx context.Context) {
+	logger.Info("TransferTask start.")
 	cli, err := entity.Client(ctx)
 	if err != nil {
 		return
@@ -64,23 +65,33 @@ func TransferTask(ctx context.Context) {
 		w3.Eth.SetChainId(net.ChainID)
 
 		transferTxs, err := client.TransferTransaction.Query().Order(ent.Desc(transfertransaction.FieldBlockNumber)).Limit(1).All(ctx)
+		maxReceipts, err := client.TransactionReceiptDecode.Query().Order(ent.Desc(transactionreceiptdecode.FieldBlockNumber)).Limit(1).All(ctx)
 		lastBlockNum := int64(13920457)
+		maxBlockNum := int64(0)
+		if len(maxReceipts) > 0 {
+			maxBlockNum = maxReceipts[0].BlockNumber
+		}
 		if err != nil {
 			continue
 		}
 		if len(transferTxs) > 0 {
 			lastBlockNum = transferTxs[0].BlockNumber
 		}
+		logger.Info("TransferTask get receipts ", "lastBlockNum", lastBlockNum, "maxBlock", maxBlockNum)
 		for {
 
 			allReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.BlockNumberGTE(lastBlockNum), transactionreceiptdecode.BlockNumberLT(lastBlockNum+10)).Order(ent.Asc(transactionreceiptdecode.FieldBlockNumber)).All(ctx)
+			logger.Info("TransferTask get receipts ", "size", len(allReceipts))
 			if err != nil {
 				break
 			}
-			if len(allReceipts) == 0 {
+			lastBlockNum = lastBlockNum + 11
+			if lastBlockNum > maxBlockNum {
 				break
 			}
-			lastBlockNum = allReceipts[len(allReceipts)-1].BlockNumber + 1
+			if len(allReceipts) == 0 {
+				continue
+			}
 
 			for _, receipt := range allReceipts {
 				logs := receipt.Logs
