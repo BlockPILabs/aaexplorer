@@ -23,6 +23,7 @@ import (
 )
 
 const TokenAbi = "[{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]"
+const SimpleTransferEventSign = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
 func InitTransferTask(ctx context.Context) {
 	mevScheduler := chrono.NewDefaultTaskScheduler()
@@ -121,7 +122,7 @@ func TransferTask(ctx context.Context) {
 					if len(data) <= 2 {
 						continue
 					}
-					if sign == LogTransferEventSign {
+					if sign == SimpleTransferEventSign {
 						from := utils.HexToAddress(topics[1])
 						to := utils.HexToAddress(topics[2])
 						val := hexToDecimal(substring(data, 0, 64*1))
