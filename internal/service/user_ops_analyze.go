@@ -186,7 +186,7 @@ func GetHotAAToken(ctx context.Context, req vo.HotAARequest) (*vo.HotAAResponse,
 
 	//day1 := time.UnixMilli(time.Now().UnixMilli() - 24*3600*1000)
 	//Where(transfertransaction.TimeGTE(day1))
-	var results []HotAA
+	var results []*HotAA
 	err = client.TransferTransaction.Query().GroupBy(transfertransaction.FieldTokenSymbol).Aggregate(ent.Count()).Scan(ctx, &results)
 	if err != nil {
 		return nil, err
@@ -194,8 +194,13 @@ func GetHotAAToken(ctx context.Context, req vo.HotAARequest) (*vo.HotAAResponse,
 	if len(results) == 0 {
 		return nil, nil
 	}
+
+	sort.Sort(ByHotAA(results))
 	var details []vo.TokenDetail
-	for _, res := range results {
+	for idx, res := range results {
+		if idx > 14 {
+			break
+		}
 		detail := vo.TokenDetail{
 			TokenSymbol: res.TokenSymbol,
 			Count:       res.Count,
@@ -203,6 +208,7 @@ func GetHotAAToken(ctx context.Context, req vo.HotAARequest) (*vo.HotAAResponse,
 		details = append(details, detail)
 
 	}
+
 	resp.TokenDetails = details
 
 	return resp, nil
@@ -211,4 +217,12 @@ func GetHotAAToken(ctx context.Context, req vo.HotAARequest) (*vo.HotAAResponse,
 type HotAA struct {
 	TokenSymbol string `json:"token_symbol"`
 	Count       int64  `json:"count"`
+}
+
+type ByHotAA []*HotAA
+
+func (b ByHotAA) Len() int      { return len(b) }
+func (b ByHotAA) Swap(i, j int) { b[i], b[j] = b[j], b[i] }
+func (b ByHotAA) Less(i, j int) bool {
+	return b[i].Count-b[j].Count > 0
 }
