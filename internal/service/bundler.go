@@ -148,7 +148,7 @@ func (*bundlerService) GetBundlerTransfers(ctx context.Context, req vo.BundlerTr
 			To:          tx.ToAddr,
 			Value:       tx.TransferValue,
 			TokenSymbol: tx.TokenSymbol,
-			TokenImage:  tx.TokenURL,
+			TokenImage:  config.UrlPrefix + tx.TokenURL,
 		}
 		details = append(details, info)
 	}
