@@ -196,9 +196,9 @@ func TransferTaskOld(ctx context.Context) {
 
 	for _, net := range networks {
 		network := net.ID
-		//if network != "ethereum" {
-		//	continue
-		//}
+		if network != "ethereum" {
+			continue
+		}
 		client, err := entity.Client(ctx, network)
 		if err != nil {
 			continue
@@ -222,7 +222,7 @@ func TransferTaskOld(ctx context.Context) {
 		if len(transferTxs) > 0 {
 			//lastBlockNum = transferTxs[0].BlockNumber
 		}
-		logger.Info("TransferTask get receipts ", "lastBlockNum", lastBlockNum, "maxBlock", maxBlockNum)
+		logger.Info("TransferTask blockNum ", "lastBlockNum", lastBlockNum, "maxBlock", maxBlockNum)
 		for {
 			s0 := time.Now().UnixMilli()
 			allReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.BlockNumberGTE(lastBlockNum), transactionreceiptdecode.BlockNumberLT(lastBlockNum+10)).Order(ent.Asc(transactionreceiptdecode.FieldBlockNumber)).All(ctx)
