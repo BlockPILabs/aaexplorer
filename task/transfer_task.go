@@ -143,8 +143,11 @@ func TransferTaskNew(ctx context.Context) {
 						}
 						var tokenAll *ent.TokenAll
 						if len(curTokenAlls) == 0 {
+							logger.Info("TransferTaskNew add token ", "address", address)
 							tokenAll = addToken(ctx, client, address, w3, network)
-							continue
+							logger.Info("TransferTaskNew add token end", "address", address)
+
+							//continue
 						} else {
 							tokenAll = curTokenAlls[0]
 						}
