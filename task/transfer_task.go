@@ -211,7 +211,7 @@ func TransferTaskOld(ctx context.Context) {
 
 		transferTxs, err := client.TransferTransaction.Query().Order(ent.Desc(transfertransaction.FieldBlockNumber)).Limit(1).All(ctx)
 		//maxReceipts, err := client.TransactionReceiptDecode.Query().Order(ent.Desc(transactionreceiptdecode.FieldBlockNumber)).Limit(1).All(ctx)
-		lastBlockNum := int64(13920457)
+		lastBlockNum := int64(13930197)
 		maxBlockNum := int64(20267076)
 		//if len(maxReceipts) > 0 {
 		//	maxBlockNum = maxReceipts[0].BlockNumber
@@ -220,7 +220,7 @@ func TransferTaskOld(ctx context.Context) {
 			continue
 		}
 		if len(transferTxs) > 0 {
-			lastBlockNum = transferTxs[0].BlockNumber
+			//lastBlockNum = transferTxs[0].BlockNumber
 		}
 		logger.Info("TransferTask get receipts ", "lastBlockNum", lastBlockNum, "maxBlock", maxBlockNum)
 		for {
