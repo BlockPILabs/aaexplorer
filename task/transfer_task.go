@@ -26,9 +26,10 @@ const TokenAbi = "[{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType
 const SimpleTransferEventSign = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
 func InitTransferTask(ctx context.Context) {
+	go TransferTaskOld(ctx)
 	mevScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := mevScheduler.ScheduleWithCron(func(ctx context.Context) {
-		TransferTask(ctx)
+		TransferTaskNew(ctx)
 	}, "0/30 * * * * *")
 
 	if err == nil {
@@ -37,7 +38,7 @@ func InitTransferTask(ctx context.Context) {
 
 }
 
-func TransferTask(ctx context.Context) {
+func TransferTaskNew(ctx context.Context) {
 	logger.Info("TransferTask start.")
 	cli, err := entity.Client(ctx)
 	if err != nil {
@@ -60,18 +61,158 @@ func TransferTask(ctx context.Context) {
 		}
 		w3, err := web3.NewWeb3(net.HTTPRPC)
 		if err != nil {
-			logger.Error("TransferTask newWeb3 err ", "msg", err)
+			logger.Error("TransferTaskNew newWeb3 err ", "msg", err)
 			continue
 		}
 		w3.Eth.SetChainId(net.ChainID)
 
+		tokens, err := client.Token.Query().Where(token.TypeEQ("base")).All(ctx)
+		waddress := ""
+		if len(tokens) > 0 {
+			waddress = tokens[0].ContractAddress
+		}
+
 		transferTxs, err := client.TransferTransaction.Query().Order(ent.Desc(transfertransaction.FieldBlockNumber)).Limit(1).All(ctx)
 		maxReceipts, err := client.TransactionReceiptDecode.Query().Order(ent.Desc(transactionreceiptdecode.FieldBlockNumber)).Limit(1).All(ctx)
-		lastBlockNum := int64(13920457)
+		lastBlockNum := int64(20267076)
 		maxBlockNum := int64(0)
 		if len(maxReceipts) > 0 {
 			maxBlockNum = maxReceipts[0].BlockNumber
 		}
+		if err != nil {
+			continue
+		}
+		if len(transferTxs) > 0 {
+			lastBlockNum = transferTxs[0].BlockNumber
+		}
+		logger.Info("TransferTaskNew get receipts ", "lastBlockNum", lastBlockNum, "maxBlock", maxBlockNum)
+		for {
+
+			allReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.BlockNumberGTE(lastBlockNum), transactionreceiptdecode.BlockNumberLT(lastBlockNum+10)).Order(ent.Asc(transactionreceiptdecode.FieldBlockNumber)).All(ctx)
+			logger.Info("TransferTaskNew get receipts ", "size", len(allReceipts))
+			if err != nil {
+				break
+			}
+			lastBlockNum = lastBlockNum + 11
+			if lastBlockNum > maxBlockNum {
+				break
+			}
+			if len(allReceipts) == 0 {
+				continue
+			}
+
+			for _, receipt := range allReceipts {
+				logs := receipt.Logs
+				if len(logs) <= 2 {
+					//continue
+				}
+				if receipt.Status == "0x0" {
+					continue
+				}
+				var typeLogs []*aa.Log
+				err := json.Unmarshal([]byte(logs), &typeLogs)
+				if err != nil {
+					continue
+				}
+				if len(typeLogs) == 0 {
+					//handleNativeTransfer(client, ctx, receipt)
+					continue
+				}
+				for _, log := range typeLogs {
+					topics := log.Topics
+					if len(topics) < 3 {
+						continue
+					}
+					address := log.Address
+					sign := topics[0]
+					data := log.Data
+					if len(data) <= 2 {
+						continue
+					}
+					if strings.ToLower(address) == waddress {
+						logger.Info("TransferTaskNew waddress skip ", "txHash", receipt.ID)
+						continue
+					}
+					if sign == SimpleTransferEventSign {
+						from := utils.HexToAddress(topics[1])
+						to := utils.HexToAddress(topics[2])
+						val := hexToDecimal(substring(data, 0, 64*1))
+						curTokenAlls, err := client.TokenAll.Query().Where(tokenall.ContractAddressEqualFold(address)).All(ctx)
+						if err != nil {
+							continue
+						}
+						var tokenAll *ent.TokenAll
+						if len(curTokenAlls) == 0 {
+							tokenAll = addToken(ctx, client, address, w3, network)
+							continue
+						} else {
+							tokenAll = curTokenAlls[0]
+						}
+
+						if tokenAll == nil {
+							continue
+						}
+
+						count, err := client.TransferTransaction.Query().Where(transfertransaction.TxHashEQ(receipt.ID)).Count(ctx)
+						if count > 0 {
+							continue
+						}
+
+						decimals := tokenAll.Decimals
+						amount := decimal.NewFromBigInt(val, 0).DivRound(decimal.NewFromFloat(math.Pow10(int(decimals))), int32(decimals))
+						tx := client.TransferTransaction.Create().SetTime(receipt.Time).SetCreateTime(time.Now()).SetTxHash(receipt.ID).SetGasPrice(decimal.Zero).
+							SetGas(receipt.GasUsed).SetValue(decimal.Zero).SetTransferValue(amount).SetFromAddr(from).SetToAddr(to).
+							SetTransactionIndex(receipt.TransactionIndex).SetBlockNumber(receipt.BlockNumber).SetBlockHash(receipt.BlockHash).
+							SetTokenAddress(tokenAll.ContractAddress).SetTokenSymbol(tokenAll.Symbol).SetTokenURL(tokenAll.ImageURL)
+
+						_, err = tx.Save(ctx)
+						if err == nil {
+							logger.Info("TransferTaskNew add tx success ", "txHash", receipt.ID)
+						}
+					}
+
+				}
+			}
+
+		}
+
+	}
+}
+
+func TransferTaskOld(ctx context.Context) {
+	logger.Info("TransferTaskOld start.")
+	cli, err := entity.Client(ctx)
+	if err != nil {
+		return
+	}
+
+	networks, err := cli.Network.Query().All(ctx)
+	if len(networks) == 0 {
+		return
+	}
+
+	for _, net := range networks {
+		network := net.ID
+		//if network != "ethereum" {
+		//	continue
+		//}
+		client, err := entity.Client(ctx, network)
+		if err != nil {
+			continue
+		}
+		tokens, err := client.Token.Query().Where(token.TypeEQ("base")).All(ctx)
+		waddress := ""
+		if len(tokens) > 0 {
+			waddress = tokens[0].ContractAddress
+		}
+
+		transferTxs, err := client.TransferTransaction.Query().Order(ent.Desc(transfertransaction.FieldBlockNumber)).Limit(1).All(ctx)
+		//maxReceipts, err := client.TransactionReceiptDecode.Query().Order(ent.Desc(transactionreceiptdecode.FieldBlockNumber)).Limit(1).All(ctx)
+		lastBlockNum := int64(13920457)
+		maxBlockNum := int64(20267076)
+		//if len(maxReceipts) > 0 {
+		//	maxBlockNum = maxReceipts[0].BlockNumber
+		//}
 		if err != nil {
 			continue
 		}
@@ -108,7 +249,7 @@ func TransferTask(ctx context.Context) {
 					continue
 				}
 				if len(typeLogs) == 0 {
-					handleNativeTransfer(client, ctx, receipt)
+					//handleNativeTransfer(client, ctx, receipt)
 					continue
 				}
 				for _, log := range typeLogs {
@@ -120,6 +261,11 @@ func TransferTask(ctx context.Context) {
 					sign := topics[0]
 					data := log.Data
 					if len(data) <= 2 {
+						continue
+					}
+
+					if strings.ToLower(address) == waddress {
+						logger.Info("TransferTaskNew waddress skip ", "txHash", receipt.ID)
 						continue
 					}
 					if sign == SimpleTransferEventSign {
