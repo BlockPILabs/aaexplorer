@@ -39,7 +39,7 @@ func InitTransferTask(ctx context.Context) {
 }
 
 func TransferTaskNew(ctx context.Context) {
-	logger.Info("TransferTask start.")
+	logger.Info("TransferTaskNew start.")
 	cli, err := entity.Client(ctx)
 	if err != nil {
 		return
@@ -72,7 +72,7 @@ func TransferTaskNew(ctx context.Context) {
 			waddress = tokens[0].ContractAddress
 		}
 
-		transferTxs, err := client.TransferTransaction.Query().Order(ent.Desc(transfertransaction.FieldBlockNumber)).Limit(1).All(ctx)
+		//transferTxs, err := client.TransferTransaction.Query().Order(ent.Desc(transfertransaction.FieldBlockNumber)).Limit(1).All(ctx)
 		maxReceipts, err := client.TransactionReceiptDecode.Query().Order(ent.Desc(transactionreceiptdecode.FieldBlockNumber)).Limit(1).All(ctx)
 		lastBlockNum := int64(20267076)
 		maxBlockNum := int64(0)
@@ -82,9 +82,9 @@ func TransferTaskNew(ctx context.Context) {
 		if err != nil {
 			continue
 		}
-		if len(transferTxs) > 0 {
-			lastBlockNum = transferTxs[0].BlockNumber
-		}
+		//if len(transferTxs) > 0 {
+		//lastBlockNum = transferTxs[0].BlockNumber
+		//}
 		logger.Info("TransferTaskNew get receipts ", "lastBlockNum", lastBlockNum, "maxBlock", maxBlockNum)
 		for {
 
