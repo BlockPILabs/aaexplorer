@@ -36,4 +36,6 @@ scp -o StrictHostKeyChecking=no  ./dist/aim root@162.55.130.133:"${version_dir}/
 ssh -o StrictHostKeyChecking=no  root@162.55.130.133 ln -f -s ${version_dir}/${version} /blockpi/aaexplorer/aim || exit 1
 
 ssh -o StrictHostKeyChecking=no  root@162.55.130.133 supervisorctl restart aim
+ssh -o StrictHostKeyChecking=no  root@162.55.130.133 supervisorctl restart aim-task
+
 #./aim --home ./.aim start
