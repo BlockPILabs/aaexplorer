@@ -221,9 +221,10 @@ func TransferTaskOld(ctx context.Context) {
 		}
 		logger.Info("TransferTask get receipts ", "lastBlockNum", lastBlockNum, "maxBlock", maxBlockNum)
 		for {
-
+			s0 := time.Now().UnixMilli()
 			allReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.BlockNumberGTE(lastBlockNum), transactionreceiptdecode.BlockNumberLT(lastBlockNum+10)).Order(ent.Asc(transactionreceiptdecode.FieldBlockNumber)).All(ctx)
-			logger.Info("TransferTask get receipts ", "size", len(allReceipts))
+			e0 := time.Now().UnixMilli()
+			logger.Info("TransferTask get receipts ", "size", len(allReceipts), "spent", e0-s0)
 			if err != nil {
 				break
 			}
