@@ -68,7 +68,7 @@ func TransferTaskNew(ctx context.Context) {
 
 		//transferTxs, err := client.TransferTransaction.Query().Order(ent.Desc(transfertransaction.FieldBlockNumber)).Limit(1).All(ctx)
 		maxReceipts, err := client.TransactionReceiptDecode.Query().Order(ent.Desc(transactionreceiptdecode.FieldBlockNumber)).Limit(1).All(ctx)
-		lastBlockNum := int64(20267076)
+		lastBlockNum := int64(20269568)
 		maxBlockNum := int64(0)
 		if len(maxReceipts) > 0 {
 			maxBlockNum = maxReceipts[0].BlockNumber
@@ -125,7 +125,6 @@ func TransferTaskNew(ctx context.Context) {
 						continue
 					}
 					if strings.ToLower(address) == constConfig.WETH {
-						logger.Info("TransferTaskNew waddress skip ", "txHash", receipt.ID)
 						continue
 					}
 					if sign == SimpleTransferEventSign {
@@ -207,7 +206,7 @@ func TransferTaskOld(ctx context.Context) {
 
 		transferTxs, err := client.TransferTransaction.Query().Order(ent.Desc(transfertransaction.FieldBlockNumber)).Limit(1).All(ctx)
 		//maxReceipts, err := client.TransactionReceiptDecode.Query().Order(ent.Desc(transactionreceiptdecode.FieldBlockNumber)).Limit(1).All(ctx)
-		lastBlockNum := int64(13935792)
+		lastBlockNum := int64(13936276)
 		maxBlockNum := int64(20267076)
 		//if len(maxReceipts) > 0 {
 		//	maxBlockNum = maxReceipts[0].BlockNumber
@@ -265,7 +264,6 @@ func TransferTaskOld(ctx context.Context) {
 					}
 
 					if strings.ToLower(address) == constConfig.WETH {
-						logger.Info("TransferTaskOld waddress skip ", "txHash", receipt.ID)
 						continue
 					}
 					if sign == SimpleTransferEventSign {
