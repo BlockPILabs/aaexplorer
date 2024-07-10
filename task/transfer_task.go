@@ -66,12 +66,15 @@ func TransferTaskNew(ctx context.Context) {
 		}
 		w3.Eth.SetChainId(net.ChainID)
 
-		//transferTxs, err := client.TransferTransaction.Query().Order(ent.Desc(transfertransaction.FieldBlockNumber)).Limit(1).All(ctx)
+		transferTxs, err := client.TransferTransaction.Query().Order(ent.Desc(transfertransaction.FieldBlockNumber)).Limit(1).All(ctx)
 		maxReceipts, err := client.TransactionReceiptDecode.Query().Order(ent.Desc(transactionreceiptdecode.FieldBlockNumber)).Limit(1).All(ctx)
 		lastBlockNum := int64(20269568)
 		maxBlockNum := int64(0)
 		if len(maxReceipts) > 0 {
 			maxBlockNum = maxReceipts[0].BlockNumber
+		}
+		if len(transferTxs) > 0 {
+			lastBlockNum = transferTxs[0].BlockNumber
 		}
 		if err != nil {
 			continue
