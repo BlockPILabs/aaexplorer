@@ -66,12 +66,6 @@ func TransferTaskNew(ctx context.Context) {
 		}
 		w3.Eth.SetChainId(net.ChainID)
 
-		tokens, err := client.Token.Query().Where(token.TypeEQ("base")).All(ctx)
-		waddress := ""
-		if len(tokens) > 0 {
-			waddress = tokens[0].ContractAddress
-		}
-
 		//transferTxs, err := client.TransferTransaction.Query().Order(ent.Desc(transfertransaction.FieldBlockNumber)).Limit(1).All(ctx)
 		maxReceipts, err := client.TransactionReceiptDecode.Query().Order(ent.Desc(transactionreceiptdecode.FieldBlockNumber)).Limit(1).All(ctx)
 		lastBlockNum := int64(20267076)
@@ -130,7 +124,7 @@ func TransferTaskNew(ctx context.Context) {
 					if len(data) <= 2 {
 						continue
 					}
-					if strings.ToLower(address) == strings.ToLower(waddress) {
+					if strings.ToLower(address) == constConfig.WETH {
 						logger.Info("TransferTaskNew waddress skip ", "txHash", receipt.ID)
 						continue
 					}
@@ -210,11 +204,6 @@ func TransferTaskOld(ctx context.Context) {
 		if err != nil {
 			continue
 		}
-		tokens, err := client.Token.Query().Where(token.TypeEQ("base")).All(ctx)
-		waddress := ""
-		if len(tokens) > 0 {
-			waddress = tokens[0].ContractAddress
-		}
 
 		transferTxs, err := client.TransferTransaction.Query().Order(ent.Desc(transfertransaction.FieldBlockNumber)).Limit(1).All(ctx)
 		//maxReceipts, err := client.TransactionReceiptDecode.Query().Order(ent.Desc(transactionreceiptdecode.FieldBlockNumber)).Limit(1).All(ctx)
@@ -275,7 +264,7 @@ func TransferTaskOld(ctx context.Context) {
 						continue
 					}
 
-					if strings.ToLower(address) == strings.ToLower(waddress) {
+					if strings.ToLower(address) == constConfig.WETH {
 						logger.Info("TransferTaskOld waddress skip ", "txHash", receipt.ID)
 						continue
 					}
