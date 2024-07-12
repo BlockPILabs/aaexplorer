@@ -6,6 +6,7 @@ import (
 	constConfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaaccountdata"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/token"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/tokenall"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactiondecode"
@@ -127,12 +128,15 @@ func TransferTaskNew(ctx context.Context) {
 					if len(data) <= 2 {
 						continue
 					}
-					if strings.ToLower(address) == constConfig.WETH {
-						continue
-					}
 					if sign == SimpleTransferEventSign {
 						from := utils.HexToAddress(topics[1])
 						to := utils.HexToAddress(topics[2])
+
+						aaDatas, err := client.AaAccountData.Query().Where(aaaccountdata.IDIn(from, to)).All(ctx)
+						if len(aaDatas) == 0 {
+							continue
+						}
+
 						val := hexToDecimal(substring(data, 0, 64*1))
 						curTokenAlls, err := client.TokenAll.Query().Where(tokenall.ContractAddressEqualFold(address)).All(ctx)
 						if err != nil {
@@ -209,7 +213,7 @@ func TransferTaskOld(ctx context.Context) {
 
 		transferTxs, err := client.TransferTransaction.Query().Order(ent.Desc(transfertransaction.FieldBlockNumber)).Limit(1).All(ctx)
 		//maxReceipts, err := client.TransactionReceiptDecode.Query().Order(ent.Desc(transactionreceiptdecode.FieldBlockNumber)).Limit(1).All(ctx)
-		lastBlockNum := int64(13936276)
+		lastBlockNum := int64(13944212)
 		maxBlockNum := int64(20267076)
 		//if len(maxReceipts) > 0 {
 		//	maxBlockNum = maxReceipts[0].BlockNumber
@@ -266,12 +270,14 @@ func TransferTaskOld(ctx context.Context) {
 						continue
 					}
 
-					if strings.ToLower(address) == constConfig.WETH {
-						continue
-					}
 					if sign == SimpleTransferEventSign {
 						from := utils.HexToAddress(topics[1])
 						to := utils.HexToAddress(topics[2])
+						aaDatas, err := client.AaAccountData.Query().Where(aaaccountdata.IDIn(from, to)).All(ctx)
+						if len(aaDatas) == 0 {
+							continue
+						}
+
 						val := hexToDecimal(substring(data, 0, 64*1))
 						curTokenAlls, err := client.TokenAll.Query().Where(tokenall.ContractAddressEqualFold(address)).All(ctx)
 						if err != nil {
@@ -325,11 +331,8 @@ func addToken(ctx context.Context, client *ent.Client, address string, w3 *web3.
 		imageUrl = tokens[0].ImageURL
 	}
 
-	time.Sleep(time.Millisecond * 100)
 	symbol := GetTokenSymbol(ctx, address, TokenAbi, w3)
-	time.Sleep(time.Millisecond * 100)
 	decimals := GetTokenDecimals(ctx, address, TokenAbi, w3)
-	time.Sleep(time.Millisecond * 100)
 	tokenName := GetTokenName(ctx, address, TokenAbi, w3)
 	address = strings.ToLower(address)
 	tokenAll := client.TokenAll.Create().SetTokenPrice(decimal.Zero).SetNetwork(network).SetLastTime(time.Now().UnixMilli()).
