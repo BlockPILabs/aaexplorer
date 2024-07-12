@@ -98,7 +98,7 @@ func TransferTaskNew(ctx context.Context) {
 			if len(allReceipts) == 0 {
 				continue
 			}
-
+			var transferTxss []*ent.TransferTransactionCreate
 			for _, receipt := range allReceipts {
 				logs := receipt.Logs
 				if len(logs) <= 2 {
@@ -169,10 +169,11 @@ func TransferTaskNew(ctx context.Context) {
 							SetTransactionIndex(receipt.TransactionIndex).SetBlockNumber(receipt.BlockNumber).SetBlockHash(receipt.BlockHash).
 							SetTokenAddress(tokenAll.ContractAddress).SetTokenSymbol(tokenAll.Symbol).SetTokenURL(tokenAll.ImageURL)
 
-						_, err = tx.Save(ctx)
-						if err == nil {
-							logger.Info("TransferTaskNew add tx success ", "txHash", receipt.ID)
-						}
+						transferTxss = append(transferTxss, tx)
+						//_, err = tx.Save(ctx)
+						//if err == nil {
+						//	logger.Info("TransferTaskNew add tx success ", "txHash", receipt.ID)
+						//}
 
 						e1 := time.Now().UnixMilli()
 						logger.Info("TransferTaskNew complete once ", "spent", e1-s1)
@@ -180,9 +181,13 @@ func TransferTaskNew(ctx context.Context) {
 
 				}
 			}
-
-			e0 := time.Now().UnixMilli()
-			logger.Info("TransferTaskNew complete all ", "spent", e0-s0)
+			if len(transferTxss) > 0 {
+				_, err := client.TransferTransaction.CreateBulk(transferTxss[:]...).Save(ctx)
+				e0 := time.Now().UnixMilli()
+				if err == nil {
+					logger.Info("TransferTaskNew complete all ", "spent", e0-s0)
+				}
+			}
 
 		}
 
@@ -213,7 +218,7 @@ func TransferTaskOld(ctx context.Context) {
 
 		transferTxs, err := client.TransferTransaction.Query().Order(ent.Desc(transfertransaction.FieldBlockNumber)).Limit(1).All(ctx)
 		//maxReceipts, err := client.TransactionReceiptDecode.Query().Order(ent.Desc(transactionreceiptdecode.FieldBlockNumber)).Limit(1).All(ctx)
-		lastBlockNum := int64(13944212)
+		lastBlockNum := int64(13945144)
 		maxBlockNum := int64(20267076)
 		//if len(maxReceipts) > 0 {
 		//	maxBlockNum = maxReceipts[0].BlockNumber
@@ -240,7 +245,7 @@ func TransferTaskOld(ctx context.Context) {
 			if len(allReceipts) == 0 {
 				continue
 			}
-
+			var transferTxss []*ent.TransferTransactionCreate
 			for _, receipt := range allReceipts {
 				logs := receipt.Logs
 				if len(logs) <= 2 {
@@ -307,12 +312,21 @@ func TransferTaskOld(ctx context.Context) {
 							SetTransactionIndex(receipt.TransactionIndex).SetBlockNumber(receipt.BlockNumber).SetBlockHash(receipt.BlockHash).
 							SetTokenAddress(tokenAll.ContractAddress).SetTokenSymbol(tokenAll.Symbol).SetTokenURL(tokenAll.ImageURL)
 
-						_, err = tx.Save(ctx)
-						if err == nil {
-							logger.Info("TransferTaskOld add tx success ", "txHash", receipt.ID)
-						}
+						transferTxss = append(transferTxss, tx)
+						//_, err = tx.Save(ctx)
+						//if err == nil {
+						//	logger.Info("TransferTaskOld add tx success ", "txHash", receipt.ID)
+						//}
 					}
 
+				}
+			}
+
+			if len(transferTxss) > 0 {
+				_, err := client.TransferTransaction.CreateBulk(transferTxss[:]...).Save(ctx)
+				e0 := time.Now().UnixMilli()
+				if err == nil {
+					logger.Info("TransferTaskNew complete all ", "spent", e0-s0)
 				}
 			}
 
