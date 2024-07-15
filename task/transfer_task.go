@@ -131,14 +131,20 @@ func TransferTaskNew(ctx context.Context) {
 					if sign == SimpleTransferEventSign {
 						from := utils.HexToAddress(topics[1])
 						to := utils.HexToAddress(topics[2])
-
+						s2 := time.Now().UnixMilli()
 						aaDatas, err := client.AaAccountData.Query().Where(aaaccountdata.IDIn(from, to)).All(ctx)
+						e2 := time.Now().UnixMilli()
+
+						logger.Info("TransferTaskNew complete step1 ", "spent", e2-s2)
 						if len(aaDatas) == 0 {
 							continue
 						}
 
 						val := hexToDecimal(substring(data, 0, 64*1))
+						s3 := time.Now().UnixMilli()
 						curTokenAlls, err := client.TokenAll.Query().Where(tokenall.ContractAddressEqualFold(address)).All(ctx)
+						e3 := time.Now().UnixMilli()
+						logger.Info("TransferTaskNew complete step2 ", "spent", e3-s3)
 						if err != nil {
 							continue
 						}
@@ -156,8 +162,10 @@ func TransferTaskNew(ctx context.Context) {
 						if tokenAll == nil {
 							continue
 						}
-
+						s4 := time.Now().UnixMilli()
 						count, err := client.TransferTransaction.Query().Where(transfertransaction.TxHashEQ(receipt.ID)).Count(ctx)
+						e4 := time.Now().UnixMilli()
+						logger.Info("TransferTaskNew complete step3 ", "spent", e4-s4)
 						if count > 0 {
 							continue
 						}
@@ -182,7 +190,10 @@ func TransferTaskNew(ctx context.Context) {
 				}
 			}
 			if len(transferTxss) > 0 {
+				s5 := time.Now().UnixMilli()
 				_, err := client.TransferTransaction.CreateBulk(transferTxss[:]...).Save(ctx)
+				e5 := time.Now().UnixMilli()
+				logger.Info("TransferTaskNew complete step4 ", "spent", e5-s5)
 				e0 := time.Now().UnixMilli()
 				if err == nil {
 					logger.Info("TransferTaskNew complete all ", "spent", e0-s0)
@@ -326,7 +337,7 @@ func TransferTaskOld(ctx context.Context) {
 				_, err := client.TransferTransaction.CreateBulk(transferTxss[:]...).Save(ctx)
 				e0 := time.Now().UnixMilli()
 				if err == nil {
-					logger.Info("TransferTaskNew complete all ", "spent", e0-s0)
+					logger.Info("TransferTaskOld batch complete all ", "spent", e0-s0)
 				}
 			}
 
