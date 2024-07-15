@@ -136,7 +136,6 @@ func TransferTaskNew(ctx context.Context) {
 					continue
 				}
 				for _, log := range typeLogs {
-					s1 := time.Now().UnixMilli()
 					topics := log.Topics
 					if len(topics) < 3 {
 						continue
@@ -198,8 +197,7 @@ func TransferTaskNew(ctx context.Context) {
 						//	logger.Info("TransferTaskNew add tx success ", "txHash", receipt.ID)
 						//}
 
-						e1 := time.Now().UnixMilli()
-						logger.Info("TransferTaskNew complete once ", "spent", e1-s1)
+						//logger.Info("TransferTaskNew complete once ", "spent", e1-s1)
 					}
 
 				}
