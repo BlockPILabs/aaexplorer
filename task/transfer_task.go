@@ -6,9 +6,7 @@ import (
 	constConfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
-	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaaccountdata"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/token"
-	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/tokenall"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactiondecode"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactionreceiptdecode"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transfertransaction"
@@ -80,18 +78,39 @@ func TransferTaskNew(ctx context.Context) {
 		if err != nil {
 			continue
 		}
-		//if len(transferTxs) > 0 {
-		//lastBlockNum = transferTxs[0].BlockNumber
-		//}
+		aaAccounts, err := client.AaAccountData.Query().All(ctx)
+		var accountMap = make(map[string]*ent.AaAccountData)
+		if len(aaAccounts) > 0 {
+			for _, aaAccount := range aaAccounts {
+				accountMap[aaAccount.ID] = aaAccount
+			}
+		}
+		tokenAlls, err := client.TokenAll.Query().All(ctx)
+		var tokenMap = make(map[string]*ent.TokenAll)
+		if len(tokenAlls) > 0 {
+			for _, tokenAll := range tokenAlls {
+				if len(tokenAll.ContractAddress) == 0 {
+					continue
+				}
+				tokenMap[tokenAll.ContractAddress] = tokenAll
+			}
+		}
 		logger.Info("TransferTaskNew get receipts ", "lastBlockNum", lastBlockNum, "maxBlock", maxBlockNum)
 		for {
 			s0 := time.Now().UnixMilli()
-			allReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.BlockNumberGTE(lastBlockNum), transactionreceiptdecode.BlockNumberLT(lastBlockNum+10)).Order(ent.Asc(transactionreceiptdecode.FieldBlockNumber)).All(ctx)
+			allReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.BlockNumberGTE(lastBlockNum), transactionreceiptdecode.BlockNumberLT(lastBlockNum+20)).Order(ent.Asc(transactionreceiptdecode.FieldBlockNumber)).All(ctx)
 			logger.Info("TransferTaskNew get receipts ", "size", len(allReceipts))
 			if err != nil {
 				break
 			}
-			lastBlockNum = lastBlockNum + 11
+			transferTxs, err := client.TransferTransaction.Query().Where(transfertransaction.BlockNumberGTE(lastBlockNum), transfertransaction.BlockNumberLT(lastBlockNum+20)).All(ctx)
+			var transferTxMap = make(map[string]*ent.TransferTransaction)
+			if len(transferTxs) > 0 {
+				for _, transferTx := range transferTxs {
+					transferTxMap[transferTx.TxHash] = transferTx
+				}
+			}
+			lastBlockNum = lastBlockNum + 21
 			if lastBlockNum > maxBlockNum {
 				break
 			}
@@ -131,44 +150,40 @@ func TransferTaskNew(ctx context.Context) {
 					if sign == SimpleTransferEventSign {
 						from := utils.HexToAddress(topics[1])
 						to := utils.HexToAddress(topics[2])
-						s2 := time.Now().UnixMilli()
-						aaDatas, err := client.AaAccountData.Query().Where(aaaccountdata.IDIn(from, to)).All(ctx)
-						e2 := time.Now().UnixMilli()
+						//s2 := time.Now().UnixMilli()
+						//aaDatas, err := client.AaAccountData.Query().Where(aaaccountdata.IDIn(from, to)).All(ctx)
+						//e2 := time.Now().UnixMilli()
 
-						logger.Info("TransferTaskNew complete step1 ", "spent", e2-s2)
-						if len(aaDatas) == 0 {
+						//logger.Info("TransferTaskNew complete step1 ", "spent", e2-s2)
+						fromData := accountMap[from]
+						toData := accountMap[to]
+
+						if fromData == nil && toData == nil {
 							continue
 						}
 
 						val := hexToDecimal(substring(data, 0, 64*1))
-						s3 := time.Now().UnixMilli()
-						curTokenAlls, err := client.TokenAll.Query().Where(tokenall.ContractAddressEqualFold(address)).All(ctx)
-						e3 := time.Now().UnixMilli()
-						logger.Info("TransferTaskNew complete step2 ", "spent", e3-s3)
-						if err != nil {
-							continue
-						}
-						var tokenAll *ent.TokenAll
-						if len(curTokenAlls) == 0 {
-							logger.Info("TransferTaskNew add token ", "address", address)
+						var tokenAll = tokenMap[strings.ToLower(address)]
+						if tokenAll == nil {
 							tokenAll = addToken(ctx, client, address, w3, network)
-							logger.Info("TransferTaskNew add token end", "address", address)
-
-							//continue
-						} else {
-							tokenAll = curTokenAlls[0]
 						}
-
 						if tokenAll == nil {
 							continue
 						}
-						s4 := time.Now().UnixMilli()
-						count, err := client.TransferTransaction.Query().Where(transfertransaction.TxHashEQ(receipt.ID)).Count(ctx)
-						e4 := time.Now().UnixMilli()
-						logger.Info("TransferTaskNew complete step3 ", "spent", e4-s4)
-						if count > 0 {
+						tokenMap[strings.ToLower(address)] = tokenAll
+
+						existTx := transferTxMap[receipt.ID]
+						if existTx != nil {
 							continue
 						}
+
+						//s4 := time.Now().UnixMilli()
+						//count, err := client.TransferTransaction.Query().Where(transfertransaction.TxHashEQ(receipt.ID)).Count(ctx)
+						//e4 := time.Now().UnixMilli()
+						//logger.Info("TransferTaskNew complete step3 ", "spent", e4-s4)
+						//if count > 0 {
+						//	continue
+						//}
 
 						decimals := tokenAll.Decimals
 						amount := decimal.NewFromBigInt(val, 0).DivRound(decimal.NewFromFloat(math.Pow10(int(decimals))), int32(decimals))
@@ -227,18 +242,27 @@ func TransferTaskOld(ctx context.Context) {
 			continue
 		}
 
-		transferTxs, err := client.TransferTransaction.Query().Order(ent.Desc(transfertransaction.FieldBlockNumber)).Limit(1).All(ctx)
-		//maxReceipts, err := client.TransactionReceiptDecode.Query().Order(ent.Desc(transactionreceiptdecode.FieldBlockNumber)).Limit(1).All(ctx)
-		lastBlockNum := int64(13981703)
+		lastBlockNum := int64(13983822)
 		maxBlockNum := int64(20267076)
-		//if len(maxReceipts) > 0 {
-		//	maxBlockNum = maxReceipts[0].BlockNumber
-		//}
 		if err != nil {
 			continue
 		}
-		if len(transferTxs) > 0 {
-			//lastBlockNum = transferTxs[0].BlockNumber
+		aaAccounts, err := client.AaAccountData.Query().All(ctx)
+		var accountMap = make(map[string]*ent.AaAccountData)
+		if len(aaAccounts) > 0 {
+			for _, aaAccount := range aaAccounts {
+				accountMap[aaAccount.ID] = aaAccount
+			}
+		}
+		tokenAlls, err := client.TokenAll.Query().All(ctx)
+		var tokenMap = make(map[string]*ent.TokenAll)
+		if len(tokenAlls) > 0 {
+			for _, tokenAll := range tokenAlls {
+				if len(tokenAll.ContractAddress) == 0 {
+					continue
+				}
+				tokenMap[tokenAll.ContractAddress] = tokenAll
+			}
 		}
 		logger.Info("TransferTaskOld blockNum ", "lastBlockNum", lastBlockNum, "maxBlock", maxBlockNum)
 		for {
@@ -248,6 +272,13 @@ func TransferTaskOld(ctx context.Context) {
 			logger.Info("TransferTaskOld get receipts ", "size", len(allReceipts), "spent", e0-s0)
 			if err != nil {
 				break
+			}
+			transferTxs, err := client.TransferTransaction.Query().Where(transfertransaction.BlockNumberGTE(lastBlockNum), transfertransaction.BlockNumberLT(lastBlockNum+20)).All(ctx)
+			var transferTxMap = make(map[string]*ent.TransferTransaction)
+			if len(transferTxs) > 0 {
+				for _, transferTx := range transferTxs {
+					transferTxMap[transferTx.TxHash] = transferTx
+				}
 			}
 			lastBlockNum = lastBlockNum + 21
 			if lastBlockNum > maxBlockNum {
@@ -260,7 +291,7 @@ func TransferTaskOld(ctx context.Context) {
 			for _, receipt := range allReceipts {
 				logs := receipt.Logs
 				if len(logs) <= 2 {
-					//continue
+					continue
 				}
 				if receipt.Status == "0x0" {
 					continue
@@ -289,32 +320,32 @@ func TransferTaskOld(ctx context.Context) {
 					if sign == SimpleTransferEventSign {
 						from := utils.HexToAddress(topics[1])
 						to := utils.HexToAddress(topics[2])
-						aaDatas, err := client.AaAccountData.Query().Where(aaaccountdata.IDIn(from, to)).All(ctx)
-						if len(aaDatas) == 0 {
+						fromData := accountMap[from]
+						toData := accountMap[to]
+
+						if fromData == nil && toData == nil {
 							continue
 						}
 
 						val := hexToDecimal(substring(data, 0, 64*1))
-						curTokenAlls, err := client.TokenAll.Query().Where(tokenall.ContractAddressEqualFold(address)).All(ctx)
-						if err != nil {
-							continue
-						}
-						var tokenAll *ent.TokenAll
-						if len(curTokenAlls) == 0 {
+						//curTokenAlls, err := client.TokenAll.Query().Where(tokenall.ContractAddressEqualFold(address)).All(ctx)
+						//if err != nil {
+						//	continue
+						//}
+						var tokenAll = tokenMap[strings.ToLower(address)]
+						if tokenAll == nil {
 							//tokenAll = addToken(ctx, client, address, w3, network)
 							continue
-						} else {
-							tokenAll = curTokenAlls[0]
 						}
 
-						if tokenAll == nil {
+						existTx := transferTxMap[receipt.ID]
+						if existTx != nil {
 							continue
 						}
-
-						count, err := client.TransferTransaction.Query().Where(transfertransaction.TxHashEQ(receipt.ID)).Count(ctx)
-						if count > 0 {
-							continue
-						}
+						//count, _ := client.TransferTransaction.Query().Where(transfertransaction.TxHashEQ(receipt.ID)).Count(ctx)
+						//if count > 0 {
+						//	continue
+						//}
 
 						decimals := tokenAll.Decimals
 						amount := decimal.NewFromBigInt(val, 0).DivRound(decimal.NewFromFloat(math.Pow10(int(decimals))), int32(decimals))
@@ -324,10 +355,6 @@ func TransferTaskOld(ctx context.Context) {
 							SetTokenAddress(tokenAll.ContractAddress).SetTokenSymbol(tokenAll.Symbol).SetTokenURL(tokenAll.ImageURL)
 
 						transferTxss = append(transferTxss, tx)
-						//_, err = tx.Save(ctx)
-						//if err == nil {
-						//	logger.Info("TransferTaskOld add tx success ", "txHash", receipt.ID)
-						//}
 					}
 
 				}
