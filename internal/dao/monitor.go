@@ -101,7 +101,7 @@ func (dao *monitorDao) ListMonitorDao(ctx context.Context, req vo.ListWatchingAd
 				TotalUserOps:    userOpsNum,
 			})
 		case "aa":
-			toOpsCount, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.TargetEqualFold(monitorItem.MonitorAddress)).Count(ctx)
+			toOpsCount, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.SenderEqualFold(monitorItem.MonitorAddress)).Count(ctx)
 			if err != nil {
 				toOpsCount = 0
 			}
