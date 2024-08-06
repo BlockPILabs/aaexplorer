@@ -68,7 +68,7 @@ func (dao *monitorDao) ListMonitorDao(ctx context.Context, req vo.ListWatchingAd
 			userOpsNum := int64(0)
 			if len(bundlerInfo) > 0 {
 				profits = bundlerInfo[0].FeeEarnedD1
-				userOpsNum = bundlerInfo[0].UserOpsNum
+				userOpsNum = bundlerInfo[0].UserOpsNumD1
 			}
 
 			list = append(list, &vo.WatchingAddress{
@@ -89,7 +89,7 @@ func (dao *monitorDao) ListMonitorDao(ctx context.Context, req vo.ListWatchingAd
 			userOpsNum := int64(0)
 			if len(paymaster) > 0 {
 				gasSponsored = paymaster[0].GasSponsoredD1
-				userOpsNum = paymaster[0].UserOpsNum
+				userOpsNum = paymaster[0].UserOpsNumD1
 			}
 
 			list = append(list, &vo.WatchingAddress{
