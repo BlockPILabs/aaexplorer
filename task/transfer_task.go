@@ -240,7 +240,7 @@ func TransferTaskOld(ctx context.Context) {
 			continue
 		}
 
-		lastBlockNum := int64(13983822)
+		lastBlockNum := int64(18133903)
 		maxBlockNum := int64(20267076)
 		if err != nil {
 			continue

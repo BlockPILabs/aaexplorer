@@ -188,7 +188,7 @@ func doRefresh(ctx context.Context, client *ent.Client, tokens []*ent.Token, w3 
 			continue
 		}
 		nativeBalance := decimal.NewFromBigInt(balance, 0).Div(decimal.NewFromInt(10).Pow(decimal.NewFromInt(constConfig.DefaultDecimals)))
-		nativeTokens, err := client.Token.Query().Where(token.TypeEQ("base"), token.NetworkEQ(network)).Limit(1).All(ctx)
+		nativeTokens, err := client.Token.Query().Where(token.TypeEQ("native"), token.NetworkEQ(network)).Limit(1).All(ctx)
 		nativePrice := decimal.Zero
 		nativeSymbol := ""
 		if len(nativeTokens) > 0 {
@@ -246,8 +246,14 @@ func oldRefresh(ctx context.Context, client *ent.Client, address string, tokens 
 			if detail.AssetAmount.Cmp(decimal.Zero) == 0 {
 				continue
 			}
+
 			contractAddress := strings.ToLower(detail.ContractAddress)
-			price := tokenMap[contractAddress]
+			price := decimal.Zero
+			if len(contractAddress) == 0 {
+				price = nativePrice
+			} else {
+				price = tokenMap[contractAddress]
+			}
 			oneValue := price.Mul(detail.AssetAmount)
 			totalValue = totalValue.Add(oneValue)
 			client.AaAssetDetail.Update().SetAssetValue(oneValue).SetLastTime(time.Now().UnixMilli()).Where(aaassetdetail.IDEQ(detail.ID)).Exec(ctx)
