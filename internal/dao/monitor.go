@@ -12,6 +12,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
 	"github.com/shopspring/decimal"
 	"strings"
+	"time"
 )
 
 type monitorDao struct {
@@ -101,7 +102,8 @@ func (dao *monitorDao) ListMonitorDao(ctx context.Context, req vo.ListWatchingAd
 				TotalUserOps:    userOpsNum,
 			})
 		case "aa":
-			toOpsCount, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.SenderEqualFold(monitorItem.MonitorAddress)).Count(ctx)
+			day1 := time.UnixMilli(time.Now().UnixMilli() - 24*3600*1000)
+			toOpsCount, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.SenderEqualFold(monitorItem.MonitorAddress), aauseropsinfo.TimeGTE(day1)).Count(ctx)
 			if err != nil {
 				toOpsCount = 0
 			}
@@ -115,7 +117,8 @@ func (dao *monitorDao) ListMonitorDao(ctx context.Context, req vo.ListWatchingAd
 				TotalUserOps:    int64(toOpsCount),
 			})
 		case "entry_point":
-			toTxCount, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.ToAddrEqualFold(monitorItem.MonitorAddress)).Count(ctx)
+			day1 := time.UnixMilli(time.Now().UnixMilli() - 24*3600*1000)
+			toTxCount, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.ToAddrEqualFold(monitorItem.MonitorAddress), aatransactioninfo.TimeGTE(day1)).Count(ctx)
 			if err != nil {
 				toTxCount = 0
 			}
