@@ -139,6 +139,10 @@ func (*bundlerService) GetBundlerTransfers(ctx context.Context, req vo.BundlerTr
 	}
 	var details []vo.TransferInfo
 	for _, tx := range transferTxs {
+		tokenUrl := ""
+		if len(tx.TokenURL) > 0 {
+			tokenUrl = config.UrlPrefix + tx.TokenURL
+		}
 		info := vo.TransferInfo{
 			Id:          tx.ID,
 			TxnHash:     tx.TxHash,
@@ -148,7 +152,7 @@ func (*bundlerService) GetBundlerTransfers(ctx context.Context, req vo.BundlerTr
 			To:          tx.ToAddr,
 			Value:       tx.TransferValue,
 			TokenSymbol: tx.TokenSymbol,
-			TokenImage:  config.UrlPrefix + tx.TokenURL,
+			TokenImage:  tokenUrl,
 		}
 		details = append(details, info)
 	}
