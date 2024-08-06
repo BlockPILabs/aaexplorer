@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aaasset"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aatransactioninfo"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aauseropsinfo"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/bundlerinfo"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/monitor"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/paymasterinfo"
@@ -99,6 +101,10 @@ func (dao *monitorDao) ListMonitorDao(ctx context.Context, req vo.ListWatchingAd
 				TotalUserOps:    userOpsNum,
 			})
 		case "aa":
+			toOpsCount, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.TargetEqualFold(monitorItem.MonitorAddress)).Count(ctx)
+			if err != nil {
+				toOpsCount = 0
+			}
 			list = append(list, &vo.WatchingAddress{
 				Network:         req.Network,
 				AddressType:     "Account",
@@ -106,9 +112,13 @@ func (dao *monitorDao) ListMonitorDao(ctx context.Context, req vo.ListWatchingAd
 				Balance:         monitorBalance,
 				Profits24H:      decimal.Zero,
 				SponsoredGas24H: decimal.Zero,
-				TotalUserOps:    int64(0),
+				TotalUserOps:    int64(toOpsCount),
 			})
 		case "entry_point":
+			toTxCount, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.ToAddrEqualFold(monitorItem.MonitorAddress)).Count(ctx)
+			if err != nil {
+				toTxCount = 0
+			}
 			list = append(list, &vo.WatchingAddress{
 				Network:         req.Network,
 				AddressType:     "Contract Account",
@@ -116,7 +126,7 @@ func (dao *monitorDao) ListMonitorDao(ctx context.Context, req vo.ListWatchingAd
 				Balance:         monitorBalance,
 				Profits24H:      decimal.Zero,
 				SponsoredGas24H: decimal.Zero,
-				TotalUserOps:    int64(0),
+				TotalUserOps:    int64(toTxCount),
 			})
 		default:
 			addrType := ""
