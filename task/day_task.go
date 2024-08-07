@@ -111,6 +111,9 @@ func DoDayStatistic() {
 
 			hashs := getKeySlice(txHashMap)
 			receipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(hashs[:]...)).All(context.Background())
+			if err != nil {
+				logger.Error("DayTask-error getReceipts", "err", err)
+			}
 			costMap := getCostMap(receipts)
 			earnMap := getEarnMap(receiveMap, costMap)
 
@@ -267,6 +270,7 @@ func calDailyStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, allTxHash
 		}
 		receipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(hashes[:]...)).All(context.Background())
 		if err != nil {
+			logger.Error("DayTask-err calDailyStatistic", "size", len(hashes), "err", err)
 			return nil
 		}
 
