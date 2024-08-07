@@ -110,9 +110,24 @@ func DoDayStatistic() {
 			}
 
 			hashs := getKeySlice(txHashMap)
-			receipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(hashs[:]...)).All(context.Background())
-			if err != nil {
-				logger.Error("DayTask-error getReceipts", "err", err)
+			var receipts []*ent.TransactionReceiptDecode
+			var partHashes []string
+			for _, oneHash := range hashs {
+				partHashes = append(partHashes, oneHash)
+				if len(partHashes) >= 60000 {
+					partReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(partHashes[:]...)).All(context.Background())
+					partHashes = []string{}
+					if err != nil {
+						logger.Error("DayTask-error getReceipts", "err", err)
+						continue
+					}
+					if len(partReceipts) > 0 {
+						for _, part := range partReceipts {
+							receipts = append(receipts, part)
+						}
+					}
+				}
+
 			}
 			costMap := getCostMap(receipts)
 			earnMap := getEarnMap(receiveMap, costMap)
@@ -268,9 +283,26 @@ func calDailyStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, allTxHash
 		for key, _ := range txHashes {
 			hashes = append(hashes, key)
 		}
-		receipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(hashes[:]...)).All(context.Background())
-		if err != nil {
-			logger.Error("DayTask-err calDailyStatistic", "size", len(hashes), "err", err)
+		var receipts []*ent.TransactionReceiptDecode
+		var partHashes []string
+		for _, oneHash := range hashes {
+			partHashes = append(partHashes, oneHash)
+			if len(partHashes) >= 60000 {
+				partReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(partHashes[:]...)).All(context.Background())
+				partHashes = []string{}
+				if err != nil {
+					logger.Error("DayTask-error getReceipts", "err", err)
+					continue
+				}
+				if len(partReceipts) > 0 {
+					for _, part := range partReceipts {
+						receipts = append(receipts, part)
+					}
+				}
+			}
+
+		}
+		if len(receipts) == 0 {
 			return nil
 		}
 
