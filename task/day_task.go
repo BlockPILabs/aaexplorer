@@ -26,9 +26,10 @@ import (
 const TimeLayout = "2006-01-02 15:04:05"
 
 func InitDayStatis() {
+	go DoDayStatistic()
 	dayScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := dayScheduler.ScheduleWithCron(func(ctx context.Context) {
-		doDayStatistic()
+		DoDayStatistic()
 	}, "0 15 0 * * *")
 	if err == nil {
 		log.Print("dayStatistic has been scheduled")
@@ -36,7 +37,8 @@ func InitDayStatis() {
 
 }
 
-func doDayStatistic() {
+func DoDayStatistic() {
+	logger.Info("DayTask-start ")
 	cli, err := entity.Client(context.Background())
 	if err != nil {
 		return
@@ -68,11 +70,15 @@ func doDayStatistic() {
 			if startTime.Compare(dayStart) >= 0 {
 				break
 			}
+			s0 := time.Now().UnixMilli()
 			opsInfos, err := client.AAUserOpsInfo.Query().
 				Where(
 					aauseropsinfo.TxTimeGTE(startTime.Unix()),
 					aauseropsinfo.TxTimeLT(endTime.Unix())).
 				All(context.Background())
+
+			e0 := time.Now().UnixMilli()
+			logger.Info("DayTask-spent0 ", "time", e0-s0)
 			if err != nil {
 				log.Println(err)
 				break
@@ -121,7 +127,10 @@ func doDayStatistic() {
 				addTxHash(opsInfo.TxHash, opsInfo, txHashes, "day")
 			}
 
+			s1 := time.Now().UnixMilli()
 			dailyStatisticDays := calDailyStatistic(client, opsInfos, txHashes, network, txCount, startTime)
+			e1 := time.Now().UnixMilli()
+			logger.Info("DayTask-spent1 ", "time", e1-s1)
 
 			bundlerList := calBundlerStatisDay(client, bundlerMap, earnMap, totalBundleMap, startTime, network)
 			paymasterList := calPaymasterStatisDay(client, paymasterMap, startTime, network)
@@ -143,6 +152,7 @@ func doDayStatistic() {
 }
 
 func bulkInsertDailyStatistic(ctx context.Context, client *ent.Client, data []*ent.DailyStatisticDayCreate) error {
+	logger.Info("DayTask-bulkInsertDailyStatistic ", "size", len(data), "data", data)
 	if len(data) == 0 {
 		return nil
 	}
@@ -295,7 +305,7 @@ func calDailyStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, allTxHash
 
 		resp = append(resp, dailyStatistic)
 	}
-
+	logger.Info("DayTask-calDailyStatistic ", "resp", resp)
 	return resp
 }
 
