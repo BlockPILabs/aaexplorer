@@ -78,7 +78,7 @@ func DoDayStatistic() {
 				All(context.Background())
 
 			e0 := time.Now().UnixMilli()
-			logger.Info("DayTask-spent0 ", "time", e0-s0)
+			logger.Info("DayTask-spent0 ", "time", e0-s0, "network", network)
 			if err != nil {
 				log.Println(err)
 				break
@@ -118,7 +118,7 @@ func DoDayStatistic() {
 					partReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(partHashes[:]...)).All(context.Background())
 					partHashes = []string{}
 					if err != nil {
-						logger.Error("DayTask-error getReceipts", "err", err)
+						logger.Error("DayTask-error getReceipts", "err", err, "network", network)
 						continue
 					}
 					if len(partReceipts) > 0 {
@@ -148,7 +148,7 @@ func DoDayStatistic() {
 			s1 := time.Now().UnixMilli()
 			dailyStatisticDays := calDailyStatistic(client, opsInfos, txHashes, network, txCount, startTime)
 			e1 := time.Now().UnixMilli()
-			logger.Info("DayTask-spent1 ", "time", e1-s1)
+			logger.Info("DayTask-spent1 ", "time", e1-s1, "network", network)
 
 			bundlerList := calBundlerStatisDay(client, bundlerMap, earnMap, totalBundleMap, startTime, network)
 			paymasterList := calPaymasterStatisDay(client, paymasterMap, startTime, network)
