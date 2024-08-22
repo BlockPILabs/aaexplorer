@@ -2,6 +2,9 @@ package task
 
 import (
 	"context"
+	"log"
+	"time"
+
 	internalconfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
@@ -19,8 +22,6 @@ import (
 	"github.com/BlockPILabs/aaexplorer/third/moralis"
 	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
-	"log"
-	"time"
 )
 
 const TimeLayout = "2006-01-02 15:04:05"
@@ -129,6 +130,17 @@ func DoDayStatistic() {
 				}
 
 			}
+			partReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(partHashes[:]...)).All(context.Background())
+			partHashes = []string{}
+			if err != nil {
+				logger.Error("DayTask-error getReceipts", "err", err, "network", network)
+				continue
+			}
+			if len(partReceipts) > 0 {
+				for _, part := range partReceipts {
+					receipts = append(receipts, part)
+				}
+			}
 			costMap := getCostMap(receipts)
 			earnMap := getEarnMap(receiveMap, costMap)
 
@@ -154,10 +166,10 @@ func DoDayStatistic() {
 			paymasterList := calPaymasterStatisDay(client, paymasterMap, startTime, network)
 			factoryList := calFactoryStatisDay(client, factoryMap, startTime, network)
 
+			bulkInsertDailyStatistic(context.Background(), client, dailyStatisticDays)
 			bulkInsertBundlerStatsDay(context.Background(), client, bundlerList)
 			bulkInsertPaymasterStatsDay(context.Background(), client, paymasterList)
 			bulkInsertFactoryStatsDay(context.Background(), client, factoryList)
-			bulkInsertDailyStatistic(context.Background(), client, dailyStatisticDays)
 
 			//saveWhaleStatisticDay(context.Background(), client, startTime)
 			client.TaskRecord.Update().SetLastTime(startTime).Where(taskrecord.IDEQ(taskRecords[0].ID)).Exec(context.Background())
@@ -301,6 +313,17 @@ func calDailyStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, allTxHash
 				}
 			}
 
+		}
+		partReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(partHashes[:]...)).All(context.Background())
+		partHashes = []string{}
+		if err != nil {
+			logger.Error("DayTask-error getReceipts", "err", err)
+			continue
+		}
+		if len(partReceipts) > 0 {
+			for _, part := range partReceipts {
+				receipts = append(receipts, part)
+			}
 		}
 		if len(receipts) == 0 {
 			return nil

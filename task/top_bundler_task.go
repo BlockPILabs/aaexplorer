@@ -2,6 +2,9 @@ package task
 
 import (
 	"context"
+	"log"
+	"time"
+
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/bundlerinfo"
@@ -10,8 +13,6 @@ import (
 	"github.com/BlockPILabs/aaexplorer/service"
 	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
-	"log"
-	"time"
 )
 
 func InitTask() {
@@ -257,7 +258,7 @@ func saveOrUpdateBundlerDay(client *ent.Client, bundler string, info *ent.Bundle
 		}
 	}
 
-	log.Printf("top bundler day, single statistic sync success, bundler:%s", info.ID)
+	logger.Info("top bundler day, single statistic sync success, ", "bundler", info.ID)
 
 }
 
@@ -452,7 +453,7 @@ func doTopBundlersHour(timeRange int) {
 				}
 			}
 		}
-		log.Printf("top bundler hour statistic success timeRange:%s, network:%s", string(timeRange), network)
+		logger.Info("top bundler hour statistic success ", "timeRange", string(timeRange), "network", network)
 	}
 
 }
@@ -553,9 +554,9 @@ func saveOrUpdateBundler(client *ent.Client, bundler string, info *ent.BundlerIn
 		}
 
 		if err != nil {
-			log.Printf("Update bundler err, %s\n", err)
+			logger.Error("Update bundler err, ", "err", err)
 		}
 	}
-	log.Printf("top bundler hour, single statistic sync success, bundler:%s", info.ID)
+	logger.Info("top bundler hour, single statistic sync success,", "bundler", info.ID)
 
 }

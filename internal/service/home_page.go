@@ -2,6 +2,11 @@ package service
 
 import (
 	"context"
+	"log"
+	"math"
+	"sort"
+	"time"
+
 	"github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
@@ -11,10 +16,6 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/mevtransaction"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
 	"github.com/shopspring/decimal"
-	"log"
-	"math"
-	"sort"
-	"time"
 )
 
 const DaySecond = 24 * 3600
@@ -168,7 +169,7 @@ func GetAATxnDominance(ctx context.Context, req vo.AATxnDominanceRequest) (*vo.A
 		}
 		resp = getDominanceResponseHour(dailyStatisticHours)
 	} else if timeRange == config.RangeD7 {
-		startTime := time.Now().Add(-7 * 24 * time.Hour)
+		startTime := time.Now().Add(-8 * 24 * time.Hour)
 		dailyStatisticDays, err := client.DailyStatisticDay.Query().Where(dailystatisticday.StatisticTimeGTE(startTime.UnixMilli()), dailystatisticday.NetworkEqualFold(network)).All(ctx)
 		if err != nil {
 			log.Println(err)
@@ -176,7 +177,7 @@ func GetAATxnDominance(ctx context.Context, req vo.AATxnDominanceRequest) (*vo.A
 		}
 		resp = getDominanceResponseDay(dailyStatisticDays)
 	} else if timeRange == config.RangeD30 {
-		startTime := time.Now().Add(-150 * 24 * time.Hour)
+		startTime := time.Now().Add(-31 * 24 * time.Hour)
 		dailyStatisticDays, err := client.DailyStatisticDay.Query().Where(dailystatisticday.StatisticTimeGTE(startTime.UnixMilli()), dailystatisticday.NetworkEqualFold(network)).All(ctx)
 		if err != nil {
 			log.Println(err)

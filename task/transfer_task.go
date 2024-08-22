@@ -3,6 +3,10 @@ package task
 import (
 	"context"
 	"encoding/json"
+	"math"
+	"strings"
+	"time"
+
 	constConfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
@@ -16,9 +20,6 @@ import (
 	"github.com/chenzhijie/go-web3"
 	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
-	"math"
-	"strings"
-	"time"
 )
 
 const TokenAbi = "[{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]"
@@ -240,7 +241,7 @@ func TransferTaskOld(ctx context.Context) {
 			continue
 		}
 
-		lastBlockNum := int64(18133903)
+		lastBlockNum := int64(18909284)
 		maxBlockNum := int64(20267076)
 		if err != nil {
 			continue

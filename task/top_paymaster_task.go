@@ -2,6 +2,9 @@ package task
 
 import (
 	"context"
+	"log"
+	"time"
+
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/paymasterinfo"
@@ -10,8 +13,6 @@ import (
 	"github.com/BlockPILabs/aaexplorer/service"
 	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
-	"log"
-	"time"
 )
 
 func TopPaymaster() {
@@ -277,7 +278,7 @@ func doTopPaymasterHour(timeRange int) {
 				}
 			}
 		}
-		log.Printf("top paymaster hour statistic success timeRange:%s, network:%s", string(timeRange), network)
+		logger.Info("top paymaster hour statistic success ", "timeRange", string(timeRange), "network", network)
 	}
 
 }
@@ -341,5 +342,5 @@ func saveOrUpdatePaymaster(client *ent.Client, paymaster string, info *ent.Payma
 			log.Printf("Update paymaster err, %s\n", err)
 		}
 	}
-	log.Printf("top paymaster hour, single statistic sync success, bundler:%s", info.ID)
+	logger.Info("top paymaster hour, single statistic sync success,", "bundler", info.ID)
 }
