@@ -2,6 +2,11 @@ package task
 
 import (
 	"context"
+	"log"
+	"math"
+	"math/big"
+	"time"
+
 	internalconfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
@@ -19,10 +24,6 @@ import (
 	"github.com/BlockPILabs/aaexplorer/third/moralis"
 	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
-	"log"
-	"math"
-	"math/big"
-	"time"
 )
 
 func InitHourStatis() {
@@ -560,6 +561,9 @@ func bulkInsertPaymasterStatsHour(ctx context.Context, client *ent.Client, data 
 			for _, old := range bundlerDays {
 				client.PaymasterStatisHour.Delete().Where(paymasterstatishour.IDEQ(old.ID)).Exec(context.Background())
 			}
+		}
+		if paymaster == internalconfig.ZeroAddress {
+			continue
 		}
 		one.Save(context.Background())
 		log.Printf("paymaster-hour-task statistic success, paymaster: %s, day:%s", paymaster, time.String())

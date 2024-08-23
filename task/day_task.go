@@ -27,7 +27,7 @@ import (
 const TimeLayout = "2006-01-02 15:04:05"
 
 func InitDayStatis() {
-	go DoDayStatistic()
+	//go DoDayStatistic()
 	dayScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := dayScheduler.ScheduleWithCron(func(ctx context.Context) {
 		DoDayStatistic()
@@ -428,6 +428,9 @@ func bulkInsertPaymasterStatsDay(ctx context.Context, client *ent.Client, data [
 			for _, old := range paymasterDays {
 				client.PaymasterStatisDay.Delete().Where(paymasterstatisday.IDEQ(old.ID)).Exec(context.Background())
 			}
+		}
+		if paymaster == internalconfig.ZeroAddress {
+			continue
 		}
 		one.Save(context.Background())
 		log.Printf("paymaster-day-task statistic success, paymaster: %s, day:%s", paymaster, time.String())

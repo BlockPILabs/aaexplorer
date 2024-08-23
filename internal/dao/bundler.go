@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+
 	"entgo.io/ent/dialect/sql"
 	"github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
@@ -20,7 +21,7 @@ func (*bundlerDao) GetSortFields(ctx context.Context) []string {
 		config.Default,
 		bundlerinfo.FieldBundlesNum,
 		bundlerinfo.FieldSuccessRate,
-		bundlerinfo.FieldBundleRateD1,
+		bundlerinfo.FieldSuccessRateD1,
 		bundlerinfo.FieldUserOpsNum,
 		bundlerinfo.FieldBundlesNumD1,
 		bundlerinfo.FieldFeeEarnedD1,

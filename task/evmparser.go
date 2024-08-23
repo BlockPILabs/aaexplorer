@@ -4,9 +4,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"entgo.io/ent/dialect/sql"
 	"errors"
 	"fmt"
+	"math"
+	"math/big"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
+	"entgo.io/ent/dialect/sql"
 	internalconfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/dao"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
@@ -38,12 +45,6 @@ import (
 	"github.com/shopspring/decimal"
 	"golang.org/x/exp/maps"
 	"golang.org/x/sync/errgroup"
-	"math"
-	"math/big"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
 )
 
 const UserOperationEventSign = "0x49628fd1471006c1482da88028e9ce4dbb080b815c9b0344d39e5a8e6ec1419f"
@@ -1195,6 +1196,9 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 		var pgTarges = pgtype.TextArray{}
 		pgTarges.Set(targets)
 
+		if strings.HasPrefix(target, "0x000000000000000000000000000000000000") {
+			target = ""
+		}
 		userOpHash := op.GetUserOpHash(common.HexToAddress(parserTx.transaction.ToAddr), big.NewInt(network.ChainID))
 		now := time.Now()
 		userOpsInfo := &ent.AAUserOpsInfo{
@@ -1284,6 +1288,10 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 					)),
 				).
 				Hex()
+			var dataTarget = callDetail.target
+			if strings.HasPrefix(dataTarget, "0x000000000000000000000000000000000000") {
+				dataTarget = ""
+			}
 			aaUserOpsCalldata := &ent.AAUserOpsCalldata{
 				ID:          id,
 				Time:        userOpsInfo.Time,
@@ -1292,7 +1300,7 @@ func (t *_evmParser) parseUserOps(ctx context.Context, client *ent.Client, netwo
 				BlockNumber: userOpsInfo.BlockNumber,
 				Network:     userOpsInfo.Network,
 				Sender:      userOpsInfo.Sender,
-				Target:      callDetail.target,
+				Target:      dataTarget,
 				TxValue:     &callDetail.value,
 				Source:      callDetail.source,
 				Calldata:    callDetail.data,

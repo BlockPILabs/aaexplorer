@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	internalconfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/paymasterinfo"
@@ -243,6 +244,9 @@ func doTopPaymasterHour(timeRange int) {
 
 		for paymaster, paymasterInfo := range paymasterInfoMap {
 			if len(paymaster) == 0 {
+				continue
+			}
+			if paymaster == internalconfig.ZeroAddress {
 				continue
 			}
 			//nativeBalance := moralis.GetNativeTokenBalance(paymaster, network)
