@@ -4,6 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"math"
+	"math/big"
+	"strconv"
+	"strings"
+	"time"
+
 	constConfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
@@ -19,12 +26,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
-	"log"
-	"math"
-	"math/big"
-	"strconv"
-	"strings"
-	"time"
 )
 
 func InitMEVTask(ctx context.Context) {
@@ -266,7 +267,7 @@ func MEVTask(ctx context.Context) {
 						}
 						var totalUserCost = decimal.Zero
 						for _, oneUserOps := range successUserOps {
-							totalUserCost = totalUserCost.Add(RayDiv(decimal.NewFromInt(oneUserOps.ActualGasCost)))
+							totalUserCost = totalUserCost.Add(RayDiv(decimal.NewFromInt(oneUserOps.ActualGasUsed)))
 						}
 
 						accounts, err := client.AaAccountData.Query().Where(aaaccountdata.IDEqualFold(*tx.FromAddr)).All(ctx)
