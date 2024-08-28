@@ -267,7 +267,7 @@ func MEVTask(ctx context.Context) {
 						}
 						var totalUserCost = decimal.Zero
 						for _, oneUserOps := range successUserOps {
-							totalUserCost = totalUserCost.Add(RayDiv(decimal.NewFromInt(oneUserOps.ActualGasUsed)))
+							totalUserCost = totalUserCost.Add(RayDiv(decimal.NewFromInt(oneUserOps.ActualGasCost)))
 						}
 
 						accounts, err := client.AaAccountData.Query().Where(aaaccountdata.IDEqualFold(*tx.FromAddr)).All(ctx)
@@ -443,6 +443,101 @@ func FixTask1(ctx context.Context) {
 		if err != nil {
 			logger.Error("err", err)
 		}
+	}
+
+}
+
+func FixTaskMevProfit(ctx context.Context) {
+	cli, err := entity.Client(ctx)
+	if err != nil {
+		return
+	}
+
+	networks, err := cli.Network.Query().All(ctx)
+	if len(networks) == 0 {
+		return
+	}
+
+	for _, net := range networks {
+		network := net.ID
+		//if network != "ethereum" {
+		//	continue
+		//}
+		client, err := entity.Client(ctx, network)
+		if err != nil {
+			continue
+		}
+		time1 := time.Now()
+		for {
+			mevs, err := client.MevTransaction.Query().Where(mevtransaction.CreateTimeLT(time1)).Limit(100).All(ctx)
+			if err != nil {
+				break
+			}
+			if len(mevs) == 0 {
+				break
+			}
+			time1 = mevs[len(mevs)-1].CreateTime
+
+			tokens, err := client.Token.Query().Where(token.TypeEQ("base")).All(ctx)
+			if len(tokens) == 0 {
+				continue
+			}
+			tokenPrice := tokens[0].TokenPrice
+			for _, mev := range mevs {
+				successTxs, err := client.TransactionDecode.Query().Where(transactiondecode.IDEQ(mev.ID)).All(ctx)
+				if err != nil {
+					continue
+				}
+				if len(successTxs) == 0 {
+					continue
+				}
+				successTx := successTxs[0]
+
+				receipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDEQ(mev.ID)).All(ctx)
+				if len(receipts) == 0 {
+					continue
+				}
+				receipt := receipts[0]
+
+				txs, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.IDEQ(mev.VictimTxHash)).All(ctx)
+				if err != nil {
+					continue
+				}
+				if len(txs) == 0 {
+					continue
+				}
+				//tx := txs[0]
+
+				successUserOps, err := client.AAUserOpsInfo.Query().Where(aauseropsinfo.TxHashEQ(mev.ID)).All(ctx)
+				if err != nil {
+					continue
+				}
+				if len(successUserOps) == 0 {
+					continue
+				}
+				var totalUserCost = decimal.Zero
+				for _, oneUserOps := range successUserOps {
+					totalUserCost = totalUserCost.Add(RayDiv(decimal.NewFromInt(oneUserOps.ActualGasCost)))
+				}
+
+				victimReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDEQ(mev.VictimTxHash)).All(ctx)
+				if len(victimReceipts) == 0 {
+					continue
+				}
+				//victimReceipt := victimReceipts[0]
+
+				attackerGas := receipt.GasUsed.Mul(successTx.GasPrice.DivRound(decimal.NewFromInt(10).Pow(decimal.NewFromInt(18)), 18))
+				//victimGas := (*tx.GasPrice).DivRound(decimal.NewFromInt(10).Pow(decimal.NewFromInt(18)), 18).Mul(victimReceipt.GasUsed)
+				//fmt.Println(victimGas)
+				mevProfitUsd := totalUserCost.Sub(attackerGas).Mul(tokenPrice)
+				err = client.MevTransaction.Update().SetMevProfit(mevProfitUsd).Where(mevtransaction.IDEQ(mev.ID)).Exec(ctx)
+				if err == nil {
+					logger.Info("update success ", "ID", mev.ID, "oldMevProfit", mev.MevProfitUsd, "mevProfitUsd", mevProfitUsd)
+				}
+
+			}
+		}
+
 	}
 
 }
