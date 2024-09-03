@@ -2,6 +2,9 @@ package service
 
 import (
 	"context"
+	"strings"
+	"time"
+
 	"github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/dao"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
@@ -13,7 +16,6 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/log"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
 	"github.com/shopspring/decimal"
-	"strings"
 )
 
 type bundlerService struct {
@@ -131,8 +133,10 @@ func (*bundlerService) GetBundlerTransfers(ctx context.Context, req vo.BundlerTr
 		},
 	}
 
-	transferTxs, err := client.TransferTransaction.Query().Where(transfertransaction.FromAddr(bundler)).Order(ent.Desc(transfertransaction.FieldTime)).Offset(req.GetOffset()).Limit(req.PerPage).All(ctx)
-	totalCount, err := client.TransferTransaction.Query().Where(transfertransaction.FromAddr(bundler)).Count(ctx)
+	startTime := time.UnixMilli(time.Now().UnixMilli() - 24*3600*1000*180)
+
+	transferTxs, err := client.TransferTransaction.Query().Where(transfertransaction.FromAddr(bundler), transfertransaction.TokenSymbolNEQ(""), transfertransaction.TimeGTE(startTime)).Order(ent.Desc(transfertransaction.FieldTime)).Offset(req.GetOffset()).Limit(req.PerPage).All(ctx)
+	totalCount, err := client.TransferTransaction.Query().Where(transfertransaction.FromAddr(bundler), transfertransaction.TokenSymbolNEQ(""), transfertransaction.TimeGTE(startTime)).Count(ctx)
 
 	if len(transferTxs) == 0 {
 		return nil, nil
