@@ -2,6 +2,10 @@ package service
 
 import (
 	"context"
+	"log"
+	"sort"
+	"time"
+
 	"github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
@@ -11,8 +15,6 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/useroptypestatistic"
 	"github.com/BlockPILabs/aaexplorer/internal/vo"
 	"github.com/shopspring/decimal"
-	"log"
-	"sort"
 )
 
 func GetUserOpType(ctx context.Context, req vo.UserOpsTypeRequest) (*vo.UserOpsTypeResponse, error) {
@@ -184,10 +186,10 @@ func GetHotAAToken(ctx context.Context, req vo.HotAARequest) (*vo.HotAAResponse,
 	}
 	var resp = &vo.HotAAResponse{}
 
-	//day1 := time.UnixMilli(time.Now().UnixMilli() - 24*3600*1000)
+	day1 := time.UnixMilli(time.Now().UnixMilli() - 24*3600*1000)
 	//Where(transfertransaction.TimeGTE(day1))
 	var results []*HotAA
-	err = client.TransferTransaction.Query().GroupBy(transfertransaction.FieldTokenSymbol).Aggregate(ent.Count()).Scan(ctx, &results)
+	err = client.TransferTransaction.Query().Where(transfertransaction.TimeGTE(day1)).GroupBy(transfertransaction.FieldTokenSymbol).Aggregate(ent.Count()).Scan(ctx, &results)
 	if err != nil {
 		return nil, err
 	}
