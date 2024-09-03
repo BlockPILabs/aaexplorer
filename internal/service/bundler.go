@@ -133,7 +133,7 @@ func (*bundlerService) GetBundlerTransfers(ctx context.Context, req vo.BundlerTr
 		},
 	}
 
-	startTime := time.UnixMilli(time.Now().UnixMilli() - 24*3600*1000*180)
+	startTime := time.UnixMilli(time.Now().UnixMilli() - 24*3600*1000*30)
 
 	transferTxs, err := client.TransferTransaction.Query().Where(transfertransaction.FromAddr(bundler), transfertransaction.TokenSymbolNEQ(""), transfertransaction.TimeGTE(startTime)).Order(ent.Desc(transfertransaction.FieldTime)).Offset(req.GetOffset()).Limit(req.PerPage).All(ctx)
 	totalCount, err := client.TransferTransaction.Query().Where(transfertransaction.FromAddr(bundler), transfertransaction.TokenSymbolNEQ(""), transfertransaction.TimeGTE(startTime)).Count(ctx)
