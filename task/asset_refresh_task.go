@@ -2,6 +2,10 @@ package task
 
 import (
 	"context"
+	"math/big"
+	"strings"
+	"time"
+
 	constConfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
@@ -14,9 +18,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
-	"math/big"
-	"strings"
-	"time"
 )
 
 const Abi = "[{\"constant\":true,\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"name\":\"\",\"type\":\"uint8\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"balance\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"}]"
@@ -199,6 +200,8 @@ func doRefresh(ctx context.Context, client *ent.Client, tokens []*ent.Token, w3 
 		totalValue = totalValue.Add(nativeValue)
 		client.AaAsset.Update().SetAssetValue(totalValue).SetLastTime(time.Now().UnixMilli()).SetBalance(nativeBalance).Where(aaasset.IDEqualFold(userAddress)).Exec(ctx)
 		nativeDetails, err := client.AaAssetDetail.Query().Where(aaassetdetail.UserAddressEqualFold(userAddress), aaassetdetail.IsNativeEqualFold("true")).All(ctx)
+
+		logger.Info("AssetRefreshTask-one-native ", "user", userAddress, "nativePrice", nativePrice, "nativeValue", nativeValue, "network", network)
 		if err != nil {
 			continue
 		}
