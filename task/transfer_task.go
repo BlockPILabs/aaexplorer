@@ -26,7 +26,7 @@ const TokenAbi = "[{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType
 const SimpleTransferEventSign = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
 func InitTransferTask(ctx context.Context) {
-	go TransferTaskOld(ctx)
+	//go TransferTaskOld(ctx)
 	mevScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := mevScheduler.ScheduleWithCron(func(ctx context.Context) {
 		TransferTaskNew(ctx)
