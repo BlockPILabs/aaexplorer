@@ -3,8 +3,12 @@ package task
 import (
 	"context"
 	"encoding/json"
-	"entgo.io/ent/dialect/sql"
 	"errors"
+	"runtime"
+	"sync"
+	"time"
+
+	"entgo.io/ent/dialect/sql"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/blocksync"
@@ -20,9 +24,6 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/shopspring/decimal"
 	"golang.org/x/sync/errgroup"
-	"runtime"
-	"sync"
-	"time"
 )
 
 var blockScanTaskChain = make(chan *ent.Network, 10)
@@ -76,8 +77,10 @@ func BlockSyncRun(ctx context.Context) {
 			logger.Error("error in network db connect", "err", err)
 			return
 		}
-
+		s0 := time.Now().UnixMilli()
+		logger.Info("BlockSyncRun-start, ", "network", network.ID)
 		result, err := networkTx.ExecContext(ctx, `insert into block_sync(block_num, create_time, update_time) select generate_series(max(block_num) , $1 ) , $2 , $2 from block_sync on conflict do nothing`, blockNumber, time.Now())
+		logger.Info("BlockSyncRun-end, ", "network", network.ID, "spent", time.Now().UnixMilli()-s0)
 		if err != nil {
 			logger.Error("error in block_sync generate_series", "err", err)
 			continue
