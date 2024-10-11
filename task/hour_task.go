@@ -10,6 +10,7 @@ import (
 	internalconfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aatransactioninfo"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aauseropsinfo"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/bundlerstatishour"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/dailystatistichour"
@@ -17,7 +18,6 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/paymasterstatishour"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/taskrecord"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/tokenpriceinfo"
-	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactiondecode"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactionreceiptdecode"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/userassetinfo"
 	"github.com/BlockPILabs/aaexplorer/service"
@@ -81,7 +81,8 @@ func doHourStatistic() {
 				continue
 			}
 
-			txCount, err := client.TransactionDecode.Query().Where(transactiondecode.TimeGTE(startTime), transactiondecode.TimeLT(endTime)).Count(context.Background())
+			//txCount, err := client.TransactionDecode.Query().Where(transactiondecode.TimeGTE(startTime), transactiondecode.TimeLT(endTime)).Count(context.Background())
+			txCount, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.TimeGTE(startTime), aatransactioninfo.TimeLT(endTime)).Count(context.Background())
 
 			bundlerMap := make(map[string]map[string][]*ent.AAUserOpsInfo)
 			paymasterMap := make(map[string]map[string][]*ent.AAUserOpsInfo)
@@ -111,7 +112,8 @@ func doHourStatistic() {
 			}
 
 			hashs := getKeySlice(txHashMap)
-			receipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(hashs[:]...)).All(context.Background())
+			//receipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(hashs[:]...)).All(context.Background())
+			receipts, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.IDIn(hashs[:]...)).All(context.Background())
 			costMap := getCostMap(receipts)
 			//receiptMap := getReceiptMap(receipts)
 			earnMap := getEarnMap(receiveMap, costMap)
@@ -209,19 +211,22 @@ func getEarnMap(receiveMap map[string]decimal.Decimal, costMap map[string]decima
 	return earnMap
 }
 
-func getCostMap(receipts []*ent.TransactionReceiptDecode) map[string]decimal.Decimal {
+func getCostMap(receipts []*ent.AaTransactionInfo) map[string]decimal.Decimal {
 	if len(receipts) == 0 {
 		return make(map[string]decimal.Decimal)
 	}
 	var receiptMap = make(map[string]decimal.Decimal)
 	for _, receipt := range receipts {
 		bundler := receipt.FromAddr
-		cost, costOk := receiptMap[bundler]
+		if bundler == nil {
+			continue
+		}
+		cost, costOk := receiptMap[*bundler]
 		if !costOk {
 			cost = decimal.Zero
 		}
-		cost = cost.Add(GetReceiptGasRayDiv(receipt))
-		receiptMap[bundler] = cost
+		cost = cost.Add(GetAaGasRayDiv(receipt))
+		receiptMap[*bundler] = cost
 	}
 	return receiptMap
 }
@@ -251,6 +256,19 @@ func getKeySlice(maps map[string]bool) []string {
 func GetReceiptGasRayDiv(receipt *ent.TransactionReceiptDecode) decimal.Decimal {
 	var gasPrice big.Int
 	_, success := gasPrice.SetString(receipt.EffectiveGasPrice, 0)
+	if !success {
+		log.Printf("GetReceiptGasRayDiv convert err, %s", receipt.ID)
+		return decimal.Zero
+	}
+	return receipt.GasUsed.Mul(RayDiv(decimal.NewFromInt(gasPrice.Int64())))
+}
+
+func GetAaGasRayDiv(receipt *ent.AaTransactionInfo) decimal.Decimal {
+	if receipt.EffectiveGasPrice == nil {
+		return decimal.Zero
+	}
+	var gasPrice big.Int
+	_, success := gasPrice.SetString(*receipt.EffectiveGasPrice, 0)
 	if !success {
 		log.Printf("GetReceiptGasRayDiv convert err, %s", receipt.ID)
 		return decimal.Zero

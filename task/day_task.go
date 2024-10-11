@@ -8,6 +8,7 @@ import (
 	internalconfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aatransactioninfo"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aauseropsinfo"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/bundlerstatisday"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/dailystatisticday"
@@ -15,8 +16,6 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/paymasterstatisday"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/taskrecord"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/tokenpriceinfo"
-	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactiondecode"
-	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactionreceiptdecode"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/userassetinfo"
 	"github.com/BlockPILabs/aaexplorer/service"
 	"github.com/BlockPILabs/aaexplorer/third/moralis"
@@ -27,7 +26,7 @@ import (
 const TimeLayout = "2006-01-02 15:04:05"
 
 func InitDayStatis() {
-	//go DoDayStatistic()
+	go DoDayStatistic()
 	dayScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := dayScheduler.ScheduleWithCron(func(ctx context.Context) {
 		DoDayStatistic()
@@ -85,7 +84,8 @@ func DoDayStatistic() {
 				break
 			}
 
-			txCount, err := client.TransactionDecode.Query().Where(transactiondecode.TimeGTE(startTime), transactiondecode.TimeLT(endTime)).Count(context.Background())
+			txCount, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.TimeGTE(startTime), aatransactioninfo.TimeLT(endTime)).Count(context.Background())
+			//txCount, err := client.TransactionDecode.Query().Where(transactiondecode.TimeGTE(startTime), transactiondecode.TimeLT(endTime)).Count(context.Background())
 
 			receiveMap := make(map[string]decimal.Decimal)
 			totalBundleMap := make(map[string]map[string]int)
@@ -111,12 +111,14 @@ func DoDayStatistic() {
 			}
 
 			hashs := getKeySlice(txHashMap)
-			var receipts []*ent.TransactionReceiptDecode
+			//var receipts []*ent.TransactionReceiptDecode
+			var receipts []*ent.AaTransactionInfo
 			var partHashes []string
 			for _, oneHash := range hashs {
 				partHashes = append(partHashes, oneHash)
 				if len(partHashes) >= 60000 {
-					partReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(partHashes[:]...)).All(context.Background())
+					//partReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(partHashes[:]...)).All(context.Background())
+					partReceipts, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.IDIn(partHashes[:]...)).All(context.Background())
 					partHashes = []string{}
 					if err != nil {
 						logger.Error("DayTask-error getReceipts", "err", err, "network", network)
@@ -130,7 +132,8 @@ func DoDayStatistic() {
 				}
 
 			}
-			partReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(partHashes[:]...)).All(context.Background())
+			//partReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(partHashes[:]...)).All(context.Background())
+			partReceipts, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.IDIn(partHashes[:]...)).All(context.Background())
 			partHashes = []string{}
 			if err != nil {
 				logger.Error("DayTask-error getReceipts", "err", err, "network", network)
@@ -295,12 +298,14 @@ func calDailyStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, allTxHash
 		for key, _ := range txHashes {
 			hashes = append(hashes, key)
 		}
-		var receipts []*ent.TransactionReceiptDecode
+		//var receipts []*ent.TransactionReceiptDecode
+		var receipts []*ent.AaTransactionInfo
 		var partHashes []string
 		for _, oneHash := range hashes {
 			partHashes = append(partHashes, oneHash)
 			if len(partHashes) >= 60000 {
-				partReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(partHashes[:]...)).All(context.Background())
+				//partReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(partHashes[:]...)).All(context.Background())
+				partReceipts, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.IDIn(partHashes[:]...)).All(context.Background())
 				partHashes = []string{}
 				if err != nil {
 					logger.Error("DayTask-error getReceipts", "err", err)
@@ -314,7 +319,9 @@ func calDailyStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, allTxHash
 			}
 
 		}
-		partReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(partHashes[:]...)).All(context.Background())
+		//partReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDIn(partHashes[:]...)).All(context.Background())
+		partReceipts, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.IDIn(partHashes[:]...)).All(context.Background())
+
 		partHashes = []string{}
 		if err != nil {
 			logger.Error("DayTask-error getReceipts", "err", err)
@@ -331,7 +338,7 @@ func calDailyStatistic(client *ent.Client, infos []*ent.AAUserOpsInfo, allTxHash
 
 		var spentGas = decimal.Zero
 		for _, receipt := range receipts {
-			spentGas = spentGas.Sub(GetReceiptGasRayDiv(receipt))
+			spentGas = spentGas.Sub(GetAaGasRayDiv(receipt))
 		}
 		var totalGasFee = decimal.Zero
 		var txMap = make(map[string]bool)
@@ -542,6 +549,7 @@ func calPaymasterStatisDay(client *ent.Client, bundlerMap map[string]map[string]
 				SetReserveUsd(price.Mul(nativeBalance)).
 				SetStatisTime(sTime),
 			)
+
 		}
 
 	}

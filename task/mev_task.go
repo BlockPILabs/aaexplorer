@@ -211,12 +211,12 @@ func MEVTask(ctx context.Context) {
 			if blockNums == nil {
 				continue
 			}
-			receipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.BlockNumberIn(blockNums[:]...)).All(ctx)
+			receipts, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.BlockNumberIn(blockNums[:]...)).All(ctx)
 			if len(receipts) == 0 {
 				continue
 			}
 
-			victimReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.IDEQ(txHash)).All(ctx)
+			victimReceipts, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.IDEQ(txHash)).All(ctx)
 			if len(victimReceipts) == 0 {
 				continue
 			}
@@ -232,17 +232,20 @@ func MEVTask(ctx context.Context) {
 		receiptFor:
 			for _, receipt := range receipts {
 				logs := receipt.Logs
-				if len(logs) <= 2 {
+				if logs == nil || receipt.Status == nil {
 					continue
 				}
-				if receipt.Status == "0x0" {
+				if len(*logs) <= 2 {
+					continue
+				}
+				if *receipt.Status == "0x0" {
 					continue
 				}
 				if receipt.ID == txHash {
 					continue
 				}
 				var typeLogs []*aa.Log
-				err := json.Unmarshal([]byte(logs), &typeLogs)
+				err := json.Unmarshal([]byte(*logs), &typeLogs)
 				if err != nil {
 					continue
 				}
@@ -276,23 +279,23 @@ func MEVTask(ctx context.Context) {
 							victimType = accounts[0].AaType
 						}
 
-						successTxs, err := client.TransactionDecode.Query().Where(transactiondecode.IDEQ(receipt.ID)).All(ctx)
+						successTxs, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.IDEQ(receipt.ID)).All(ctx)
 						if len(successTxs) == 0 {
 							continue
 						}
 						successTx := successTxs[0]
 
-						attackerGas := successTx.GasPrice.DivRound(decimal.NewFromInt(10).Pow(decimal.NewFromInt(18)), 18).Mul(receipt.GasUsed)
-						victimGas := (*tx.GasPrice).DivRound(decimal.NewFromInt(10).Pow(decimal.NewFromInt(18)), 18).Mul(victimReceipt.GasUsed)
+						attackerGas := successTx.GasPrice.DivRound(decimal.NewFromInt(10).Pow(decimal.NewFromInt(18)), 18).Mul(*receipt.GasUsed)
+						victimGas := (*tx.GasPrice).DivRound(decimal.NewFromInt(10).Pow(decimal.NewFromInt(18)), 18).Mul(*victimReceipt.GasUsed)
 
 						bundlerLossUsd := victimGas.Mul(tokenPrice)
 						mevProfitUsd := totalUserCost.Sub(attackerGas).Mul(tokenPrice)
 
 						mevTx := client.MevTransaction.Create().
-							SetCreateTime(time.Now()).SetID(receipt.ID).SetTime(receipt.Time).SetFromAddr(receipt.FromAddr).
-							SetToAddr(receipt.ToAddr).SetBlockNumber(receipt.BlockNumber).SetBlockHash(receipt.BlockHash).
-							SetValue(decimal.Zero).SetGas(decimal.NewFromInt(receipt.CumulativeGasUsed)).SetGasPrice(*tx.GasPrice).SetTransactionIndex(*tx.TransactionIndex).SetVictim(*tx.FromAddr).
-							SetAttacker(receipt.FromAddr).SetVictimTxHash(txHash).SetVictimFromAddr(*tx.FromAddr).SetVictimType(victimType).SetVictimToAddr(*tx.ToAddr).
+							SetCreateTime(time.Now()).SetID(receipt.ID).SetTime(receipt.Time).SetFromAddr(*receipt.FromAddr).
+							SetToAddr(*receipt.ToAddr).SetBlockNumber(receipt.BlockNumber).SetBlockHash(receipt.BlockHash).
+							SetValue(decimal.Zero).SetGas(decimal.NewFromInt(*receipt.CumulativeGasUsed)).SetGasPrice(*tx.GasPrice).SetTransactionIndex(*tx.TransactionIndex).SetVictim(*tx.FromAddr).
+							SetAttacker(*receipt.FromAddr).SetVictimTxHash(txHash).SetVictimFromAddr(*tx.FromAddr).SetVictimType(victimType).SetVictimToAddr(*tx.ToAddr).
 							SetVictimBlockNumber(tx.BlockNumber).SetMevType(constConfig.MevFront).SetBundlerLoss(victimGas).SetBundlerLossUsd(bundlerLossUsd).SetMevProfit(totalUserCost.Sub(attackerGas)).
 							SetMevProfitUsd(mevProfitUsd)
 						logger.Info("find mev tx success ", "userHash", txHash, "mevHash", receipt.ID, "sender", userOpsKey)
