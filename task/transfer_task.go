@@ -53,23 +53,27 @@ func TransferTaskNew(ctx context.Context) {
 
 	for _, net := range networks {
 		network := net.ID
+		logger.Info("TransferTaskNew network.", "network", network)
 		//if network != "ethereum" {
 		//	continue
 		//}
+		if network != "optimism" {
+			continue
+		}
 		client, err := entity.Client(ctx, network)
 		if err != nil {
 			continue
 		}
 		w3, err := web3.NewWeb3(net.HTTPRPC)
 		if err != nil {
-			logger.Error("TransferTaskNew newWeb3 err ", "msg", err)
+			logger.Error("TransferTaskNew newWeb3 err ", "network", network, "msg", err)
 			continue
 		}
 		w3.Eth.SetChainId(net.ChainID)
 
 		transferTxs, err := client.TransferTransaction.Query().Order(ent.Desc(transfertransaction.FieldBlockNumber)).Limit(1).All(ctx)
-		maxReceipts, err := client.AaTransactionInfo.Query().Order(ent.Desc(aatransactioninfo.FieldBlockNumber)).Limit(1).All(ctx)
-		lastBlockNum := int64(64884700)
+		maxReceipts, err := client.TransactionReceiptDecode.Query().Order(ent.Desc(aatransactioninfo.FieldBlockNumber)).Limit(1).All(ctx)
+		lastBlockNum := int64(104884700)
 		maxBlockNum := int64(0)
 		if len(maxReceipts) > 0 {
 			maxBlockNum = maxReceipts[0].BlockNumber
@@ -97,11 +101,11 @@ func TransferTaskNew(ctx context.Context) {
 				tokenMap[tokenAll.ContractAddress] = tokenAll
 			}
 		}
-		logger.Info("TransferTaskNew get receipts ", "lastBlockNum", lastBlockNum, "maxBlock", maxBlockNum)
+		logger.Info("TransferTaskNew get receipts ", "lastBlockNum", lastBlockNum, "maxBlock", maxBlockNum, "network", network)
 		for {
 			s0 := time.Now().UnixMilli()
-			allReceipts, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.BlockNumberGTE(lastBlockNum), aatransactioninfo.BlockNumberLT(lastBlockNum+20)).Order(ent.Asc(aatransactioninfo.FieldBlockNumber)).All(ctx)
-			logger.Info("TransferTaskNew get receipts ", "size", len(allReceipts))
+			allReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.BlockNumberGTE(lastBlockNum), transactionreceiptdecode.BlockNumberLT(lastBlockNum+20)).Order(ent.Asc(transactionreceiptdecode.FieldBlockNumber)).All(ctx)
+			logger.Info("TransferTaskNew get receipts ", "size", len(allReceipts), "start", lastBlockNum, "end", lastBlockNum+20, "network", network)
 			if err != nil {
 				break
 			}
@@ -122,17 +126,14 @@ func TransferTaskNew(ctx context.Context) {
 			var transferTxss []*ent.TransferTransactionCreate
 			for _, receipt := range allReceipts {
 				logs := receipt.Logs
-				if logs == nil || receipt.Status == nil {
-					continue
-				}
-				if len(*logs) <= 2 {
+				if len(logs) <= 2 {
 					//continue
 				}
-				if *receipt.Status == "0x0" {
+				if receipt.Status == "0x0" {
 					continue
 				}
 				var typeLogs []*aa.Log
-				err := json.Unmarshal([]byte(*logs), &typeLogs)
+				err := json.Unmarshal([]byte(logs), &typeLogs)
 				if err != nil {
 					continue
 				}
@@ -163,6 +164,7 @@ func TransferTaskNew(ctx context.Context) {
 						toData := accountMap[to]
 
 						if fromData == nil && toData == nil {
+							logger.Info("TransferTaskNew data is null ", "hash", receipt.ID, "from", from, "to", to, "network", network)
 							continue
 						}
 
@@ -192,8 +194,8 @@ func TransferTaskNew(ctx context.Context) {
 						decimals := tokenAll.Decimals
 						amount := decimal.NewFromBigInt(val, 0).DivRound(decimal.NewFromFloat(math.Pow10(int(decimals))), int32(decimals))
 						tx := client.TransferTransaction.Create().SetTime(receipt.Time).SetCreateTime(time.Now()).SetTxHash(receipt.ID).SetGasPrice(decimal.Zero).
-							SetGas(*receipt.GasUsed).SetValue(decimal.Zero).SetTransferValue(amount).SetFromAddr(from).SetToAddr(to).
-							SetTransactionIndex(receipt.TransactionIndex.BigInt().Int64()).SetBlockNumber(receipt.BlockNumber).SetBlockHash(receipt.BlockHash).
+							SetGas(receipt.GasUsed).SetValue(decimal.Zero).SetTransferValue(amount).SetFromAddr(from).SetToAddr(to).
+							SetTransactionIndex(receipt.TransactionIndex).SetBlockNumber(receipt.BlockNumber).SetBlockHash(receipt.BlockHash).
 							SetTokenAddress(tokenAll.ContractAddress).SetTokenSymbol(tokenAll.Symbol).SetTokenURL(tokenAll.ImageURL)
 
 						transferTxss = append(transferTxss, tx)
@@ -211,10 +213,10 @@ func TransferTaskNew(ctx context.Context) {
 				s5 := time.Now().UnixMilli()
 				_, err := client.TransferTransaction.CreateBulk(transferTxss[:]...).Save(ctx)
 				e5 := time.Now().UnixMilli()
-				logger.Info("TransferTaskNew complete step4 ", "spent", e5-s5)
+				logger.Info("TransferTaskNew complete step4 ", "spent", e5-s5, "network", network)
 				e0 := time.Now().UnixMilli()
 				if err == nil {
-					logger.Info("TransferTaskNew complete all ", "spent", e0-s0)
+					logger.Info("TransferTaskNew complete all ", "spent", e0-s0, "network", network)
 				}
 			}
 
