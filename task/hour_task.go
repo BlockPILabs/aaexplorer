@@ -18,6 +18,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/paymasterstatishour"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/taskrecord"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/tokenpriceinfo"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactiondecode"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactionreceiptdecode"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/userassetinfo"
 	"github.com/BlockPILabs/aaexplorer/service"
@@ -81,8 +82,8 @@ func doHourStatistic() {
 				continue
 			}
 
-			//txCount, err := client.TransactionDecode.Query().Where(transactiondecode.TimeGTE(startTime), transactiondecode.TimeLT(endTime)).Count(context.Background())
-			txCount, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.TimeGTE(startTime), aatransactioninfo.TimeLT(endTime)).Count(context.Background())
+			txCount, err := client.TransactionDecode.Query().Where(transactiondecode.TimeGTE(startTime), transactiondecode.TimeLT(endTime)).Count(context.Background())
+			//txCount, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.TimeGTE(startTime), aatransactioninfo.TimeLT(endTime)).Count(context.Background())
 
 			bundlerMap := make(map[string]map[string][]*ent.AAUserOpsInfo)
 			paymasterMap := make(map[string]map[string][]*ent.AAUserOpsInfo)
