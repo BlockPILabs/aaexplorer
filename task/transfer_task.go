@@ -10,6 +10,7 @@ import (
 	constConfig "github.com/BlockPILabs/aaexplorer/config"
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/aatransactioninfo"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/token"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactiondecode"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactionreceiptdecode"
@@ -67,8 +68,8 @@ func TransferTaskNew(ctx context.Context) {
 		w3.Eth.SetChainId(net.ChainID)
 
 		transferTxs, err := client.TransferTransaction.Query().Order(ent.Desc(transfertransaction.FieldBlockNumber)).Limit(1).All(ctx)
-		maxReceipts, err := client.TransactionReceiptDecode.Query().Order(ent.Desc(transactionreceiptdecode.FieldBlockNumber)).Limit(1).All(ctx)
-		lastBlockNum := int64(20269568)
+		maxReceipts, err := client.AaTransactionInfo.Query().Order(ent.Desc(aatransactioninfo.FieldBlockNumber)).Limit(1).All(ctx)
+		lastBlockNum := int64(64884700)
 		maxBlockNum := int64(0)
 		if len(maxReceipts) > 0 {
 			maxBlockNum = maxReceipts[0].BlockNumber
@@ -99,7 +100,7 @@ func TransferTaskNew(ctx context.Context) {
 		logger.Info("TransferTaskNew get receipts ", "lastBlockNum", lastBlockNum, "maxBlock", maxBlockNum)
 		for {
 			s0 := time.Now().UnixMilli()
-			allReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.BlockNumberGTE(lastBlockNum), transactionreceiptdecode.BlockNumberLT(lastBlockNum+20)).Order(ent.Asc(transactionreceiptdecode.FieldBlockNumber)).All(ctx)
+			allReceipts, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.BlockNumberGTE(lastBlockNum), aatransactioninfo.BlockNumberLT(lastBlockNum+20)).Order(ent.Asc(aatransactioninfo.FieldBlockNumber)).All(ctx)
 			logger.Info("TransferTaskNew get receipts ", "size", len(allReceipts))
 			if err != nil {
 				break
@@ -121,14 +122,17 @@ func TransferTaskNew(ctx context.Context) {
 			var transferTxss []*ent.TransferTransactionCreate
 			for _, receipt := range allReceipts {
 				logs := receipt.Logs
-				if len(logs) <= 2 {
+				if logs == nil || receipt.Status == nil {
+					continue
+				}
+				if len(*logs) <= 2 {
 					//continue
 				}
-				if receipt.Status == "0x0" {
+				if *receipt.Status == "0x0" {
 					continue
 				}
 				var typeLogs []*aa.Log
-				err := json.Unmarshal([]byte(logs), &typeLogs)
+				err := json.Unmarshal([]byte(*logs), &typeLogs)
 				if err != nil {
 					continue
 				}
@@ -188,8 +192,8 @@ func TransferTaskNew(ctx context.Context) {
 						decimals := tokenAll.Decimals
 						amount := decimal.NewFromBigInt(val, 0).DivRound(decimal.NewFromFloat(math.Pow10(int(decimals))), int32(decimals))
 						tx := client.TransferTransaction.Create().SetTime(receipt.Time).SetCreateTime(time.Now()).SetTxHash(receipt.ID).SetGasPrice(decimal.Zero).
-							SetGas(receipt.GasUsed).SetValue(decimal.Zero).SetTransferValue(amount).SetFromAddr(from).SetToAddr(to).
-							SetTransactionIndex(receipt.TransactionIndex).SetBlockNumber(receipt.BlockNumber).SetBlockHash(receipt.BlockHash).
+							SetGas(*receipt.GasUsed).SetValue(decimal.Zero).SetTransferValue(amount).SetFromAddr(from).SetToAddr(to).
+							SetTransactionIndex(receipt.TransactionIndex.BigInt().Int64()).SetBlockNumber(receipt.BlockNumber).SetBlockHash(receipt.BlockHash).
 							SetTokenAddress(tokenAll.ContractAddress).SetTokenSymbol(tokenAll.Symbol).SetTokenURL(tokenAll.ImageURL)
 
 						transferTxss = append(transferTxss, tx)
