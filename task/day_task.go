@@ -16,6 +16,7 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/paymasterstatisday"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/taskrecord"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/tokenpriceinfo"
+	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/transactiondecode"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/userassetinfo"
 	"github.com/BlockPILabs/aaexplorer/service"
 	"github.com/BlockPILabs/aaexplorer/third/moralis"
@@ -26,6 +27,7 @@ import (
 const TimeLayout = "2006-01-02 15:04:05"
 
 func InitDayStatis() {
+	go DoDayStatistic()
 	dayScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := dayScheduler.ScheduleWithCron(func(ctx context.Context) {
 		DoDayStatistic()
@@ -83,8 +85,8 @@ func DoDayStatistic() {
 				break
 			}
 
-			txCount, err := client.AaTransactionInfo.Query().Where(aatransactioninfo.TimeGTE(startTime), aatransactioninfo.TimeLT(endTime)).Count(context.Background())
-			//txCount, err := client.TransactionDecode.Query().Where(transactiondecode.TimeGTE(startTime), transactiondecode.TimeLT(endTime)).Count(context.Background())
+			//txCount, err := client.BlockDataDecode.Query().Where(blockdatadecode.TimeGTE(startTime), aatransactioninfo.TimeLT(endTime)).Count(context.Background())
+			txCount, err := client.TransactionDecode.Query().Where(transactiondecode.TimeGTE(startTime), transactiondecode.TimeLT(endTime)).Count(context.Background())
 
 			receiveMap := make(map[string]decimal.Decimal)
 			totalBundleMap := make(map[string]map[string]int)
