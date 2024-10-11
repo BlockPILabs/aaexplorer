@@ -2,6 +2,9 @@ package task
 
 import (
 	"context"
+	"log"
+	"time"
+
 	"github.com/BlockPILabs/aaexplorer/internal/entity"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent"
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/factoryinfo"
@@ -9,12 +12,10 @@ import (
 	"github.com/BlockPILabs/aaexplorer/internal/entity/ent/factorystatishour"
 	"github.com/procyon-projects/chrono"
 	"github.com/shopspring/decimal"
-	"log"
-	"time"
 )
 
 func TopFactories() {
-	//go doTopFactoryDay()
+	go doTopFactoryDay()
 	//go doTopFactoryHour(1)
 	factoryScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := factoryScheduler.ScheduleWithCron(func(ctx context.Context) {

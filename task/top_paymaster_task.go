@@ -18,7 +18,7 @@ import (
 
 func TopPaymaster() {
 
-	//go doTopPaymasterDay()
+	go doTopPaymasterDay()
 	//go doTopPaymasterHour(1)
 
 	paymasterScheduler := chrono.NewDefaultTaskScheduler()

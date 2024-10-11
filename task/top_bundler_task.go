@@ -70,7 +70,7 @@ func getHourStart(t time.Time) string {
 }
 
 func TopBundlers() {
-	//go doTopBundlersDay()
+	go doTopBundlersDay()
 	//go doTopBundlersHour(1)
 	bundlerScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := bundlerScheduler.ScheduleWithCron(func(ctx context.Context) {
