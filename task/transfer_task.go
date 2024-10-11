@@ -57,9 +57,6 @@ func TransferTaskNew(ctx context.Context) {
 		//if network != "ethereum" {
 		//	continue
 		//}
-		if network != "optimism" {
-			continue
-		}
 		client, err := entity.Client(ctx, network)
 		if err != nil {
 			continue
