@@ -54,7 +54,7 @@ func TransferTaskNew(ctx context.Context) {
 	for _, net := range networks {
 		network := net.ID
 		logger.Info("TransferTaskNew network.", "network", network)
-		//if network != "ethereum" {
+		//if network != "taiko-hekla" {
 		//	continue
 		//}
 		client, err := entity.Client(ctx, network)
@@ -86,13 +86,13 @@ func TransferTaskNew(ctx context.Context) {
 		} else if network == "taiko-hekla" {
 			lastBlockNum = int64(873611)
 		}
-		aaAccounts, err := client.AaAccountData.Query().All(ctx)
-		var accountMap = make(map[string]*ent.AaAccountData)
-		if len(aaAccounts) > 0 {
-			for _, aaAccount := range aaAccounts {
-				accountMap[aaAccount.ID] = aaAccount
-			}
-		}
+		//aaAccounts, err := client.AaAccountData.Query().Limit(10).All(ctx)
+		//var accountMap = make(map[string]*ent.AaAccountData)
+		//if len(aaAccounts) > 0 {
+		//	for _, aaAccount := range aaAccounts {
+		//		accountMap[aaAccount.ID] = aaAccount
+		//	}
+		//}
 		tokenAlls, err := client.TokenAll.Query().All(ctx)
 		var tokenMap = make(map[string]*ent.TokenAll)
 		if len(tokenAlls) > 0 {
@@ -162,13 +162,13 @@ func TransferTaskNew(ctx context.Context) {
 						//e2 := time.Now().UnixMilli()
 
 						//logger.Info("TransferTaskNew complete step1 ", "spent", e2-s2)
-						fromData := accountMap[from]
-						toData := accountMap[to]
+						//fromData := accountMap[from]
+						//toData := accountMap[to]
 
-						if fromData == nil && toData == nil {
-							logger.Info("TransferTaskNew data is null ", "hash", receipt.ID, "from", from, "to", to, "network", network)
-							//continue
-						}
+						//if fromData == nil && toData == nil {
+						//	logger.Info("TransferTaskNew data is null ", "hash", receipt.ID, "from", from, "to", to, "network", network)
+						//continue
+						//}
 
 						val := hexToDecimal(substring(data, 0, 64*1))
 						var tokenAll = tokenMap[strings.ToLower(address)]
@@ -254,13 +254,13 @@ func TransferTaskOld(ctx context.Context) {
 		if err != nil {
 			continue
 		}
-		aaAccounts, err := client.AaAccountData.Query().All(ctx)
-		var accountMap = make(map[string]*ent.AaAccountData)
-		if len(aaAccounts) > 0 {
-			for _, aaAccount := range aaAccounts {
-				accountMap[aaAccount.ID] = aaAccount
-			}
-		}
+		//aaAccounts, err := client.AaAccountData.Query().All(ctx)
+		//var accountMap = make(map[string]*ent.AaAccountData)
+		//if len(aaAccounts) > 0 {
+		//	for _, aaAccount := range aaAccounts {
+		//		accountMap[aaAccount.ID] = aaAccount
+		//	}
+		//}
 		tokenAlls, err := client.TokenAll.Query().All(ctx)
 		var tokenMap = make(map[string]*ent.TokenAll)
 		if len(tokenAlls) > 0 {
@@ -327,12 +327,12 @@ func TransferTaskOld(ctx context.Context) {
 					if sign == SimpleTransferEventSign {
 						from := utils.HexToAddress(topics[1])
 						to := utils.HexToAddress(topics[2])
-						fromData := accountMap[from]
-						toData := accountMap[to]
+						//fromData := accountMap[from]
+						//toData := accountMap[to]
 
-						if fromData == nil && toData == nil {
-							continue
-						}
+						//if fromData == nil && toData == nil {
+						//	continue
+						//}
 
 						val := hexToDecimal(substring(data, 0, 64*1))
 						//curTokenAlls, err := client.TokenAll.Query().Where(tokenall.ContractAddressEqualFold(address)).All(ctx)
