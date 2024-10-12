@@ -27,7 +27,7 @@ const TokenAbi = "[{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType
 const SimpleTransferEventSign = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
 func InitTransferTask(ctx context.Context) {
-	//go TransferTaskOld(ctx)
+	go TransferTaskOld(ctx)
 	mevScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := mevScheduler.ScheduleWithCron(func(ctx context.Context) {
 		TransferTaskNew(ctx)
@@ -80,6 +80,9 @@ func TransferTaskNew(ctx context.Context) {
 		}
 		if err != nil {
 			continue
+		}
+		if network == "optimism" {
+			lastBlockNum = int64(126555541)
 		}
 		aaAccounts, err := client.AaAccountData.Query().All(ctx)
 		var accountMap = make(map[string]*ent.AaAccountData)
@@ -236,7 +239,7 @@ func TransferTaskOld(ctx context.Context) {
 
 	for _, net := range networks {
 		network := net.ID
-		if network != "ethereum" {
+		if network != "optimism" {
 			continue
 		}
 		client, err := entity.Client(ctx, network)
@@ -244,8 +247,8 @@ func TransferTaskOld(ctx context.Context) {
 			continue
 		}
 
-		lastBlockNum := int64(19380056)
-		maxBlockNum := int64(20267076)
+		lastBlockNum := int64(106902657)
+		maxBlockNum := int64(126555541)
 		if err != nil {
 			continue
 		}
