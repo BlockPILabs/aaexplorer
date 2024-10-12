@@ -83,6 +83,8 @@ func TransferTaskNew(ctx context.Context) {
 		}
 		if network == "optimism" {
 			lastBlockNum = int64(126555541)
+		} else if network == "taiko-hekla" {
+			lastBlockNum = int64(873611)
 		}
 		aaAccounts, err := client.AaAccountData.Query().All(ctx)
 		var accountMap = make(map[string]*ent.AaAccountData)
@@ -165,7 +167,7 @@ func TransferTaskNew(ctx context.Context) {
 
 						if fromData == nil && toData == nil {
 							logger.Info("TransferTaskNew data is null ", "hash", receipt.ID, "from", from, "to", to, "network", network)
-							continue
+							//continue
 						}
 
 						val := hexToDecimal(substring(data, 0, 64*1))
