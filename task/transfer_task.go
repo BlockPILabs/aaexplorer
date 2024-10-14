@@ -57,171 +57,175 @@ func TransferTaskNew(ctx context.Context) {
 		//if network != "taiko-hekla" {
 		//	continue
 		//}
-		client, err := entity.Client(ctx, network)
-		if err != nil {
-			continue
-		}
-		w3, err := web3.NewWeb3(net.HTTPRPC)
-		if err != nil {
-			logger.Error("TransferTaskNew newWeb3 err ", "network", network, "msg", err)
-			continue
-		}
-		w3.Eth.SetChainId(net.ChainID)
+		go handlerOneNetwork(ctx, network, net)
 
-		transferTxs, err := client.TransferTransaction.Query().Order(ent.Desc(transfertransaction.FieldBlockNumber)).Limit(1).All(ctx)
-		maxReceipts, err := client.TransactionReceiptDecode.Query().Order(ent.Desc(aatransactioninfo.FieldBlockNumber)).Limit(1).All(ctx)
-		lastBlockNum := int64(104884700)
-		maxBlockNum := int64(0)
-		if len(maxReceipts) > 0 {
-			maxBlockNum = maxReceipts[0].BlockNumber
-		}
-		if len(transferTxs) > 0 {
-			lastBlockNum = transferTxs[0].BlockNumber
-		}
-		if err != nil {
-			continue
-		}
-		if network == "optimism" {
-			lastBlockNum = int64(126555541)
-		} else if network == "taiko-hekla" {
-			lastBlockNum = int64(873611)
-		}
-		//aaAccounts, err := client.AaAccountData.Query().Limit(10).All(ctx)
-		//var accountMap = make(map[string]*ent.AaAccountData)
-		//if len(aaAccounts) > 0 {
-		//	for _, aaAccount := range aaAccounts {
-		//		accountMap[aaAccount.ID] = aaAccount
-		//	}
-		//}
-		tokenAlls, err := client.TokenAll.Query().All(ctx)
-		var tokenMap = make(map[string]*ent.TokenAll)
-		if len(tokenAlls) > 0 {
-			for _, tokenAll := range tokenAlls {
-				if len(tokenAll.ContractAddress) == 0 {
-					continue
-				}
-				tokenMap[tokenAll.ContractAddress] = tokenAll
-			}
-		}
-		logger.Info("TransferTaskNew get receipts ", "lastBlockNum", lastBlockNum, "maxBlock", maxBlockNum, "network", network)
-		for {
-			s0 := time.Now().UnixMilli()
-			allReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.BlockNumberGTE(lastBlockNum), transactionreceiptdecode.BlockNumberLT(lastBlockNum+20)).Order(ent.Asc(transactionreceiptdecode.FieldBlockNumber)).All(ctx)
-			logger.Info("TransferTaskNew get receipts ", "size", len(allReceipts), "start", lastBlockNum, "end", lastBlockNum+20, "network", network)
-			if err != nil {
-				break
-			}
-			transferTxs, err := client.TransferTransaction.Query().Where(transfertransaction.BlockNumberGTE(lastBlockNum), transfertransaction.BlockNumberLT(lastBlockNum+20)).All(ctx)
-			var transferTxMap = make(map[string]*ent.TransferTransaction)
-			if len(transferTxs) > 0 {
-				for _, transferTx := range transferTxs {
-					transferTxMap[transferTx.TxHash] = transferTx
-				}
-			}
-			lastBlockNum = lastBlockNum + 21
-			if lastBlockNum > maxBlockNum {
-				break
-			}
-			if len(allReceipts) == 0 {
+	}
+}
+
+func handlerOneNetwork(ctx context.Context, network string, net *ent.Network) {
+	client, err := entity.Client(ctx, network)
+	if err != nil {
+		return
+	}
+	w3, err := web3.NewWeb3(net.HTTPRPC)
+	if err != nil {
+		logger.Error("TransferTaskNew newWeb3 err ", "network", network, "msg", err)
+		return
+	}
+	w3.Eth.SetChainId(net.ChainID)
+
+	transferTxs, err := client.TransferTransaction.Query().Order(ent.Desc(transfertransaction.FieldBlockNumber)).Limit(1).All(ctx)
+	maxReceipts, err := client.TransactionReceiptDecode.Query().Order(ent.Desc(aatransactioninfo.FieldBlockNumber)).Limit(1).All(ctx)
+	lastBlockNum := int64(104884700)
+	maxBlockNum := int64(0)
+	if len(maxReceipts) > 0 {
+		maxBlockNum = maxReceipts[0].BlockNumber
+	}
+	if len(transferTxs) > 0 {
+		lastBlockNum = transferTxs[0].BlockNumber
+	}
+	if err != nil {
+		return
+	}
+	if network == "optimism" {
+		lastBlockNum = int64(126555541)
+	} else if network == "taiko-hekla" {
+		lastBlockNum = int64(873611)
+	}
+	//aaAccounts, err := client.AaAccountData.Query().Limit(10).All(ctx)
+	//var accountMap = make(map[string]*ent.AaAccountData)
+	//if len(aaAccounts) > 0 {
+	//	for _, aaAccount := range aaAccounts {
+	//		accountMap[aaAccount.ID] = aaAccount
+	//	}
+	//}
+	tokenAlls, err := client.TokenAll.Query().All(ctx)
+	var tokenMap = make(map[string]*ent.TokenAll)
+	if len(tokenAlls) > 0 {
+		for _, tokenAll := range tokenAlls {
+			if len(tokenAll.ContractAddress) == 0 {
 				continue
 			}
-			var transferTxss []*ent.TransferTransactionCreate
-			for _, receipt := range allReceipts {
-				logs := receipt.Logs
-				if len(logs) <= 2 {
+			tokenMap[tokenAll.ContractAddress] = tokenAll
+		}
+	}
+	logger.Info("TransferTaskNew get receipts ", "lastBlockNum", lastBlockNum, "maxBlock", maxBlockNum, "network", network)
+	for {
+		s0 := time.Now().UnixMilli()
+		allReceipts, err := client.TransactionReceiptDecode.Query().Where(transactionreceiptdecode.BlockNumberGTE(lastBlockNum), transactionreceiptdecode.BlockNumberLT(lastBlockNum+20)).Order(ent.Asc(transactionreceiptdecode.FieldBlockNumber)).All(ctx)
+		logger.Info("TransferTaskNew get receipts ", "size", len(allReceipts), "start", lastBlockNum, "end", lastBlockNum+20, "network", network)
+		if err != nil {
+			break
+		}
+		transferTxs, err := client.TransferTransaction.Query().Where(transfertransaction.BlockNumberGTE(lastBlockNum), transfertransaction.BlockNumberLT(lastBlockNum+20)).All(ctx)
+		var transferTxMap = make(map[string]*ent.TransferTransaction)
+		if len(transferTxs) > 0 {
+			for _, transferTx := range transferTxs {
+				transferTxMap[transferTx.TxHash] = transferTx
+			}
+		}
+		lastBlockNum = lastBlockNum + 21
+		if lastBlockNum > maxBlockNum {
+			break
+		}
+		if len(allReceipts) == 0 {
+			continue
+		}
+		var transferTxss []*ent.TransferTransactionCreate
+		for _, receipt := range allReceipts {
+			logs := receipt.Logs
+			if len(logs) <= 2 {
+				//continue
+			}
+			if receipt.Status == "0x0" {
+				continue
+			}
+			var typeLogs []*aa.Log
+			err := json.Unmarshal([]byte(logs), &typeLogs)
+			if err != nil {
+				continue
+			}
+			if len(typeLogs) == 0 {
+				//handleNativeTransfer(client, ctx, receipt)
+				continue
+			}
+			for _, log := range typeLogs {
+				topics := log.Topics
+				if len(topics) < 3 {
+					continue
+				}
+				address := log.Address
+				sign := topics[0]
+				data := log.Data
+				if len(data) <= 2 {
+					continue
+				}
+				if sign == SimpleTransferEventSign {
+					from := utils.HexToAddress(topics[1])
+					to := utils.HexToAddress(topics[2])
+					//s2 := time.Now().UnixMilli()
+					//aaDatas, err := client.AaAccountData.Query().Where(aaaccountdata.IDIn(from, to)).All(ctx)
+					//e2 := time.Now().UnixMilli()
+
+					//logger.Info("TransferTaskNew complete step1 ", "spent", e2-s2)
+					//fromData := accountMap[from]
+					//toData := accountMap[to]
+
+					//if fromData == nil && toData == nil {
+					//	logger.Info("TransferTaskNew data is null ", "hash", receipt.ID, "from", from, "to", to, "network", network)
 					//continue
-				}
-				if receipt.Status == "0x0" {
-					continue
-				}
-				var typeLogs []*aa.Log
-				err := json.Unmarshal([]byte(logs), &typeLogs)
-				if err != nil {
-					continue
-				}
-				if len(typeLogs) == 0 {
-					//handleNativeTransfer(client, ctx, receipt)
-					continue
-				}
-				for _, log := range typeLogs {
-					topics := log.Topics
-					if len(topics) < 3 {
+					//}
+
+					val := hexToDecimal(substring(data, 0, 64*1))
+					var tokenAll = tokenMap[strings.ToLower(address)]
+					if tokenAll == nil {
+						tokenAll = addToken(ctx, client, address, w3, network)
+					}
+					if tokenAll == nil {
 						continue
 					}
-					address := log.Address
-					sign := topics[0]
-					data := log.Data
-					if len(data) <= 2 {
+					tokenMap[strings.ToLower(address)] = tokenAll
+
+					existTx := transferTxMap[receipt.ID]
+					if existTx != nil {
 						continue
 					}
-					if sign == SimpleTransferEventSign {
-						from := utils.HexToAddress(topics[1])
-						to := utils.HexToAddress(topics[2])
-						//s2 := time.Now().UnixMilli()
-						//aaDatas, err := client.AaAccountData.Query().Where(aaaccountdata.IDIn(from, to)).All(ctx)
-						//e2 := time.Now().UnixMilli()
 
-						//logger.Info("TransferTaskNew complete step1 ", "spent", e2-s2)
-						//fromData := accountMap[from]
-						//toData := accountMap[to]
+					//s4 := time.Now().UnixMilli()
+					//count, err := client.TransferTransaction.Query().Where(transfertransaction.TxHashEQ(receipt.ID)).Count(ctx)
+					//e4 := time.Now().UnixMilli()
+					//logger.Info("TransferTaskNew complete step3 ", "spent", e4-s4)
+					//if count > 0 {
+					//	continue
+					//}
 
-						//if fromData == nil && toData == nil {
-						//	logger.Info("TransferTaskNew data is null ", "hash", receipt.ID, "from", from, "to", to, "network", network)
-						//continue
-						//}
+					decimals := tokenAll.Decimals
+					amount := decimal.NewFromBigInt(val, 0).DivRound(decimal.NewFromFloat(math.Pow10(int(decimals))), int32(decimals))
+					tx := client.TransferTransaction.Create().SetTime(receipt.Time).SetCreateTime(time.Now()).SetTxHash(receipt.ID).SetGasPrice(decimal.Zero).
+						SetGas(receipt.GasUsed).SetValue(decimal.Zero).SetTransferValue(amount).SetFromAddr(from).SetToAddr(to).
+						SetTransactionIndex(receipt.TransactionIndex).SetBlockNumber(receipt.BlockNumber).SetBlockHash(receipt.BlockHash).
+						SetTokenAddress(tokenAll.ContractAddress).SetTokenSymbol(tokenAll.Symbol).SetTokenURL(tokenAll.ImageURL)
 
-						val := hexToDecimal(substring(data, 0, 64*1))
-						var tokenAll = tokenMap[strings.ToLower(address)]
-						if tokenAll == nil {
-							tokenAll = addToken(ctx, client, address, w3, network)
-						}
-						if tokenAll == nil {
-							continue
-						}
-						tokenMap[strings.ToLower(address)] = tokenAll
+					transferTxss = append(transferTxss, tx)
+					//_, err = tx.Save(ctx)
+					//if err == nil {
+					//	logger.Info("TransferTaskNew add tx success ", "txHash", receipt.ID)
+					//}
 
-						existTx := transferTxMap[receipt.ID]
-						if existTx != nil {
-							continue
-						}
-
-						//s4 := time.Now().UnixMilli()
-						//count, err := client.TransferTransaction.Query().Where(transfertransaction.TxHashEQ(receipt.ID)).Count(ctx)
-						//e4 := time.Now().UnixMilli()
-						//logger.Info("TransferTaskNew complete step3 ", "spent", e4-s4)
-						//if count > 0 {
-						//	continue
-						//}
-
-						decimals := tokenAll.Decimals
-						amount := decimal.NewFromBigInt(val, 0).DivRound(decimal.NewFromFloat(math.Pow10(int(decimals))), int32(decimals))
-						tx := client.TransferTransaction.Create().SetTime(receipt.Time).SetCreateTime(time.Now()).SetTxHash(receipt.ID).SetGasPrice(decimal.Zero).
-							SetGas(receipt.GasUsed).SetValue(decimal.Zero).SetTransferValue(amount).SetFromAddr(from).SetToAddr(to).
-							SetTransactionIndex(receipt.TransactionIndex).SetBlockNumber(receipt.BlockNumber).SetBlockHash(receipt.BlockHash).
-							SetTokenAddress(tokenAll.ContractAddress).SetTokenSymbol(tokenAll.Symbol).SetTokenURL(tokenAll.ImageURL)
-
-						transferTxss = append(transferTxss, tx)
-						//_, err = tx.Save(ctx)
-						//if err == nil {
-						//	logger.Info("TransferTaskNew add tx success ", "txHash", receipt.ID)
-						//}
-
-						//logger.Info("TransferTaskNew complete once ", "spent", e1-s1)
-					}
-
+					//logger.Info("TransferTaskNew complete once ", "spent", e1-s1)
 				}
-			}
-			if len(transferTxss) > 0 {
-				s5 := time.Now().UnixMilli()
-				_, err := client.TransferTransaction.CreateBulk(transferTxss[:]...).Save(ctx)
-				e5 := time.Now().UnixMilli()
-				logger.Info("TransferTaskNew complete step4 ", "spent", e5-s5, "network", network)
-				e0 := time.Now().UnixMilli()
-				if err == nil {
-					logger.Info("TransferTaskNew complete all ", "spent", e0-s0, "network", network)
-				}
-			}
 
+			}
+		}
+		if len(transferTxss) > 0 {
+			s5 := time.Now().UnixMilli()
+			_, err := client.TransferTransaction.CreateBulk(transferTxss[:]...).Save(ctx)
+			e5 := time.Now().UnixMilli()
+			logger.Info("TransferTaskNew complete step4 ", "spent", e5-s5, "network", network)
+			e0 := time.Now().UnixMilli()
+			if err == nil {
+				logger.Info("TransferTaskNew complete all ", "spent", e0-s0, "network", network)
+			}
 		}
 
 	}
