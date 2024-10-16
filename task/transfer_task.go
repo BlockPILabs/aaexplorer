@@ -27,7 +27,7 @@ const TokenAbi = "[{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType
 const SimpleTransferEventSign = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
 func InitTransferTask(ctx context.Context) {
-	go TransferTaskOld(ctx)
+	//go TransferTaskOld(ctx)
 	mevScheduler := chrono.NewDefaultTaskScheduler()
 	_, err := mevScheduler.ScheduleWithCron(func(ctx context.Context) {
 		TransferTaskNew(ctx)
@@ -87,11 +87,11 @@ func handlerOneNetwork(ctx context.Context, network string, net *ent.Network) {
 	if err != nil {
 		return
 	}
-	if network == "optimism" {
-		lastBlockNum = int64(126555541)
-	} else if network == "taiko-hekla" {
-		lastBlockNum = int64(873611)
-	}
+	//if network == "optimism" {
+	//	lastBlockNum = int64(126555541)
+	//} else if network == "taiko-hekla" {
+	//	lastBlockNum = int64(873611)
+	//}
 	//aaAccounts, err := client.AaAccountData.Query().Limit(10).All(ctx)
 	//var accountMap = make(map[string]*ent.AaAccountData)
 	//if len(aaAccounts) > 0 {
