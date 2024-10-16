@@ -87,8 +87,9 @@ func handlerOneNetwork(ctx context.Context, network string, net *ent.Network) {
 	if err != nil {
 		return
 	}
-	//if network == "optimism" {
-	//	lastBlockNum = int64(126555541)
+	if network == "optimism" {
+		lastBlockNum = int64(126723592)
+	}
 	//} else if network == "taiko-hekla" {
 	//	lastBlockNum = int64(873611)
 	//}
